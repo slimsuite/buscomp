@@ -66,7 +66,7 @@ Function:
     tested and might give some unexpected behaviours, as some of the quoted figures will still be based on the
     calculated BUSCOMPSeq data. Please report any unexpected behaviour.
 
-    For full documentation of the BUSCOMP workflow, run with `dochtml=T` and read the `*.info.html` file generated.
+    For full documentation of the BUSCOMP workflow, run with `dochtml=T` and read the `*.docs.html` file generated.
 
 Commandline:
     ### ~ Input/Output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
