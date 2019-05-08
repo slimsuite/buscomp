@@ -1,0 +1,5 @@
+Prefix,Genome,Description
+SGDR64.2.1,01_SGD,SGD R64.2.1 reference genome (strain S288c)
+MBG344001,02_PacBioHQ,High quality PacBio assembly of strain MBG344 (similar to S288c)
+chrIIIdup,03_chrIIIdup,Duplicated chromosome III contig from High Quality PacBio assembly
+MBG344WTDBG2,10_PacBioWTDBG2,WTDBG2 PacBio assembly of strain MBG344 (similar to S288c)

@@ -1,0 +1,8 @@
+Genome,Group
+01_SGD,HighQuality
+02_PacBioHQ,HighQuality
+03_chrIIIdup,HighQuality
+01_SGD,BUSCOMP
+02_PacBioHQ,BUSCOMP
+03_chrIIIdup,BUSCOMP
+10_PacBioWTDBG2,BUSCOMP
