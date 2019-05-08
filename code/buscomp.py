@@ -58,7 +58,7 @@ Function:
     identify the "best" assemblies. Details of settings, key results, tables and plots are output to an HTML report
     using Rmarkdown.
 
-    NOTE: For HTML output, a pandoc environment variable must be set, e.g.
+    NOTE: For HTML output, R must be installed and a pandoc environment variable must be set, e.g.
 
         export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc
 
@@ -204,6 +204,8 @@ def setupProgram(): ### Basic Setup of Program when called from commandline.
     '''
     try:### ~ [1] ~ Initial Command Setup & Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         info = makeInfo()                                   # Sets up Info object with program details
+        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: print(info.version); sys.exit(0)
+        if len(sys.argv) == 2 and sys.argv[1] in ['details','-details','--details']: print('%s v%s' % (info.program,info.version)); sys.exit(0)
         cmd_list = rje.getCmdList(sys.argv[1:],info=info)   # Reads arguments and load defaults from program.ini
         out = rje.Out(cmd_list=cmd_list)                    # Sets up Out object for controlling output to screen
         out.verbose(2,2,cmd_list,1)                         # Prints full commandlist if verbosity >= 2 
@@ -379,7 +381,7 @@ class BUSCOMP(rje_obj.RJE_Object):
         identify the "best" assemblies. Details of settings, key results, tables and plots are output to an HTML report
         using Rmarkdown.
 
-        **NOTE:** For HTML output, a pandoc environment variable must be set, e.g.
+        **NOTE:** For HTML output, R must be installed and a pandoc environment variable must be set, e.g.
 
             export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc
 
@@ -394,6 +396,11 @@ class BUSCOMP(rje_obj.RJE_Object):
         BUSCOMP is written in Python 2.x and can be run directly from the commandline:
 
             python $CODEPATH/buscomp.py [OPTIONS]
+
+        If running as part of [SLiMSuite](http://slimsuite.blogspot.com/), `$CODEPATH` will be the SLiMSuite `tools/`
+        directory. If running from the standalone [BUSCOMP git repo](https://github.com/slimsuite/buscomp), `$CODEPATH`
+        will be the path the to `code/` directory. Please see details in the [BUSCOMP git repo](https://github.com/slimsuite/buscomp)
+        for running on example data.
 
         For BUSCOMPSeq analysis, [minimap2](https://github.com/lh3/minimap2) must be installed and either added to the
         environment `$PATH` or given to BUSCOMP with the `minimap2=PROG` setting.
@@ -4181,7 +4188,7 @@ def runMain():
     try: (info,out,mainlog,cmd_list) = setupProgram()
     except SystemExit: return  
     except: print 'Unexpected error during program setup:', sys.exc_info()[0]; return
-    
+
     ### ~ [2] ~ Rest of Functionality... ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     try: BUSCOMP(mainlog,cmd_list).run()
 

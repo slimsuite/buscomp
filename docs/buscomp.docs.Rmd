@@ -57,7 +57,7 @@ also combined with traditional genome assembly statistics (NG50 and LG50) based 
 identify the "best" assemblies. Details of settings, key results, tables and plots are output to an HTML report
 using Rmarkdown.
 
-**NOTE:** For HTML output, a pandoc environment variable must be set, e.g.
+**NOTE:** For HTML output, R must be installed and a pandoc environment variable must be set, e.g.
 
     export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc
 
@@ -72,6 +72,11 @@ calculated BUSCOMPSeq data. Please report any unexpected behaviour.
 BUSCOMP is written in Python 2.x and can be run directly from the commandline:
 
     python $CODEPATH/buscomp.py [OPTIONS]
+
+If running as part of [SLiMSuite](http://slimsuite.blogspot.com/), `$CODEPATH` will be the SLiMSuite `tools/`
+directory. If running from the standalone [BUSCOMP git repo](https://github.com/slimsuite/buscomp), `$CODEPATH`
+will be the path the to `code/` directory. Please see details in the [BUSCOMP git repo](https://github.com/slimsuite/buscomp)
+for running on example data.
 
 For BUSCOMPSeq analysis, [minimap2](https://github.com/lh3/minimap2) must be installed and either added to the
 environment `$PATH` or given to BUSCOMP with the `minimap2=PROG` setting.

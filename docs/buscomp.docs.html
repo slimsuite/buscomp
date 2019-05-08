@@ -242,7 +242,7 @@ div.tocify {
 <li><strong>Missing</strong>: No hits meeting local cutoff.</li>
 </ul>
 <p>In addition to individual assembly stats, BUSCO and BUSCOMP ratings are compiled across user-defined groups of assemblies with various outputs to give insight into how different assemblies complement each other. Ratings are also combined with traditional genome assembly statistics (NG50 and LG50) based on a given <code>genomesize=X</code> to help identify the “best” assemblies. Details of settings, key results, tables and plots are output to an HTML report using Rmarkdown.</p>
-<p><strong>NOTE:</strong> For HTML output, a pandoc environment variable must be set, e.g.</p>
+<p><strong>NOTE:</strong> For HTML output, R must be installed and a pandoc environment variable must be set, e.g.</p>
 <pre><code>export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc</code></pre>
 <p><strong>NOTE:</strong> BUSCOMPSeq sequences can be provided with <code>buscofas=FILE</code> in place of compilation. This option has not been tested and might give some unexpected behaviours, as some of the quoted figures will still be based on the calculated BUSCOMPSeq data. Please report any unexpected behaviour.</p>
 <hr />
@@ -251,6 +251,7 @@ div.tocify {
 <h1><span class="header-section-number">2</span> Running BUSCOMP</h1>
 <p>BUSCOMP is written in Python 2.x and can be run directly from the commandline:</p>
 <pre><code>python $CODEPATH/buscomp.py [OPTIONS]</code></pre>
+<p>If running as part of <a href="http://slimsuite.blogspot.com/">SLiMSuite</a>, <code>$CODEPATH</code> will be the SLiMSuite <code>tools/</code> directory. If running from the standalone <a href="https://github.com/slimsuite/buscomp">BUSCOMP git repo</a>, <code>$CODEPATH</code> will be the path the to <code>code/</code> directory. Please see details in the <a href="https://github.com/slimsuite/buscomp">BUSCOMP git repo</a> for running on example data.</p>
 <p>For BUSCOMPSeq analysis, <a href="https://github.com/lh3/minimap2">minimap2</a> must be installed and either added to the environment <code>$PATH</code> or given to BUSCOMP with the <code>minimap2=PROG</code> setting.</p>
 <div id="commandline-options" class="section level2">
 <h2><span class="header-section-number">2.1</span> Commandline options</h2>

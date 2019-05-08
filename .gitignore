@@ -99,3 +99,4 @@ venv.bak/
 .mypy_cache/
 code/makebuscomp.sh
 code/mod.list
+docs/makedoc.sh
