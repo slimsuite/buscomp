@@ -1,0 +1,10 @@
+#~~#	#~+~~+~#	#~~#
+#LOG	00:00:00	Activity Log for BUSCOMP V0.7.0: Wed May  8 16:00:54 2019
+#DIR	00:00:00	Run from directory: /Users/redwards/code/buscomp/docs
+#ARG	00:00:00	Commandline arguments: dochtml
+#CMD	00:00:00	Full Command List: log=buscomp.log dochtml
+#VIO	00:00:00	Verbosity: 1; Interactivity: 0.
+#RMD	00:00:00	RMarkdown BUSCOMP documentation output to buscomp.docs.Rmd
+#RCMD	00:00:00	Rscript -e 'library(rmarkdown); rmarkdown::render("buscomp.docs.Rmd", "html_document")'
+#RCMD	00:00:00	buscomp.docs.html generated from buscomp.docs.Rmd
+#LOG	00:00:00	BUSCOMP V0.7.0 End: Wed May  8 16:00:55 2019
