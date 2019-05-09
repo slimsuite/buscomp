@@ -1,0 +1,15 @@
+BUSCO	BUSCOMP	SGD	PacBioHQ	chrIIIdup	PacBioWTDBG2	TOTAL
+Complete	Complete	1670	1671	0	1372	4713
+Complete	Duplicated	0	0	0	1	1
+Complete	Partial	2	2	0	2	6
+Duplicated	Complete	2	2	0	1	5
+Duplicated	Duplicated	1	1	45	0	47
+Duplicated	NULL	8	8	0	8	24
+Fragmented	Complete	3	1	0	126	130
+Fragmented	Duplicated	0	0	0	1	1
+Fragmented	NULL	9	9	0	8	26
+Missing	Complete	3	4	0	178	185
+Missing	Ghost	0	0	1	0	1
+Missing	Missing	0	0	1634	0	1634
+Missing	NULL	13	13	30	14	70
+Missing	Partial	0	0	1	0	1

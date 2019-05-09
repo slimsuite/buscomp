@@ -1,0 +1,7 @@
+#	Genome	N	Identical	Complete	Single	Duplicated	Fragmented	Partial	Ghost	Missing
+1	SGD	1681	1609	1679	1678	1	0	2	0	0
+2	PacBioHQ	1681	1611	1679	1678	1	0	2	0	0
+3	chrIIIdup	1681	43	45	0	45	0	1	1	1634
+4	HighQuality	1681	0	1679	1678	1	0	2	0	0
+5	PacBioWTDBG2	1681	1018	1679	1677	2	0	2	0	0
+6	BUSCOMP	1681	0	1679	1678	1	0	2	0	0

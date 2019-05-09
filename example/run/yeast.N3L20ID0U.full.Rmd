@@ -1,0 +1,740 @@
+---
+title: "BUSCOMP Full Report"
+author: "yeast BUSCOMP Analysis"
+date: "2019-05-09"
+output:
+  html_document:
+    css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 3
+    number_sections: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+<a name="Top" />
+
+<a name="Top" />
+
+# BUSCOMP Run Summary
+
+    BUSCOMP V0.7.1: run Thu May  9 10:13:22 2019
+
+
+
+See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/code/buscomp/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
+
+**NOTE:** To edit this document, open `yeast.N3L20ID0U.full.Rmd` in RStudio, edit and re-knit to HTML.
+
+<a name="Summary" />
+
+## BUSCOMP Results Summary
+
+Assemblies can be assessed on a number of criteria, but the main ones (in the absence of a reference "truth" genome) are either to judge contiguity or completeness.
+NG50 and LG50 values are based on a genome size of 13.1 Mb.
+If the `genomesize=X` parameter was not set (see command list in <a href="#Appendix">appendix</a>), this will be based on the longest assembly (see sequence stats, below).
+
+Of the 4 assemblies analysed (4 BUSCO; 4 fasta; 4 both),
+3 genomes were rated as the "best" by at least one criterion:
+
+* `PacBioHQ`: NG50Length, LG50Count, MaxLength, Complete, Missing, BUSCO.
+* `PacBioWTDBG2`: Complete, Missing.
+* `SGD`: LG50Count, Complete, Missing, NoBUSCO.
+
+Best assemblies by assembly contiguity critera:
+
+* **NG50Length.** Longest NG50 contig/scaffold length (930,848 bp): `PacBioHQ`
+* **LG50Count.** Smallest LG50 contig/scaffold count (6): `PacBioHQ`, `SGD`
+* **MaxLength.** Maximum contig/scaffold length (1,553,502 bp): `PacBioHQ`
+
+Best assemblies by completeness critera:
+
+* **Complete.** Most Complete (Single & Duplicated) BUSCOMP sequences (99.9 %): `PacBioHQ`, `PacBioWTDBG2`, `SGD`
+* **Missing.** Fewest Missing BUSCOMP sequences (0.0 %): `PacBioHQ`, `PacBioWTDBG2`, `SGD`
+* **BUSCO.** Most Complete (Single & Duplicated) BUSCO sequences (97.8 %): `PacBioHQ`
+* **NoBUSCO.** Fewest Missing BUSCO sequences (0.9 %): `SGD`
+<a name="Genomes" />
+
+# Genome Summary
+
+```{r genomesetup, echo=FALSE}
+# Load and display yeast.N3L20ID0U.rdata.tdt
+rdata <- read.delim("yeast.N3L20ID0U.rdata.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+rdata = rdata[order(rdata[,1]),]
+
+# Load and display yeast.genomes.tdt
+gentable <- read.delim("yeast.genomes.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+gentable$Genome = rdata$Genome
+rownames(gentable) = gentable[,1]
+gensum = gentable[! is.na(gentable$N),2:6]
+gensum = gensum[! (gensum$Directory == "" & gensum$Fasta == ""),]
+genstat = gentable[! is.na(gentable$SeqNum),c(4,9:18)]
+busco = gentable[,c(4,21:25)]
+busco$Single = busco$Complete
+busco$Complete = busco$Single + busco$Duplicated
+busco = busco[,c(1,2,4,7,3,5:6)]
+
+```
+
+The following genomes and BUSCO results were analysed by BUSCOMP:
+
+* **SGD**. [<code>BUSCO</code>|<code>Fasta</code>] SGD R64.2.1 reference genome (strain S288c)
+* **PacBioHQ**. [<code>BUSCO</code>|<code>Fasta</code>] High quality PacBio assembly of strain MBG344 (similar to S288c)
+* **chrIIIdup**. [<code>BUSCO</code>|<code>Fasta</code>] Duplicated chromosome III contig from High Quality PacBio assembly
+* **PacBioWTDBG2**. [<code>BUSCO</code>|<code>Fasta</code>] WTDBG2 PacBio assembly of strain MBG344 (similar to S288c)
+
+Details of the directories and files are below:
+
+```{r gensum, echo=FALSE}
+# Load and display gensum
+if(nrow(gensum) > 10 | ncol(gensum) > 10){
+    rmarkdown::paged_table(gensum)
+}else{
+    knitr::kable(gensum, row.names = FALSE)
+}
+
+```
+
+
+Genomes with a **Directory** listed had BUSCO results available.
+If **Sequences** is `True`, these would be have been compiled to generate the BUSCOMP sequence set (unless `buscompseq=F`, or alternative sequences were provided with `buscofas=FASFILE`).
+Genomes with a **Fasta** listed had sequence data available for BUSCOMP searches.
+
+## Genome statistics
+
+The following genome statistics were also calculated by `RJE_SeqList` for each genome (table, below):
+
+* **SeqNum**: The total number of scaffolds/contigs in the assembly.
+* **TotLength**: The total combined length of scaffolds/contigs in the assembly.
+* **MinLength**: The length of the shortest scaffold/contig in the assembly.
+* **MaxLength**: The length of the longest scaffold/contig in the assembly.
+* **MeanLength**: The mean length of scaffolds/contigs in the assembly.
+* **MedLength**: The median length of scaffolds/contigs in the assembly.
+* **N50Length**: At least half of the assembly is contained on scaffolds/contigs of this length or greater.
+* **L50Count**: The smallest number scaffolds/contigs needed to cover half the the assembly.
+* **NG50Length**: At least half of the genome is contained on scaffolds/contigs of this length or greater.
+This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
+* **LG50Count**: The smallest number scaffolds/contigs needed to cover half the the genome.
+This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
+* **GapLength**: The total number of undefined "gap" (`N`) nucleotides in the assembly.
+* **GC**: The %GC content of the assembly.
+
+
+
+```{r genstat, echo=FALSE}
+# Load and display genstat
+knitr::kable(genstat, row.names = FALSE)
+
+```
+
+
+**NOTE:** `NG50Length` and `LG50Count` statistics use `genomesize=X` or the biggest assembly loaded (13.10 Mb). If BUSCOMP has been run more than once on the same data (_e.g._ to update descriptions or sorting), please make sure that a consistent genome size is used, or these values may be wrong. If in doubt, run with `force=T` and force regeneration of statistics.
+
+```{r plotsetup, echo=FALSE, fig.width=12, fig.height=8}
+pdata = rdata[rdata$plot == TRUE & ! is.na(rdata$MeanLength),]
+
+pdata$TotLength = pdata$TotLength / 1e9
+pdata$MaxLength = pdata$MaxLength / 1e6
+pdata$N50Length = pdata$N50Length / 1e6
+pdata$NG50Length = pdata$NG50Length / 1e6
+
+```
+
+
+## Genome coverage assessment plots
+
+In general, a good assembly will be approx. the same size as the genome and in as few pieces as possible. Any assembly smaller than the predicted genome size is clearly missing coverage. Assemblies bigger than the genome size might still be missing chunks of the genome if redundancy/duplication is a problem. In the following plot, the grey line marks the given genome size of 13.1 Mb.
+
+```{r numVsize, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$TotLength,pdata$SeqNum/1000,xlab="Assembly Size (Gb)",ylab="No. contigs/scaffolds (1000s)",col=pdata$col,pch=pdata$pch,main="Contig/scaffold count versus total assembly size",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$TotLength,0.0131)),ylim=c(0,max(pdata$SeqNum/1000)))
+abline(v=0.0131, col="grey")
+text(pdata$TotLength,pdata$SeqNum/1000,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+A better indicator of the overall coverage of the genome is the number of `Missing` BUSCO genes. As BUSCO is highly dependent on the accuracy of the sequence and the gene models it makes, the `Missing` BUSCOMP ratings arguably give a more consistent proxy for genome completeness. NOTE: this says nothing about the fragmentation or completeness of the genes themselves.
+
+```{r nobuscoVsize, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$TotLength,pdata$NoBUSCO,xlab="Assembly Size (Gb)",ylab="BUSCO Missing (%)",col=pdata$col,pch=pdata$pch,main="Missing BUSCO versus total assembly size",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$TotLength,0.0131)),ylim=c(0,max(pdata$NoBUSCO)))
+abline(v=0.0131, col="grey")
+text(pdata$TotLength,pdata$NoBUSCO,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+```{r missingVsize, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$TotLength,pdata$Missing,xlab="Assembly Size (Gb)",ylab="BUSCOMP Missing (%)",col=pdata$col,pch=pdata$pch,main="Missing BUSCOMP versus total assembly size",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$TotLength,0.0131)),ylim=c(0,max(pdata$Missing)))
+abline(v=0.0131, col="grey")
+text(pdata$TotLength,pdata$Missing,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+```{r nobuscompVnobusco, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$NoBUSCO,pdata$Missing,xlab="BUSCO Missing (%)",ylab="BUSCOMP Missing (%)",col=pdata$col,pch=pdata$pch,main="Missing BUSCOMP versus Missing BUSCO",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NoBUSCO)),ylim=c(0,max(pdata$Missing)))
+text(pdata$NoBUSCO,pdata$Missing,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+
+## Genome contiguity assessment plots
+
+In general, a good assembly will be in fewer, bigger pieces. This is approximated using NG50 and LG50, which are the min. length and number of contigs/scaffolds required to cover at least half the genome. These stats use the given genome size of 13.1 Mb.
+
+```{r lg50Vng50, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$NG50Length,pdata$LG50Count,xlab="NG50 (Mb)",ylab="LG50 contig/scaffold count",col=pdata$col,pch=pdata$pch,main="LG50 count versus NG50 length",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NG50Length)),ylim=c(0,max(pdata$LG50Count)))
+text(pdata$NG50Length,pdata$LG50Count,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+```{r completeVng50, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$NG50Length,pdata$Complete,xlab="NG50 (Mb)",ylab="BUSCOMP Complete (%)",col=pdata$col,pch=pdata$pch,main="Complete BUSCOMP versus NG50",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NG50Length)),ylim=c(0,max(pdata$Complete)))
+text(pdata$NG50Length,pdata$Complete,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+```{r buscoVng50, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$NG50Length,pdata$BUSCO,xlab="NG50 (Mb)",ylab="BUSCO Complete (%)",col=pdata$col,pch=pdata$pch,main="Complete BUSCO versus NG50",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NG50Length)),ylim=c(0,max(pdata$BUSCO)))
+text(pdata$NG50Length,pdata$BUSCO,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+```{r buscompVbusco, echo=FALSE, fig.width=12, fig.height=8}
+plot(pdata$BUSCO,pdata$Complete,xlab="BUSCO Complete (%)",ylab="BUSCOMP Complete (%)",col=pdata$col,pch=pdata$pch,main="Complete BUSCOMP versus Complete BUSCO",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$BUSCO)),ylim=c(0,max(pdata$Complete)))
+text(pdata$BUSCO,pdata$Complete,pdata$label,pos=3,col=pdata$col)
+
+
+```
+
+**NOTE:** To modify these plots and tables, edit the `*.genomes.tdt` and `*.NxLxxIDxx.rdata.tdt` files and re-knit the `*.NxLxxIDxx.Rmd` file.
+
+<a name="BUSCO" />
+
+# BUSCO Ratings
+
+Compiled BUSCO results for 4 assemblies and 2 groups have been saved in `yeast.genomes.tdt`. BUSCO ratings are defined (quoting from the [BUSCO v3 User Guide](http://gitlab.com/ezlab/busco/raw/master/BUSCO_v3_userguide.pdf) as:
+
+* `Complete`: Single-copy hits where "BUSCO matches have scored within the expected range of scores and within the expected range of length alignments to the
+BUSCO profile."
+* `Duplicated`: As `Complete` but 2+ copies.
+* `Fragmented`: "BUSCO matches ... within the range of scores but not within the range of length alignments to the BUSCO profile."
+* `Missing`: "Either no significant matches at all, or the BUSCO matches scored below the range of scores for the BUSCO profile."
+
+
+```{r busco, echo=FALSE}
+# Load and display busco
+knitr::kable(busco, row.names = FALSE)
+
+```
+
+```{r buscochart, echo=FALSE, fig.width=12, fig.height=5}
+sumdata = busco[! is.na(busco$N) & busco$N > 0,c(1,4:7)]
+colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")
+# BUSCO Plot of summary data table as % (Dataset, Complete, Duplicated, Fragmented, Missing)
+buscoPercPlot = function(sumdata,title=""){
+  sumdata = sumdata[nrow(sumdata):1,]
+  rownames(sumdata) = sumdata$Dataset
+  N = sum(sumdata[1,2:5])
+  my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F04442")
+  par(mar=c(5,12,4,1)+0.1)
+  barplot(t(as.matrix(sumdata[2:5]))*100/N,horiz=TRUE,legend=TRUE,axes=TRUE,las=1,args.legend=c(x="topright"),col=my_colors,main=title,xlab=paste0("BUSCO Percentage (n=",N,")"),xlim=c(0,119))
+  text(0,0.6+0:(dim(sumdata)[1]-1)*1.2,sumdata$text,pos=4)
+  par(mar=c(5,4,4,2)+0.1)
+}
+buscoPercPlot(sumdata,"BUSCO Rating Summary")
+
+```
+
+<a name="Groups" />
+
+## Genome Groups
+
+`BUSCOMP` compiled the following groups of genomes (where BUSCO data was loaded), keeping the "best" rating for each BUSCO gene
+ across the group:
+
+* **HighQuality**: `SGD` `PacBioHQ` `chrIIIdup`
+* **BUSCOMP**: `SGD` `PacBioHQ` `chrIIIdup` `PacBioWTDBG2`
+
+<a name="BUSCOSummary" />
+
+## BUSCO Summary
+
+```
+SGD BUSCO Results:
+        C:98.4%[S:97.7%,D:0.6%],F:0.7%,M:0.9%,n:1711
+
+PacBioHQ BUSCO Results:
+        C:98.4%[S:97.8%,D:0.6%],F:0.6%,M:1.0%,n:1711
+
+chrIIIdup BUSCO Results:
+        C:2.6%[S:0.0%,D:2.6%],F:0.0%,M:97.4%,n:1711
+
+HighQuality BUSCO Results:
+        C:98.4%[S:97.8%,D:0.6%],F:0.6%,M:0.9%,n:1711
+
+PacBioWTDBG2 BUSCO Results:
+        C:80.9%[S:80.4%,D:0.5%],F:7.9%,M:11.2%,n:1711
+
+BUSCOMP BUSCO Results:
+        C:98.7%[S:98.2%,D:0.5%],F:0.5%,M:0.8%,n:1711
+
+```
+<a name="BUSCOFull" />
+
+## BUSCO Gene Details
+
+Full BUSCO results with ratings for each gene have been compiled in `yeast.busco.tdt`:
+
+```{r buscofull, echo=FALSE}
+# Load and display yeast.busco.tdt
+buscofull <- read.delim("yeast.busco.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(buscofull) > 10 | ncol(buscofull) > 10){
+    rmarkdown::paged_table(buscofull)
+}else{
+    knitr::kable(buscofull, row.names = FALSE)
+}
+
+```
+
+<a name="BUSCOSeq" />
+
+# BUSCOMP Ratings
+
+The best complete BUSCO hit results (based on `Score` and `Length`) have been compiled in `yeast.buscoseq.tdt`.
+The `Genome` field indicates the assembly with the best hit, which is followed by details of that hit (`Contig`, `Start`, `End`, `Score`, `Length`).
+BUSCOMP ratings for each assembly are then given in subsequent fields:
+
+* `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
+* `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
+* `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
+* `Fragmented`: 95%+ combined coverage but not in any single contig/scaffold.
+* `Partial`: 40-95% combined coverage.
+* `Ghost`: Hits meeting local cutoff but <40% combined coverage.
+* `Missing`: No hits meeting local cutoff.
+
+```{r buscoseq, echo=FALSE}
+# Load and display yeast.buscoseq.tdt
+buscoseq <- read.delim("yeast.buscoseq.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(buscoseq) > 10 | ncol(buscoseq) > 10){
+    rmarkdown::paged_table(buscoseq)
+}else{
+    knitr::kable(buscoseq, row.names = FALSE)
+}
+
+```
+
+<a name="BUSCOMP" />
+
+## BUSCOSeq Rating Summary
+
+BUSCOMP ratings (see above) are compiled to summary statistics in `yeast.N3L20ID0U.ratings.tdt`. Note that `Identical` ratings in this table will also be rated as `Complete`, which in turn are `Single` or `Duplicated`.
+Percentage summaries are plotted below, along with a BUSCO-style one-line summary per assembly/group.
+
+**NOTE:** Group summaries do not include `Identical` ratings.
+
+```{r ratings, echo=FALSE}
+# Load and display yeast.N3L20ID0U.ratings.tdt
+ratings <- read.delim("yeast.N3L20ID0U.ratings.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+knitr::kable(ratings, row.names = FALSE)
+
+```
+
+```{r buscoseqchart, echo=FALSE, fig.width=12, fig.height=5}
+sumdata = ratings[,c(1,5:10)+1]
+# BUSCO Plot of summary data table as % (Genome, Single, Duplicated, Fragmented, Partial, Ghost, Missing)
+buscompSeqPercPlot = function(sumdata,title=""){
+  sumdata = sumdata[nrow(sumdata):1,]
+  rownames(sumdata) = sumdata$Genome
+  N = sum(sumdata[1,2:7])
+  my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F0E442", "#F04442", "#F04442")
+  par(mar=c(5,12,4,1)+0.1)
+  barplot(t(as.matrix(sumdata[2:7]))*100/N,horiz=TRUE,legend=TRUE,axes=TRUE,las=1,args.legend=c(x="topright"),col=my_colors,main=title,xlab=paste0("BUSCOMP Percentage (n=",N,")"),xlim=c(0,119))
+  text(0,0.6+0:(dim(sumdata)[1]-1)*1.2,sumdata$text,pos=4)
+  par(mar=c(5,4,4,2)+0.1)
+}
+
+buscompSeqPercPlotNA = function(sumdata,title=""){
+  sumdata = sumdata[nrow(sumdata):1,]
+  rownames(sumdata) = sumdata$Genome
+  N = sum(sumdata[1,2:8])
+  my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F0E442", "#F04442", "#F04442", "white")
+  par(mar=c(5,12,4,1)+0.1)
+  barplot(t(as.matrix(sumdata[2:8]))*100/N,horiz=TRUE,legend=TRUE,axes=TRUE,las=1,args.legend=c(x="topright"),col=my_colors,main=title,xlab=paste0("BUSCOMP Percentage (n=",N,")"),xlim=c(0,119))
+  text(0,0.6+0:(dim(sumdata)[1]-1)*1.2,sumdata$text,pos=4)
+  par(mar=c(5,4,4,2)+0.1)
+}
+buscompSeqPercPlot(sumdata,"BUSCOSeq Rating Summary")
+
+```
+
+```
+BUSCOMP BUSCOMP Results [1681 (98.25%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
+        C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
+
+HighQuality BUSCOMP Results [1673 (97.78%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
+        C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
+
+PacBioHQ BUSCOMP Results [1673 (97.78%) Complete BUSCOs; 1599 (95.12%) BUSCOMP Seqs]:
+        C:99.9%[S:99.8%,D:0.1%,I:95.8%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
+
+PacBioWTDBG2 BUSCOMP Results [1375 (80.36%) Complete BUSCOs; 77 (4.58%) BUSCOMP Seqs]:
+        C:99.9%[S:99.8%,D:0.1%,I:60.6%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
+
+SGD BUSCOMP Results [1672 (97.72%) Complete BUSCOs; 5 (0.30%) BUSCOMP Seqs]:
+        C:99.9%[S:99.8%,D:0.1%,I:95.7%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
+
+chrIIIdup BUSCOMP Results [0 (0.00%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
+        C:2.7%[S:0.0%,D:2.7%,I:2.6%],F:0.0%,P:0.1%,G:0.1%,M:97.2%,n:1681
+
+```
+<a name="BUSCOSeqFull" />
+
+## BUSCOSeq Full Results Table
+
+Full BUSCOMP results with ratings for each gene in every assembly and group have been compiled in `yeast.N3L20ID0U.buscomp.tdt`:
+
+```{r buscomp, echo=FALSE}
+# Load and display yeast.N3L20ID0U.buscomp.tdt
+buscomp <- read.delim("yeast.N3L20ID0U.buscomp.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(buscomp) > 10 | ncol(buscomp) > 10){
+    rmarkdown::paged_table(buscomp)
+}else{
+    knitr::kable(buscomp, row.names = FALSE)
+}
+
+```
+
+<a name="BUSCOMParisons" />
+
+# BUSCO and BUSCOMP Comparisons
+
+<a name="BUSCOMPChanges" />
+
+## BUSCO to BUSCOMP Rating Changes
+
+Ratings changes from BUSCO to BUSCOMP (where `NULL` ratings indicate no BUSCOMP sequence):
+
+```{r changes, echo=FALSE}
+# Load and display yeast.N3L20ID0U.changes.tdt
+changes <- read.delim("yeast.N3L20ID0U.changes.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+knitr::kable(changes, row.names = FALSE)
+
+```
+
+
+
+Full table of Ratings changes from by gene:
+
+```{r fullchanges, echo=FALSE}
+# Load and display yeast.N3L20ID0U.changes.full.tdt
+fullchanges <- read.delim("yeast.N3L20ID0U.changes.full.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(fullchanges) > 10 | ncol(fullchanges) > 10){
+    rmarkdown::paged_table(fullchanges)
+}else{
+    knitr::kable(fullchanges, row.names = FALSE)
+}
+
+```
+
+
+
+<small>**C**omplete, **D**uplicated, **F**ragmented, **P**artial, **G**host, **M**issing, **N**ULL (no BUSCOMP sequence)</small>
+
+### BUSCOMP Gain test
+
+There is a risk that performing a low stringency search will identify homologues or pseudogenes of the desired BUSCO gene in error.
+If there is a second copy of a gene in the genome that is detectable by the search then we would expect the same
+genes that go from `Missing` to `Complete` in some genomes to go from `Single` to `Duplicated` in others.
+
+To test this, data is reduced for each pair of genomes to BUSCO-BUSCOMP rating pairs of:
+
+* `Single`-`Single`
+* `Single`-`Duplicated`
+* `Missing`-`Missing`
+* `Missing`-`Single`
+
+This is then converted in to `G`ain ratings (`Single`-`Duplicated` & `Missing`-`Single`) or `N`o Gain ratings
+(`Single`-`Single` & `Missing`-`Missing`). The `Single`-`Duplicated` shift in one genome is then used to set the expected `Missing`-`Single`
+shift in the other, and assess the probability of observing the `Missing`-`Single` shift using a cumulative binomial
+distribution, where:
+
+* `k` is the number of observed `GG` pairs (`Single`-`Duplicated` _and_ `Missing`-`Single`)
+* `n` is the number of `Missing`-`Single` `G`ains in the focal genome (`NG`+`GG`)
+* `p` is the proportion of `Single`-`Duplicated` `G`ains in the background genome (`GN`+`GG` / (`GN`+`GG`+`NN`+`NG`))
+* `pB` is the probability of observing `k+` `Missing`-`Single` gains, given `p` and `n`
+
+This is output to `*.gain.tdt`, where each row is a Genome and each field gives the probability of the row
+genome's `Missing`-`Single` gains, given the column genome's `Single`-`Duplicated` gains:
+
+```{r gain, echo=FALSE}
+# Load and display yeast.N3L20ID0U.gain.tdt
+gain <- read.delim("yeast.N3L20ID0U.gain.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(gain) > 15 | ncol(gain) > 15){
+    rmarkdown::paged_table(gain)
+}else{
+    knitr::kable(gain, row.names = FALSE)
+}
+
+```
+
+
+
+Low probabilities indicate that BUSCOMP might be rating paralogues or pseudogenes and not functional orthologues of the BUSCO gene.
+Note that there is *no* correction for multiple testing, nor any adjustment for lack of independence between samples.
+
+<a name="BUSCOMPUnique" />
+
+## Unique BUSCO and BUSCOMP Complete Genes
+
+BUSCO and BUSCOMP `Complete` ratings were compared for each BUSCO gene to identify those genes unique to either a single assembly or a group of assemblies. The `BUSCOMP` group is excluded from this analysis, as (typically) are other redundant groups wholly contained within another group. (Inclusion of such groups is guaranteed to result in 2+ groups containing any `Complete` BUSCOs they have.)
+
+```
+SGD unique Complete genes: 0 BUSCO; 0 BUSCOMP
+PacBioHQ unique Complete genes: 1 BUSCO; 0 BUSCOMP
+chrIIIdup unique Complete genes: 0 BUSCO; 0 BUSCOMP
+PacBioWTDBG2 unique Complete genes: 5 BUSCO; 0 BUSCOMP
+HighQuality unique Complete genes: 304 BUSCO; 0 BUSCOMP
+```
+
+```{r uniqueplots, echo=FALSE, fig.width=12, fig.height=5}
+rownames(rdata) = rdata$Genome
+pdata = rdata[rev(order(rdata[,1])),]
+pdata = pdata[pdata$UniqBUSCO >= 0,]
+par(mar=c(5,15,4,1)+0.1)
+barplot(t(as.matrix(pdata[,c("UniqBUSCOMP","UniqBUSCO")])),horiz=TRUE,axes=TRUE,col=c("red","blue"),main="Unique Complete BUSCO Genes",xlab="Number of Unique Genes",names.arg=pdata$Genome,las=1,beside = TRUE,legend=TRUE)
+par(mar=c(5,4,4,2)+0.1)
+
+```
+
+<a name="BUSCOMissing" />
+
+## Ratings for Missing BUSCO genes
+
+In addition to the unique ratings (above), it can be useful to know how genes `Missing` from one assembly/group are rated in the others. These plots are generated for each assembly/group in turn. The full BUSCO (`*.busco.tdt`) and BUSCOMP (`*.LnnIDxx.buscomp.tdt`) tables are reduced to the subset of genes that are missing in the assembly/group of interest, and then the summary ratings recalculated for that subset.
+
+In each case, three plots are made (assuming both BUSCO and BUSCOMP data is available):
+            
+1. BUSCO ratings for missing BUSCO genes.
+2. BUSCOMP ratings for missing BUSCO genes. As well as being more relaxed than pure BUSCO results, this will indicate
+when BUSCOMP has found a gene in the focal assembly/group where BUSCO did not.
+3. BUSCOMP ratings for missing BUSCOMP genes. It is expected that assemblies will be much more similar in terms of BUSCOMP
+coverage.
+
+```{r missingfunctions, echo=FALSE}
+# Function to plot status of missing BUSCOs
+missingPlot = function(plotdf,genome){
+    missdf = plotdf[plotdf[[genome]]=="Missing",]
+    df = data.frame(Dataset=colnames(missdf)[-1], Complete = 0, Duplicated = 0, Fragmented = 0, Missing = 0)
+    rownames(df) = colnames(missdf)[-1] 
+    for(gen in colnames(missdf)[-1]){
+        missdf[,gen] = factor(missdf[,gen],levels=colnames(df)[-1])
+        #levels(missdf[,gen]) = colnames(df)[-1]
+        gtab = table(missdf[,gen])
+        for(field in colnames(df)[-1]){
+            df[gen,field] = gtab[[field]]
+        }
+    }
+    buscoPercPlot(df,title=paste("Missing",genome,"BUSCOs"))
+}
+# Function to plot status of missing BUSCOs
+missingSeqPlot = function(plotdf,ratedf,genome){
+    missdf = plotdf[ratedf[[genome]]=="Missing" | ratedf[[genome]]=="NULL" | is.na(ratedf[[genome]]),]
+    df = data.frame(Genome=colnames(missdf)[-c(1:2)], Complete = 0, Duplicated = 0, Fragmented = 0, Partial = 0, Ghost = 0, Missing = 0, NULL = 0)
+    rownames(df) = colnames(missdf)[-c(1:2)] 
+    for(gen in colnames(missdf)[-c(1:2)]){
+        missdf[,gen] = factor(missdf[,gen],levels=colnames(df)[-1])
+        #levels(missdf[,gen]) = colnames(df)[-1]
+        gtab = table(missdf[,gen])
+        for(field in colnames(df)[-1]){
+            df[gen,field] = gtab[[field]]
+        }
+    }
+    buscompSeqPercPlotNA(df,title=paste("Missing",genome,"BUSCOMPs"))
+}
+buscofull <- read.delim("yeast.busco.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+buscomp <- read.delim("yeast.N3L20ID0U.buscomp.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+
+```
+
+## Missing SGD BUSCO genes
+
+BUSCO ratings for `Missing` SGD BUSCO genes:
+
+```{r missing.SGD, echo=FALSE, fig.width=12, fig.height=5}
+missingPlot(buscofull,"SGD")
+```
+
+BUSCOMP ratings for `Missing` SGD BUSCO genes:
+
+```{r nobuscoseq.SGD, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscofull,"SGD")
+```
+
+BUSCOMP ratings for `Missing` SGD BUSCOMP genes:
+
+```{r missingseq.SGD, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscomp,"SGD")
+```
+
+## Missing PacBioHQ BUSCO genes
+
+BUSCO ratings for `Missing` PacBioHQ BUSCO genes:
+
+```{r missing.PacBioHQ, echo=FALSE, fig.width=12, fig.height=5}
+missingPlot(buscofull,"PacBioHQ")
+```
+
+BUSCOMP ratings for `Missing` PacBioHQ BUSCO genes:
+
+```{r nobuscoseq.PacBioHQ, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscofull,"PacBioHQ")
+```
+
+BUSCOMP ratings for `Missing` PacBioHQ BUSCOMP genes:
+
+```{r missingseq.PacBioHQ, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscomp,"PacBioHQ")
+```
+
+## Missing chrIIIdup BUSCO genes
+
+BUSCO ratings for `Missing` chrIIIdup BUSCO genes:
+
+```{r missing.chrIIIdup, echo=FALSE, fig.width=12, fig.height=5}
+missingPlot(buscofull,"chrIIIdup")
+```
+
+BUSCOMP ratings for `Missing` chrIIIdup BUSCO genes:
+
+```{r nobuscoseq.chrIIIdup, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscofull,"chrIIIdup")
+```
+
+BUSCOMP ratings for `Missing` chrIIIdup BUSCOMP genes:
+
+```{r missingseq.chrIIIdup, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscomp,"chrIIIdup")
+```
+
+## Missing HighQuality BUSCO genes
+
+BUSCO ratings for `Missing` HighQuality BUSCO genes:
+
+```{r missing.HighQuality, echo=FALSE, fig.width=12, fig.height=5}
+missingPlot(buscofull,"HighQuality")
+```
+
+BUSCOMP ratings for `Missing` HighQuality BUSCO genes:
+
+```{r nobuscoseq.HighQuality, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscofull,"HighQuality")
+```
+
+BUSCOMP ratings for `Missing` HighQuality BUSCOMP genes:
+
+```{r missingseq.HighQuality, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscomp,"HighQuality")
+```
+
+## Missing PacBioWTDBG2 BUSCO genes
+
+BUSCO ratings for `Missing` PacBioWTDBG2 BUSCO genes:
+
+```{r missing.PacBioWTDBG2, echo=FALSE, fig.width=12, fig.height=5}
+missingPlot(buscofull,"PacBioWTDBG2")
+```
+
+BUSCOMP ratings for `Missing` PacBioWTDBG2 BUSCO genes:
+
+```{r nobuscoseq.PacBioWTDBG2, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscofull,"PacBioWTDBG2")
+```
+
+BUSCOMP ratings for `Missing` PacBioWTDBG2 BUSCOMP genes:
+
+```{r missingseq.PacBioWTDBG2, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscomp,"PacBioWTDBG2")
+```
+
+## Missing BUSCOMP BUSCO genes
+
+BUSCO ratings for `Missing` BUSCOMP BUSCO genes:
+
+```{r missing.BUSCOMP, echo=FALSE, fig.width=12, fig.height=5}
+missingPlot(buscofull,"BUSCOMP")
+```
+
+BUSCOMP ratings for `Missing` BUSCOMP BUSCO genes:
+
+```{r nobuscoseq.BUSCOMP, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscofull,"BUSCOMP")
+```
+
+BUSCOMP ratings for `Missing` BUSCOMP BUSCOMP genes:
+
+```{r missingseq.BUSCOMP, echo=FALSE, fig.width=12, fig.height=5}
+missingSeqPlot(buscomp,buscomp,"BUSCOMP")
+```
+
+<a name="Appendix" />
+
+# Appendix: BUSCOMP run details
+
+    BUSCOMP V0.7.1: run Thu May  9 10:13:22 2019
+
+This analysis was run in:
+
+    /Users/redwards/code/buscomp/example/run
+
+* Log file: <a href="/Users/redwards/code/buscomp/example/run/yeast.log">`/Users/redwards/code/buscomp/example/run/yeast.log`</a>
+* Commandline arguments: `ini=../run/example.ini` `i=-1` `forks=4`
+* Full Command List: `minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2` `ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
+
+<a name="Errors" />
+
+## BUSCOMP errors
+
+BUSCOMP returned no runtime errors.
+
+## BUSCOMP warnings
+
+See run log for further details:
+
+```
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#WARN	00:00:06	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
+#WARN	00:00:06	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
+```
+
+---
+
+**Report contents:**
+
+* <a href="#Top">Run summary</a>
+* <a href="#Summary">BUSCOMP summary</a>
+* <a href="#Genomes">Genome summary</a>
+* <a href="#BUSCO">BUSCO Ratings</a>
+* <a href="#BUSCOFull">BUSCO full results compilation</a>
+* <a href="#BUSCOSeq">BUSCOMP Sequence details and rating</a>
+* <a href="#BUSCOMP">BUSCOMP re-rating of genomes</a>
+* <a href="#BUSCOSeqFull">BUSCOMP re-rating full results</a>
+* <a href="#BUSCOMPUnique">Unique BUSCO and BUSCOMP Complete genes</a>
+* <a href="#BUSCOMissing">Ratings for Missing BUSCO genes</a>
+* <a href="#Appendix">Appendix: BUSCOMP run details</a>
+
+---
+
+
+<small>Output generated by BUSCOMP v0.7.1 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>
