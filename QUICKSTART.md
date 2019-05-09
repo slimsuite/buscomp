@@ -2,12 +2,12 @@
 
 ## Step 1. Clone the git repository, or download and unpack the buscomp tarball.
 
-git clone https://github.com/slimsuite/buscomp.git 
+    git clone https://github.com/slimsuite/buscomp.git 
 
 ## Step 2. Unpack the BUSCO run data.
 
-cd buscomp/example 
-tar -xzf example_busco3.tgz
+    cd buscomp/example 
+    tar -xzf example_busco3.tgz
 
 **NOTE:** Instead of unpacking pre-generated results, you could run BUSCO v3 on the genomes in `example/fasta/`.
 
@@ -17,8 +17,8 @@ tar -xzf example_busco3.tgz
 
 The example data has already been run in the `run/` directory to compare against. To test run the program, create a second directory (e.g. `test/`) to run the program in:
 
-mkdir test/ 
-cd test/
+    mkdir test/ 
+    cd test/
 
 ## Step 4. Run BUSCOMP.
 
@@ -37,20 +37,20 @@ basefile=yeast # This sets the prefix for all output files.
 
 BUSCOMP can then be run with a simply python command, providing the program with the INI file and setting the interactivity to -1 for a non-interactive run (`i=-1`):
 
-python ../../code/buscomp.py -ini ../run/example.ini i=-1
+    python ../../code/buscomp.py -ini ../run/example.ini i=-1
 
 **Note:** You will also need to set `minimap2=PROG` unless directly callable, and may need to set the Rstudio pandoc environment variable prior to running:
 
-export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc 
-python ../../code/buscomp.py -ini ../run/example.ini i=-1 -minimap2 ~/Bioware/minimap2/minimap2
+    export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc 
+    python ../../code/buscomp.py -ini ../run/example.ini i=-1 -minimap2 ~/Bioware/minimap2/minimap2
 
 **Note:** This is the same as putting all the `example.ini` commands in the program call:
 
-python ../../code/buscomp.py genomesize=13.1e6 genomes=../example.genomes.csv groups=../example.groups.csv runs="../busco3/run_*" fastadir=../fasta/ basefile=yeast i=-1 -minimap2 ~/Bioware/minimap2/minimap2
+    python ../../code/buscomp.py genomesize=13.1e6 genomes=../example.genomes.csv groups=../example.groups.csv runs="../busco3/run_*" fastadir=../fasta/ basefile=yeast i=-1 -minimap2 ~/Bioware/minimap2/minimap2
 
 BUSCOMP will take a few minutes to run on the example data. You can speed it up a bit by allocating multiple threads with with `forks=X` command, e.g.:
 
-python ../../code/buscomp.py -ini ../run/example.ini i=-1 -minimap2 ~/Bioware/minimap2/minimap2 -forks 4
+    python ../../code/buscomp.py -ini ../run/example.ini i=-1 -minimap2 ~/Bioware/minimap2/minimap2 -forks 4
 
 **Note:** BUSCOMP recognises two parameter formats: `-forks 4` and `forks=4` are directly equivalent.
 
