@@ -20,7 +20,7 @@
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
 Version:      0.7.1
-Last Edit:    07/05/19
+Last Edit:    09/05/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -133,7 +133,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.6.1 - Fixed bug that was including Duplicated sequences in the buscomp.fasta file. Added option to exclude from BUSCOMPSeq compilation.
     # 0.6.2 - Fixed bug introduced that had broken manual group review/editing.
     # 0.7.0 - Updated the defaults in the light of test analyses. Tweaked Rmd report.
-    # 0.7.1 - Fixed unique group count bug when some genomes are not in a group.
+    # 0.7.1 - Fixed unique group count bug when some genomes are not in a group. Fixed running with non-standard options.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -165,6 +165,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [Y] : minlocid threshold update inc. docs
     # [Y] : uniquehit threshold update inc. docs
     # [Y] : mmsecnum threshold update inc. docs
+    # [ ] : Fix *.buscomp.tdt output bug if BUSCO sequences not given and buscofas used: runs=../example/fulltables/ buscofas=test1.buscomp.fasta
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
@@ -1194,15 +1195,19 @@ class BUSCOMP(rje_obj.RJE_Object):
             if not self.compileBUSCO(): return False
             #i# If sorting on BUSCO results, sort following calculations
             self.sortGenomes(restrict=['Complete','Missing'],quicksort=True)
-            self.rawSummary()  # Summarise stats from self.db('genomes')
+            if self.db('full'):
+                self.rawSummary()  # Summarise stats from self.db('genomes')
             ## ~ [2a] Main table and outputs from raw BUSCO results ~~~~~~~~~~~~~~~~~~~~~~ ##
             self.db('genomes').saveToFile()
-            self.db('full').newKey(['BuscoID','Genome','#'])
-            self.db('full').saveToFile()
-            self.db('busco').saveToFile()
+            if self.db('full'):
+                self.db('full').newKey(['BuscoID','Genome','#'])
+                self.db('full').saveToFile()
+                self.db('busco').saveToFile()
             ## ~ [2b] Compile BUSCO sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             faswarn = rje.exists(self.getStr('BUSCOFas'))
-            if not self.compileBUSCOSeqs(): return False     # - save as *.buscomp.fasta
+            if self.db('full'):
+                if not self.compileBUSCOSeqs(): return False     # - save as *.buscomp.fasta
+            else: faswarn = False
 
             ### ~ [3] ~ BUSCOMPSeq searches ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             ## ~ [3a] Perform PAF Minimap2 searches ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
@@ -1379,7 +1384,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 self.progLog('#RUNDIR','Processing %s...' % rundir)
                 prefix = ''
                 runlist = glob.glob('%s/full_table_*.tsv' % runpath)
-                if self.getBool('BUSCOMPSeq') and len(runlist) != 1:
+                if self.getBool('BUSCOMPSeq') and len(runlist) == 1:
                     prefix = rundir[4:]
                     #i# If runsort=prefix, will recognise and trim numbers off start (can be used for sorting)
                     runfile2 = runfile = '%s/full_table_%s.tsv' % (runpath,prefix)
@@ -2347,6 +2352,9 @@ class BUSCOMP(rje_obj.RJE_Object):
                 gdict.pop('Genome'); gdict.pop('BuscoID')
                 gentry.update(gdict)
                 self.talk(); self.printLog('\r#BUSCO','Processed %s.' % logtext)
+            if not fulldb:
+                self.printLog('#BUSCO','No BUSCO results to process.')
+                return True
 
             ### ~ [3] Process Groups ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             ranklist = self.list['Ratings']
@@ -2772,10 +2780,16 @@ class BUSCOMP(rje_obj.RJE_Object):
             #i# Count number of sequences in BUSCOFas file to check against hitsum file.
             fasx = 0
             buscofas = '%s.buscomp.fasta' % self.baseFile()
+            faseog = []
             if rje.exists(self.getStr('BUSCOFas')): buscofas = self.getStr('BUSCOFas')
             if rje.exists(buscofas):
                 for line in open(buscofas,'r').readlines():
-                    if line.startswith('>'): fasx += 1
+                    if line.startswith('>'):
+                        fasx += 1
+                        eog = string.split(line)[0][1:]
+                        if not compdb.data(eog):
+                            compdb.addEntry({'BuscoID':eog,'Genome':'BUSCOFas'})
+                        faseog.append(eog)
 
             ## ~ [1b] Rating cutoffs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             # Complete: 95%+ Coverage (Single/Duplicated based on numbers)
@@ -2893,7 +2907,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 # Add group to BUSCO table
                 compdb.addField(group,evalue=ranklist[-1])
                 for eog in compdb.dataKeys():
-                    if seqdb.data(eog)['Status'] != 'Complete': continue
+                    #self.debug('%s -> %s -> %s' % (eog,eog in faseog,seqdb.data(eog)['Status']))
+                    if rje.exists(self.getStr('BUSCOFas')):
+                        if eog not in faseog: continue
+                    elif seqdb.data(eog)['Status'] != 'Complete': continue
                     for genentry in gentries:
                         gfield = self.genomeField( genentry )
                         if ranklist.index(compdb.data(eog)[gfield]) < ranklist.index(compdb.data(eog)[group]):
@@ -3068,7 +3085,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 self.debug('%s' % ugenomes)
 
             ### ~ [2] Identify unique BUSCOs and BUSCOMPs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            for eog in rawdb.dataKeys():
+            if rawdb: eoglist = rawdb.dataKeys()
+            elif busdb: eoglist = busdb.dataKeys()
+            else: self.printLog('#UNIQ','No BUSCO or BUSCOMP data for Unique Complete assessment'); return
+            for eog in eoglist:
                 buscomp = busco = 'Incomplete'
                 self.bugPrint('%s' % rawdb.data(eog))
                 self.bugPrint('%s' % busdb.data(eog))
@@ -3076,10 +3096,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 for gentry in gdb.entries(sorted=True):
                     genome = self.genomeField(gentry)
                     if genome in self.dict['Groups']: continue
-                    if genome in rawdb.fields() and rawdb.data(eog)[genome] in ['Complete','Duplicated']:
+                    if rawdb and genome in rawdb.fields() and rawdb.data(eog)[genome] in ['Complete','Duplicated']:
                         if busco == 'Incomplete': busco = genome
                         else: busco = 'Multiple'
-                    if genome in busdb.fields() and busdb.data(eog)[genome] in ['Complete','Duplicated']:
+                    if busdb and genome in busdb.fields() and busdb.data(eog) and busdb.data(eog)[genome] in ['Complete','Duplicated']:
                         if buscomp == 'Incomplete': buscomp = genome
                         else: buscomp = 'Multiple'
                 # Groups
@@ -3087,11 +3107,11 @@ class BUSCOMP(rje_obj.RJE_Object):
                     group = self.genomeField(gentry)
                     if group not in self.dict['Groups'] and gentry not in ugenomes: continue
                     if group not in ugroups and group in self.dict['Groups']: continue
-                    if group in rawdb.fields() and rawdb.data(eog)[group] in ['Complete','Duplicated']:
+                    if rawdb and group in rawdb.fields() and rawdb.data(eog)[group] in ['Complete','Duplicated']:
                         if busco == 'Multiple': busco = group
                         elif busco and busco not in ugroups: pass
                         else: busco = ''
-                    if group in busdb.fields() and busdb.data(eog)[group] in ['Complete','Duplicated']:
+                    if busdb and group in busdb.fields() and busdb.data(eog) and busdb.data(eog)[group] in ['Complete','Duplicated']:
                         if buscomp == 'Multiple': buscomp = group
                         elif buscomp and buscomp not in ugroups: pass
                         else: buscomp = ''
@@ -3155,9 +3175,10 @@ class BUSCOMP(rje_obj.RJE_Object):
         genome's `Missing`-`Single` gains, given the column genome's `Single`-`Duplicated` gains.
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            self.headLog('BUSCOMP RATING CHANGES',line='=')
             busdb = self.db('busco')
             comdb = self.db('buscomp')
+            if not busdb or not comdb: return False
+            self.headLog('BUSCOMP RATING CHANGES',line='=')
             eogdb = self.db().copyTable(busdb,'changes.full')
             for genome in busdb.fields()[1:]:
                 if genome in self.dict['Groups'] or genome not in comdb.fields()[1:]:
@@ -3173,9 +3194,13 @@ class BUSCOMP(rje_obj.RJE_Object):
                 centry = comdb.data(eog)
                 eentry = eogdb.data(eog)
                 for genome in eogdb.fields()[1:]:
-                    eentry[genome] = '%s%s' % (bentry[genome][0],centry[genome][0])     # First letter of changes
+                    if centry:
+                        eentry[genome] = '%s%s' % (bentry[genome][0],centry[genome][0])     # First letter of changes
+                        nentry = newdb.data((bentry[genome],centry[genome]))
+                    else:
+                        eentry[genome] = '%sN' % (bentry[genome][0])     # First letter of changes
+                        nentry = newdb.data((bentry[genome],'NULL'))
                     #newdb.addEntry({'BuscoID':eog,'Genome':genome,'BUSCO':bentry[genome],'BUSCOMP':centry[genome]})
-                    nentry = newdb.data((bentry[genome],centry[genome]))
                     try: nentry[genome] += 1
                     except: self.errorLog('%s %s' % (bentry[genome],centry[genome]))
                     if genome not in self.dict['Groups']:
@@ -3776,59 +3801,60 @@ class BUSCOMP(rje_obj.RJE_Object):
             for gentry in gdb.entries(sorted=True):
                 if gentry['Genome'] in self.dict['Groups']: groups.append(gentry['Genome'])
             rtxt += '<a name="BUSCO" />\n\n# BUSCO Ratings\n\n'
-            rtxt += 'Compiled BUSCO results for %d assemblies and %d groups have been saved in `%s`. %s\n\n' % (gdb.entryNum()-len(groups),len(groups),genfile,buscoText)
-            #rcode = 'busco$Genome = rdata$Genome\n'
-            rcode = rmd.rmdTable(genfile,name='busco',codesection=True,loadtable=False,showtable=True,delim='tab',kable=True,rows=10,cols=10)
-            rtxt += rcode
-            #!# Add chart
-            codename = 'buscochart'
-            rmd.list['CodeChunks'].append(codename)
-            rcode = 'sumdata = busco[! is.na(busco$N) & busco$N > 0,c(1,4:7)]\n'
-            rcode += 'colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")\n'
-            rcode += buscoPercPlot
-            rcode += 'buscoPercPlot(sumdata,"BUSCO Rating Summary")\n'
-            rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(self.db('genomes').entryNum()/2),rcode)
-            ## ~ [2c] Summarise group construction  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-            rtxt += '<a name="Groups" />\n\n## Genome Groups\n\n'
-            if groups:
-                rtxt += '`BUSCOMP` compiled the following groups of genomes (where BUSCO data was loaded), keeping the "best" rating for each BUSCO gene\n'
-                rtxt += ' across the group:\n\n'
-                for group in groups:
-                    genomes = grpdb.indexDataList('Group',group,'Genome')
-                    rtxt += '* **%s**: ' % group
-                    for genome in genomes:
-                        gentry = self.aliasEntry(genome)
-                        if gentry['N']: rtxt += '`%s` ' % self.genomeField(genome,raw=True)
-                        else: rtxt += '(`%s`) ' % self.genomeField(genome,raw=True)
-                    rtxt = rtxt[:-1] + '\n'
-                    #rtxt += '* **%s**: `%s`\n' % (group,string.join(genomes,'`,`'))
-                rtxt += '\n'
-            else:
-                rtxt += 'No groups for `BUSCOMP` compilation of BUSCO ratings.\n\n'
-            # BUSCO Summary
-            rtxt += '<a name="BUSCOSummary" />\n\n## BUSCO Summary\n\n'
-            rtxt += '```\n'
-            rtxt += self.rawSummary(log=False)
-            rtxt += '```\n'
-
-            # BUSCOSeq details and ratings for each genome
-            rtxt += '<a name="BUSCOFull" />\n\n## BUSCO Gene Details\n\n'
-            dbfile = '%s.busco.tdt' % self.baseFile()
-            rtxt += 'Full BUSCO results with ratings for each gene have been compiled in `%s`' % dbfile
-            if fullreport:
-                rtxt += ':\n\n'
-                rcode = rmd.rmdTable(dbfile,name='buscofull',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
+            if self.db('busco'):
+                rtxt += 'Compiled BUSCO results for %d assemblies and %d groups have been saved in `%s`. %s\n\n' % (gdb.entryNum()-len(groups),len(groups),genfile,buscoText)
+                #rcode = 'busco$Genome = rdata$Genome\n'
+                rcode = rmd.rmdTable(genfile,name='busco',codesection=True,loadtable=False,showtable=True,delim='tab',kable=True,rows=10,cols=10)
                 rtxt += rcode
-            else: rtxt += '.\n\n'
+                #!# Add chart
+                codename = 'buscochart'
+                rmd.list['CodeChunks'].append(codename)
+                rcode = 'sumdata = busco[! is.na(busco$N) & busco$N > 0,c(1,4:7)]\n'
+                rcode += 'colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")\n'
+                rcode += buscoPercPlot
+                rcode += 'buscoPercPlot(sumdata,"BUSCO Rating Summary")\n'
+                rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(self.db('genomes').entryNum()/2),rcode)
+                ## ~ [2c] Summarise group construction  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+                rtxt += '<a name="Groups" />\n\n## Genome Groups\n\n'
+                if groups:
+                    rtxt += '`BUSCOMP` compiled the following groups of genomes (where BUSCO data was loaded), keeping the "best" rating for each BUSCO gene\n'
+                    rtxt += ' across the group:\n\n'
+                    for group in groups:
+                        genomes = grpdb.indexDataList('Group',group,'Genome')
+                        rtxt += '* **%s**: ' % group
+                        for genome in genomes:
+                            gentry = self.aliasEntry(genome)
+                            if gentry['N']: rtxt += '`%s` ' % self.genomeField(genome,raw=True)
+                            else: rtxt += '(`%s`) ' % self.genomeField(genome,raw=True)
+                        rtxt = rtxt[:-1] + '\n'
+                        #rtxt += '* **%s**: `%s`\n' % (group,string.join(genomes,'`,`'))
+                    rtxt += '\n'
+                else:
+                    rtxt += 'No groups for `BUSCOMP` compilation of BUSCO ratings.\n\n'
+                # BUSCO Summary
+                rtxt += '<a name="BUSCOSummary" />\n\n## BUSCO Summary\n\n'
+                rtxt += '```\n'
+                rtxt += self.rawSummary(log=False)
+                rtxt += '```\n'
 
-            # BUSCOSeq details and ratings for each genome
-            rtxt += '<a name="BUSCOSeq" />\n\n# BUSCOMP Ratings\n\n'
-            dbfile = '%s.buscoseq.tdt' % self.baseFile()
-            rtxt += 'The best complete BUSCO hit results (based on `Score` and `Length`) have been compiled in `%s`.\n' % dbfile
-            rtxt += 'The `Genome` field indicates the assembly with the best hit, which is followed by details of that hit '
-            rtxt += '(`Contig`, `Start`, `End`, `Score`, `Length`).\n'
-            rtxt += '''BUSCOMP ratings for each assembly are then given in subsequent fields:
+                # BUSCOSeq details and ratings for each genome
+                rtxt += '<a name="BUSCOFull" />\n\n## BUSCO Gene Details\n\n'
+                dbfile = '%s.busco.tdt' % self.baseFile()
+                rtxt += 'Full BUSCO results with ratings for each gene have been compiled in `%s`' % dbfile
+                if fullreport:
+                    rtxt += ':\n\n'
+                    rcode = rmd.rmdTable(dbfile,name='buscofull',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
+                    rtxt += rcode
+                else: rtxt += '.\n\n'
 
+                # BUSCOSeq details and ratings for each genome
+                rtxt += '<a name="BUSCOSeq" />\n\n# BUSCOMP Ratings\n\n'
+                dbfile = '%s.buscoseq.tdt' % self.baseFile()
+                rtxt += 'The best complete BUSCO hit results (based on `Score` and `Length`) have been compiled in `%s`.\n' % dbfile
+                rtxt += 'The `Genome` field indicates the assembly with the best hit, which is followed by details of that hit '
+                rtxt += '(`Contig`, `Start`, `End`, `Score`, `Length`).\n'
+                rtxt += '''BUSCOMP ratings for each assembly are then given in subsequent fields:
+    
 * `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
 * `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
 * `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
@@ -3838,9 +3864,11 @@ class BUSCOMP(rje_obj.RJE_Object):
 * `Missing`: No hits meeting local cutoff.
 
 '''
-            if fullreport:
-                rcode = rmd.rmdTable(dbfile,name='buscoseq',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
-                rtxt += rcode
+                if fullreport:
+                    rcode = rmd.rmdTable(dbfile,name='buscoseq',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
+                    rtxt += rcode
+            else:
+                rtxt += 'No BUSCO results loaded.\n\n'
 
             # BUSCOSeq re-rating summaries and charts
             rtxt += '<a name="BUSCOMP" />\n\n## BUSCOSeq Rating Summary\n\n'
