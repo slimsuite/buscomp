@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compiler and Comparison tool
 
 ```
-BUSCOMP v0.7.0
+BUSCOMP v0.7.1
 ```
 
 For a better rendering and navigation of this document, please download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -102,6 +102,10 @@ uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GAB
 mmsecnum=INT    : Max. number of secondary alignments to keep (minimap2 -N) [3]
 mmpcut=NUM      : Minimap2 Minimal secondary-to-primary score ratio to output secondary mappings (minimap2 -p) [0]
 mapopt=CDICT    : Dictionary of additional minimap2 options to apply (caution: over-rides conflicting settings) []
+### ~ Processing options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+forks=X         : Number of parallel sequences to process at once [0]
+killforks=X     : Number of seconds of no activity before killing all remaining forks. [36000]
+forksleep=X     : Sleep time (seconds) between cycles of forking out more process [0]
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 ```
 

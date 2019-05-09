@@ -375,9 +375,10 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         if self.dev() and warn: self.printLog('#DEV','Code calling getOpt() for new %s object' % self)
         return self.getBool(key,default,checkdata)
 #########################################################################################################################
-    def yesNo(self,text='',default='Y',confirm=False,i=0):
+    def yesNo(self,text='',default='Y',confirm=False,i=0,log=True):
+        if default in [True,False]: default = {True:'Y',False:'N'}
         if self.i() < i:
-            self.printLog('#AUTO','%s: %s' % (text,default.upper()))
+            if log: self.printLog('#AUTO','%s: %s' % (text,default.upper()))
             return {'Y':True,'N':False}[default.upper()]
         else: return rje.yesNo(text,default,confirm)
 #########################################################################################################################

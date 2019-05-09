@@ -11,7 +11,7 @@
 
 <meta name="author" content="Richard J. Edwards" />
 
-<meta name="date" content="2019-05-08" />
+<meta name="date" content="2019-05-09" />
 
 <title>BUSCOMP Documentation</title>
 
@@ -218,7 +218,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Documentation</h1>
 <h4 class="author"><em>Richard J. Edwards</em></h4>
-<h4 class="date"><em>2019-05-08</em></h4>
+<h4 class="date"><em>2019-05-09</em></h4>
 
 </div>
 
@@ -284,6 +284,10 @@ uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GAB
 mmsecnum=INT    : Max. number of secondary alignments to keep (minimap2 -N) [3]
 mmpcut=NUM      : Minimap2 Minimal secondary-to-primary score ratio to output secondary mappings (minimap2 -p) [0]
 mapopt=CDICT    : Dictionary of additional minimap2 options to apply (caution: over-rides conflicting settings) []
+### ~ Processing options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+forks=X         : Number of parallel sequences to process at once [0]
+killforks=X     : Number of seconds of no activity before killing all remaining forks. [36000]
+forksleep=X     : Sleep time (seconds) between cycles of forking out more process [0]
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###</code></pre>
 <hr />
 </div>

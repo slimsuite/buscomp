@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Documentation"
 author: "Richard J. Edwards"
-date: "2019-05-08"
+date: "2019-05-09"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -116,6 +116,10 @@ uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GAB
 mmsecnum=INT    : Max. number of secondary alignments to keep (minimap2 -N) [3]
 mmpcut=NUM      : Minimap2 Minimal secondary-to-primary score ratio to output secondary mappings (minimap2 -p) [0]
 mapopt=CDICT    : Dictionary of additional minimap2 options to apply (caution: over-rides conflicting settings) []
+### ~ Processing options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+forks=X         : Number of parallel sequences to process at once [0]
+killforks=X     : Number of seconds of no activity before killing all remaining forks. [36000]
+forksleep=X     : Sleep time (seconds) between cycles of forking out more process [0]
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 ```
 

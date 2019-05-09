@@ -19,7 +19,7 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.7.0
+Version:      0.7.1
 Last Edit:    07/05/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
@@ -133,6 +133,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.6.1 - Fixed bug that was including Duplicated sequences in the buscomp.fasta file. Added option to exclude from BUSCOMPSeq compilation.
     # 0.6.2 - Fixed bug introduced that had broken manual group review/editing.
     # 0.7.0 - Updated the defaults in the light of test analyses. Tweaked Rmd report.
+    # 0.7.1 - Fixed unique group count bug when some genomes are not in a group.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -168,7 +169,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.7.0', 'May 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.7.1', 'May 2019', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -440,6 +441,10 @@ class BUSCOMP(rje_obj.RJE_Object):
         mmsecnum=INT    : Max. number of secondary alignments to keep (minimap2 -N) [3]
         mmpcut=NUM      : Minimap2 Minimal secondary-to-primary score ratio to output secondary mappings (minimap2 -p) [0]
         mapopt=CDICT    : Dictionary of additional minimap2 options to apply (caution: over-rides conflicting settings) []
+        ### ~ Processing options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        forks=X         : Number of parallel sequences to process at once [0]
+        killforks=X     : Number of seconds of no activity before killing all remaining forks. [36000]
+        forksleep=X     : Sleep time (seconds) between cycles of forking out more process [0]
         ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         ```
 
@@ -2160,6 +2165,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                     desc = ''
                     if adb and 'Description' in adb.fields() and group in adb.index('Genome'):
                         desc = adb.indexEntries('Genome',group)[0]['Description']
+                        self.printLog('#DESC','Description updated: %s = "%s"' % (group,desc))
                     if not desc: desc = grprefix[group]
                     gentry = gdb.addEntry({'Prefix': grprefix[group],'Genome':group,'Description': desc})
                     self.dict['Alias'][group] = gentry
@@ -2898,12 +2904,12 @@ class BUSCOMP(rje_obj.RJE_Object):
                     if compdb.data(eog)[group] == 'Complete': grpentry['Single'] += 1
                 self.printLog('#GRP','Compiled BUSCOMP stats for group %s (%d of %d genomes)' % (group,len(gentries),len(self.dict['Groups'][group])))
                 #!# Adjust for loaded fasta: not tested yet
-                self.debug(grpentry)
+                #self.debug(grpentry)
                 if fasx and grpentry['N'] != fasx:
                     extras =  grpentry['N'] - fasx
                     grpentry['Missing'] -= extras
                     grpentry['N'] -= extras
-                self.debug(grpentry)
+                #self.debug(grpentry)
                 ratedb.addEntry(grpentry)
 
 
@@ -3053,6 +3059,13 @@ class BUSCOMP(rje_obj.RJE_Object):
                     if not rje.yesNo('Include group "%s" in unique BUSCO assessment?' % group,default=default[group in redundant]):
                         ugroups.remove(group)
             else: ugroups = self.groupDifference(ugroups,redundant)
+            ugenomes = gdb.entries()
+            self.debug('%s' % ugenomes)
+            for ugroup in ugroups:
+                self.bugPrint(ugroup)
+                # Remove entries in ugroup from unique genome list
+                ugenomes = self.groupDifference(ugenomes,self.dict['Groups'][ugroup])
+                self.debug('%s' % ugenomes)
 
             ### ~ [2] Identify unique BUSCOs and BUSCOMPs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             for eog in rawdb.dataKeys():
@@ -3070,7 +3083,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                         if buscomp == 'Incomplete': buscomp = genome
                         else: buscomp = 'Multiple'
                 # Groups
-                for group in ugroups:
+                for gentry in gdb.entries(sorted=True):
+                    group = self.genomeField(gentry)
+                    if group not in self.dict['Groups'] and gentry not in ugenomes: continue
+                    if group not in ugroups and group in self.dict['Groups']: continue
                     if group in rawdb.fields() and rawdb.data(eog)[group] in ['Complete','Duplicated']:
                         if busco == 'Multiple': busco = group
                         elif busco and busco not in ugroups: pass
@@ -3170,6 +3186,7 @@ class BUSCOMP(rje_obj.RJE_Object):
             #newdb.addField('N',evalue=1)
             #newdb.compress(['Genome','BUSCO','BUSCOMP'],default='sum')
             #newdb.dropField('BuscoID')
+            newdb.dropEntriesDirect('TOTAL',[0])
             eogdb.saveToFile()
             newdb.saveToFile()
 
@@ -3441,7 +3458,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 entry['best'] = string.join(entry['best'],'|')
 
             ### ~ [4] Review ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if self.i() >= 0 and rje.yesNo('Edit plotting attributes?'):
+            if self.yesNo('Edit plotting attributes?',default='N',log=False):
                 i = 0; sum = True
                 while rdb.entryNum():
                     default = 'E'
@@ -3497,6 +3514,8 @@ class BUSCOMP(rje_obj.RJE_Object):
     def buscompRmd(self,fullreport=True):   ### Generate Rmd and HTML output                                     # v0.5.2
         '''Generate Rmd and HTML output.'''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            summarise = self.getBool('Summarise')
+            buscompseq = self.getBool('BUSCOMPSeq')
             gdb = self.db('genomes')
             rbase = self.baseFile()
             if fullreport:
@@ -3571,15 +3590,19 @@ class BUSCOMP(rje_obj.RJE_Object):
             rtxt += '%d genomes were rated as the "best" by at least one criterion:\n\n%s\n' % (bestx, string.join(bestxt,'\n'))
 
             #
-            rtxt += '\nBest assemblies by assembly contiguity critera:\n\n'
-            rtxt += '* **NG50Length.** Longest NG50 contig/scaffold length (%s bp): `%s`\n' % (rje.iStr(self.dict['Best']['NG50Length'].keys()[0]),string.join(self.dict['Best']['NG50Length'].values()[0],'`, `'))
-            rtxt += '* **LG50Count.** Smallest LG50 contig/scaffold count (%s): `%s`\n' % (rje.iStr(self.dict['Best']['LG50Count'].keys()[0]),string.join(self.dict['Best']['LG50Count'].values()[0],'`, `'))
-            rtxt += '* **MaxLength.** Maximum contig/scaffold length (%s bp): `%s`\n' % (rje.iStr(self.dict['Best']['MaxLength'].keys()[0]),string.join(self.dict['Best']['MaxLength'].values()[0],'`, `'))
-            #rtxt += '* **SeqNum.** Minimum contig/scaffold count (%s): `%s`\n' % (rje.iStr(self.dict['Best']['SeqNum'].keys()[0]),string.join(self.dict['Best']['SeqNum'].values()[0],'`, `'))
+            if summarise:
+                rtxt += '\nBest assemblies by assembly contiguity critera:\n\n'
+                rtxt += '* **NG50Length.** Longest NG50 contig/scaffold length (%s bp): `%s`\n' % (rje.iStr(self.dict['Best']['NG50Length'].keys()[0]),string.join(self.dict['Best']['NG50Length'].values()[0],'`, `'))
+                rtxt += '* **LG50Count.** Smallest LG50 contig/scaffold count (%s): `%s`\n' % (rje.iStr(self.dict['Best']['LG50Count'].keys()[0]),string.join(self.dict['Best']['LG50Count'].values()[0],'`, `'))
+                rtxt += '* **MaxLength.** Maximum contig/scaffold length (%s bp): `%s`\n' % (rje.iStr(self.dict['Best']['MaxLength'].keys()[0]),string.join(self.dict['Best']['MaxLength'].values()[0],'`, `'))
+                #rtxt += '* **SeqNum.** Minimum contig/scaffold count (%s): `%s`\n' % (rje.iStr(self.dict['Best']['SeqNum'].keys()[0]),string.join(self.dict['Best']['SeqNum'].values()[0],'`, `'))
+            else: rtxt += '\n**NOTE:** `summarise=F` - no contiguity assessments.\n\n'
 
             rtxt += '\nBest assemblies by completeness critera:\n\n'
-            rtxt += '* **Complete.** Most Complete (Single & Duplicated) BUSCOMP sequences (%.1f %%): `%s`\n' % (self.dict['Best']['Complete'].keys()[0],string.join(self.dict['Best']['Complete'].values()[0],'`, `'))
-            rtxt += '* **Missing.** Fewest Missing BUSCOMP sequences (%.1f %%): `%s`\n' % (self.dict['Best']['Missing'].keys()[0],string.join(self.dict['Best']['Missing'].values()[0],'`, `'))
+            if buscompseq:
+                rtxt += '* **Complete.** Most Complete (Single & Duplicated) BUSCOMP sequences (%.1f %%): `%s`\n' % (self.dict['Best']['Complete'].keys()[0],string.join(self.dict['Best']['Complete'].values()[0],'`, `'))
+                rtxt += '* **Missing.** Fewest Missing BUSCOMP sequences (%.1f %%): `%s`\n' % (self.dict['Best']['Missing'].keys()[0],string.join(self.dict['Best']['Missing'].values()[0],'`, `'))
+            else: rtxt += '\n**NOTE:** `buscompseq=F` - no BUSCOMP compilation assessments.\n\n'
             rtxt += '* **BUSCO.** Most Complete (Single & Duplicated) BUSCO sequences (%.1f %%): `%s`\n' % (self.dict['Best']['BUSCO'].keys()[0],string.join(self.dict['Best']['BUSCO'].values()[0],'`, `'))
             rtxt += '* **NoBUSCO.** Fewest Missing BUSCO sequences (%.1f %%): `%s`\n' % (self.dict['Best']['NoBUSCO'].keys()[0],string.join(self.dict['Best']['NoBUSCO'].values()[0],'`, `'))
 
@@ -3855,9 +3878,9 @@ class BUSCOMP(rje_obj.RJE_Object):
 
             # Changes of Ratings
             rtxt += '<a name="BUSCOMPChanges" />\n\n## BUSCO to BUSCOMP Rating Changes\n\n'
-            rtxt += 'Ratings changes from BUSCO to BUSCOMP:\n\n'
+            rtxt += 'Ratings changes from BUSCO to BUSCOMP (where `NULL` ratings indicate no BUSCOMP sequence):\n\n'
             dbfile = '%s.changes.tdt' % idbase
-            rtxt += rmd.rmdTable(dbfile,name='changes',codesection=True,loadtable=True,showtable=True,delim='tab',kable=kable,rows=10,cols=10)
+            rtxt += rmd.rmdTable(dbfile,name='changes',codesection=True,loadtable=True,showtable=True,delim='tab',kable=True,rows=10,cols=10)
             rtxt += '\n\n'
 
             if fullreport:
@@ -3865,7 +3888,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 dbfile = '%s.changes.full.tdt' % idbase
                 rtxt += rmd.rmdTable(dbfile,name='fullchanges',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
                 rtxt += '\n\n'
-                rtxt += '<small>**C**omplete, **D**uplicated, **F**ragmented, **P**artial, **G**host, **M**issing</small>\n\n'
+                rtxt += '<small>**C**omplete, **D**uplicated, **F**ragmented, **P**artial, **G**host, **M**issing, **N**ULL (no BUSCOMP sequence)</small>\n\n'
 
             rtxt += '### BUSCOMP Gain test\n\n'
             rtxt += '''There is a risk that performing a low stringency search will identify homologues or pseudogenes of the desired BUSCO gene in error.
