@@ -11,7 +11,7 @@
 
 <meta name="author" content="yeast BUSCOMP Analysis" />
 
-<meta name="date" content="2019-05-09" />
+<meta name="date" content="2019-05-10" />
 
 <title>BUSCOMP Summary Report</title>
 
@@ -218,7 +218,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Summary Report</h1>
 <h4 class="author"><em>yeast BUSCOMP Analysis</em></h4>
-<h4 class="date"><em>2019-05-09</em></h4>
+<h4 class="date"><em>2019-05-10</em></h4>
 
 </div>
 
@@ -227,7 +227,7 @@ div.tocify {
 <p><a name="Top"></a></p>
 <div id="buscomp-run-summary" class="section level1">
 <h1><span class="header-section-number">1</span> BUSCOMP Run Summary</h1>
-<pre><code>BUSCOMP V0.7.1: run Thu May  9 10:13:22 2019</code></pre>
+<pre><code>BUSCOMP V0.7.2: run Fri May 10 10:05:24 2019</code></pre>
 <p>See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/code/buscomp/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.</p>
 <p><strong>NOTE:</strong> To edit this document, open <code>yeast.N3L20ID0U.Rmd</code> in RStudio, edit and re-knit to HTML.</p>
 <p><a name="Summary"></a></p>
@@ -677,216 +677,10 @@ chrIIIdup BUSCOMP Results [0 (0.00%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
 </div>
 <div id="busco-and-buscomp-comparisons" class="section level1">
 <h1><span class="header-section-number">5</span> BUSCO and BUSCOMP Comparisons</h1>
-<p><a name="BUSCOMPChanges"></a></p>
-<div id="busco-to-buscomp-rating-changes" class="section level2">
-<h2><span class="header-section-number">5.1</span> BUSCO to BUSCOMP Rating Changes</h2>
-<p>Ratings changes from BUSCO to BUSCOMP (where <code>NULL</code> ratings indicate no BUSCOMP sequence):</p>
-<table>
-<thead>
-<tr class="header">
-<th align="left">BUSCO</th>
-<th align="left">BUSCOMP</th>
-<th align="right">SGD</th>
-<th align="right">PacBioHQ</th>
-<th align="right">chrIIIdup</th>
-<th align="right">PacBioWTDBG2</th>
-<th align="right">TOTAL</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Complete</td>
-<td align="left">Complete</td>
-<td align="right">1670</td>
-<td align="right">1671</td>
-<td align="right">0</td>
-<td align="right">1372</td>
-<td align="right">4713</td>
-</tr>
-<tr class="even">
-<td align="left">Complete</td>
-<td align="left">Duplicated</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Complete</td>
-<td align="left">Partial</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">0</td>
-<td align="right">2</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="left">Duplicated</td>
-<td align="left">Complete</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">Duplicated</td>
-<td align="left">Duplicated</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">45</td>
-<td align="right">0</td>
-<td align="right">47</td>
-</tr>
-<tr class="even">
-<td align="left">Duplicated</td>
-<td align="left">NULL</td>
-<td align="right">8</td>
-<td align="right">8</td>
-<td align="right">0</td>
-<td align="right">8</td>
-<td align="right">24</td>
-</tr>
-<tr class="odd">
-<td align="left">Fragmented</td>
-<td align="left">Complete</td>
-<td align="right">3</td>
-<td align="right">1</td>
-<td align="right">0</td>
-<td align="right">126</td>
-<td align="right">130</td>
-</tr>
-<tr class="even">
-<td align="left">Fragmented</td>
-<td align="left">Duplicated</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">Fragmented</td>
-<td align="left">NULL</td>
-<td align="right">9</td>
-<td align="right">9</td>
-<td align="right">0</td>
-<td align="right">8</td>
-<td align="right">26</td>
-</tr>
-<tr class="even">
-<td align="left">Missing</td>
-<td align="left">Complete</td>
-<td align="right">3</td>
-<td align="right">4</td>
-<td align="right">0</td>
-<td align="right">178</td>
-<td align="right">185</td>
-</tr>
-<tr class="odd">
-<td align="left">Missing</td>
-<td align="left">Ghost</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">Missing</td>
-<td align="left">Missing</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1634</td>
-<td align="right">0</td>
-<td align="right">1634</td>
-</tr>
-<tr class="odd">
-<td align="left">Missing</td>
-<td align="left">NULL</td>
-<td align="right">13</td>
-<td align="right">13</td>
-<td align="right">30</td>
-<td align="right">14</td>
-<td align="right">70</td>
-</tr>
-<tr class="even">
-<td align="left">Missing</td>
-<td align="left">Partial</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-<td align="right">1</td>
-</tr>
-</tbody>
-</table>
-<div id="buscomp-gain-test" class="section level3">
-<h3><span class="header-section-number">5.1.1</span> BUSCOMP Gain test</h3>
-<p>There is a risk that performing a low stringency search will identify homologues or pseudogenes of the desired BUSCO gene in error. If there is a second copy of a gene in the genome that is detectable by the search then we would expect the same genes that go from <code>Missing</code> to <code>Complete</code> in some genomes to go from <code>Single</code> to <code>Duplicated</code> in others.</p>
-<p>To test this, data is reduced for each pair of genomes to BUSCO-BUSCOMP rating pairs of:</p>
-<ul>
-<li><code>Single</code>-<code>Single</code></li>
-<li><code>Single</code>-<code>Duplicated</code></li>
-<li><code>Missing</code>-<code>Missing</code></li>
-<li><code>Missing</code>-<code>Single</code></li>
-</ul>
-<p>This is then converted in to <code>G</code>ain ratings (<code>Single</code>-<code>Duplicated</code> &amp; <code>Missing</code>-<code>Single</code>) or <code>N</code>o Gain ratings (<code>Single</code>-<code>Single</code> &amp; <code>Missing</code>-<code>Missing</code>). The <code>Single</code>-<code>Duplicated</code> shift in one genome is then used to set the expected <code>Missing</code>-<code>Single</code> shift in the other, and assess the probability of observing the <code>Missing</code>-<code>Single</code> shift using a cumulative binomial distribution, where:</p>
-<ul>
-<li><code>k</code> is the number of observed <code>GG</code> pairs (<code>Single</code>-<code>Duplicated</code> <em>and</em> <code>Missing</code>-<code>Single</code>)</li>
-<li><code>n</code> is the number of <code>Missing</code>-<code>Single</code> <code>G</code>ains in the focal genome (<code>NG</code>+<code>GG</code>)</li>
-<li><code>p</code> is the proportion of <code>Single</code>-<code>Duplicated</code> <code>G</code>ains in the background genome (<code>GN</code>+<code>GG</code> / (<code>GN</code>+<code>GG</code>+<code>NN</code>+<code>NG</code>))</li>
-<li><code>pB</code> is the probability of observing <code>k+</code> <code>Missing</code>-<code>Single</code> gains, given <code>p</code> and <code>n</code></li>
-</ul>
-<p>This is output to <code>*.gain.tdt</code>, where each row is a Genome and each field gives the probability of the row genome’s <code>Missing</code>-<code>Single</code> gains, given the column genome’s <code>Single</code>-<code>Duplicated</code> gains:</p>
-<table>
-<thead>
-<tr class="header">
-<th align="left">Genome</th>
-<th align="right">SGD</th>
-<th align="right">PacBioHQ</th>
-<th align="right">chrIIIdup</th>
-<th align="right">PacBioWTDBG2</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">PacBioHQ</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">PacBioWTDBG2</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">SGD</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">chrIIIdup</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-</tbody>
-</table>
-<p>Low probabilities indicate that BUSCOMP might be rating paralogues or pseudogenes and not functional orthologues of the BUSCO gene. Note that there is <em>no</em> correction for multiple testing, nor any adjustment for lack of independence between samples.</p>
+<p>No comparison without both BUSCO and BUSCOMP rating.</p>
 <p><a name="BUSCOMPUnique"></a></p>
-</div>
-</div>
 <div id="unique-busco-and-buscomp-complete-genes" class="section level2">
-<h2><span class="header-section-number">5.2</span> Unique BUSCO and BUSCOMP Complete Genes</h2>
+<h2><span class="header-section-number">5.1</span> Unique BUSCO and BUSCOMP Complete Genes</h2>
 <p>BUSCO and BUSCOMP <code>Complete</code> ratings were compared for each BUSCO gene to identify those genes unique to either a single assembly or a group of assemblies. The <code>BUSCOMP</code> group is excluded from this analysis, as (typically) are other redundant groups wholly contained within another group. (Inclusion of such groups is guaranteed to result in 2+ groups containing any <code>Complete</code> BUSCOs they have.)</p>
 <pre><code>SGD unique Complete genes: 0 BUSCO; 0 BUSCOMP
 PacBioHQ unique Complete genes: 1 BUSCO; 0 BUSCOMP
@@ -897,7 +691,7 @@ HighQuality unique Complete genes: 304 BUSCO; 0 BUSCOMP</code></pre>
 <p><a name="BUSCOMissing"></a></p>
 </div>
 <div id="ratings-for-missing-busco-genes" class="section level2">
-<h2><span class="header-section-number">5.3</span> Ratings for Missing BUSCO genes</h2>
+<h2><span class="header-section-number">5.2</span> Ratings for Missing BUSCO genes</h2>
 <p>In addition to the unique ratings (above), it can be useful to know how genes <code>Missing</code> from one assembly/group are rated in the others. These plots are generated for each assembly/group in turn. The full BUSCO (<code>*.busco.tdt</code>) and BUSCOMP (<code>*.LnnIDxx.buscomp.tdt</code>) tables are reduced to the subset of genes that are missing in the assembly/group of interest, and then the summary ratings recalculated for that subset.</p>
 <p>In each case, three plots are made (assuming both BUSCO and BUSCOMP data is available):</p>
 <ol style="list-style-type: decimal">
@@ -911,13 +705,13 @@ HighQuality unique Complete genes: 304 BUSCO; 0 BUSCOMP</code></pre>
 </div>
 <div id="appendix-buscomp-run-details" class="section level1">
 <h1><span class="header-section-number">6</span> Appendix: BUSCOMP run details</h1>
-<pre><code>BUSCOMP V0.7.1: run Thu May  9 10:13:22 2019</code></pre>
+<pre><code>BUSCOMP V0.7.2: run Fri May 10 10:05:24 2019</code></pre>
 <p>This analysis was run in:</p>
 <pre><code>/Users/redwards/code/buscomp/example/run</code></pre>
 <ul>
 <li>Log file: <a href="/Users/redwards/code/buscomp/example/run/yeast.log"><code>/Users/redwards/code/buscomp/example/run/yeast.log</code></a></li>
 <li>Commandline arguments: <code>ini=../run/example.ini</code> <code>i=-1</code> <code>forks=4</code></li>
-<li>Full Command List: <code>minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2</code> <code>ini</code> <code>genomesize=13.1e6</code> <code>genomes=../example.genomes.csv</code> <code>groups=../example.groups.csv</code> <code>runs=../busco3/run_*</code> <code>fastadir=../fasta/</code> <code>basefile=yeast</code> <code>i=-1</code> <code>forks=4</code></li>
+<li>Full Command List: <code>minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2</code> <code>ini=../run/example.ini</code> <code>genomesize=13.1e6</code> <code>genomes=../example.genomes.csv</code> <code>groups=../example.groups.csv</code> <code>runs=../busco3/run_*</code> <code>fastadir=../fasta/</code> <code>basefile=yeast</code> <code>i=-1</code> <code>forks=4</code></li>
 </ul>
 <p><a name="Errors"></a></p>
 <div id="buscomp-errors" class="section level2">
@@ -927,10 +721,10 @@ HighQuality unique Complete genes: 304 BUSCO; 0 BUSCOMP</code></pre>
 <div id="buscomp-warnings" class="section level2">
 <h2><span class="header-section-number">6.2</span> BUSCOMP warnings</h2>
 <p>See run log for further details:</p>
-<pre><code>#WARN   00:00:04    &quot;Single copy&quot; BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
-#WARN   00:00:04    &quot;Single copy&quot; BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
-#WARN   00:00:06    &quot;Single copy&quot; BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
-#WARN   00:00:06    &quot;Single copy&quot; BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)</code></pre>
+<pre><code>#WARN   00:00:03    &quot;Single copy&quot; BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN   00:00:03    &quot;Single copy&quot; BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#WARN   00:00:04    &quot;Single copy&quot; BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
+#WARN   00:00:04    &quot;Single copy&quot; BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)</code></pre>
 <hr />
 <p><strong>Report contents:</strong></p>
 <ul>
@@ -947,7 +741,7 @@ HighQuality unique Complete genes: 304 BUSCO; 0 BUSCOMP</code></pre>
 <li><a href="#Appendix">Appendix: BUSCOMP run details</a></li>
 </ul>
 <hr />
-<p><small>Output generated by BUSCOMP v0.7.1 © 2019 Richard Edwards | <a href="mailto:richard.edwards@unsw.edu.au">richard.edwards@unsw.edu.au</a></small></p>
+<p><small>Output generated by BUSCOMP v0.7.2 © 2019 Richard Edwards | <a href="mailto:richard.edwards@unsw.edu.au">richard.edwards@unsw.edu.au</a></small></p>
 </div>
 </div>
 

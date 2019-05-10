@@ -1541,7 +1541,7 @@ class Table(rje.RJE_Object):
                 for field in index:
                     if field not in self.list['Fields']: raise ValueError('Table "%s" has no Field "%s" for Index' % (self.info['Name'],field))
             elif index not in self.list['Fields']:
-                if make or rje.yesNo('Table %s missing field "%s" for index. Make?' % (self.info['Name'],index),'N'): self.makeField(index,log=log)
+                if make or (self.i() > 0 and rje.yesNo('Table %s missing field "%s" for index. Make?' % (self.info['Name'],index),'N')): self.makeField(index,log=log)
                 else:
                     raise ValueError('Table "%s" has no Field "%s" to Index' % (self.info['Name'],index))
             missing = 0
