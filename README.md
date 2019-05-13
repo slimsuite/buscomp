@@ -2,7 +2,7 @@
 
 BUSCOMP is designed to overcome some of the non-deterministic limitations of BUSCO to:
 
-1. compile a non-redundant maximal set of non-redundant complete BUSCOs from a set of assemblies, and
+1. compile a non-redundant maximal set of complete BUSCOs from a set of assemblies, and
 2. use this set to provide a "true" comparison of completeness between different assemblies of the same genome
 with predictable behaviour.
 
