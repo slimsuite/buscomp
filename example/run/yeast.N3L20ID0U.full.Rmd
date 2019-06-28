@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Full Report"
 author: "yeast BUSCOMP Analysis"
-date: "2019-05-10"
+date: "2019-06-28"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -20,11 +20,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 <a name="Top" />
 
+
+```{r libraries, echo=FALSE}
+library(ggplot2)
+library(ggrepel)
+```
+
 <a name="Top" />
 
 # BUSCOMP Run Summary
 
-    BUSCOMP V0.7.2: run Fri May 10 10:05:24 2019
+    BUSCOMP V0.7.4: run Fri Jun 28 15:02:50 2019
 
 
 
@@ -57,7 +63,7 @@ Best assemblies by completeness critera:
 
 * **Complete.** Most Complete (Single & Duplicated) BUSCOMP sequences (99.9 %): `PacBioHQ`, `PacBioWTDBG2`, `SGD`
 * **Missing.** Fewest Missing BUSCOMP sequences (0.0 %): `PacBioHQ`, `PacBioWTDBG2`, `SGD`
-* **BUSCO.** Most Complete (Single & Duplicated) BUSCO sequences (97.8 %): `PacBioHQ`
+* **BUSCO.** Most Complete (Single & Duplicated) BUSCO sequences (98.4 %): `PacBioHQ`
 * **NoBUSCO.** Fewest Missing BUSCO sequences (0.9 %): `SGD`
 <a name="Genomes" />
 
@@ -152,36 +158,80 @@ pdata$NG50Length = pdata$NG50Length / 1e6
 In general, a good assembly will be approx. the same size as the genome and in as few pieces as possible. Any assembly smaller than the predicted genome size is clearly missing coverage. Assemblies bigger than the genome size might still be missing chunks of the genome if redundancy/duplication is a problem. In the following plot, the grey line marks the given genome size of 13.1 Mb.
 
 ```{r numVsize, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$TotLength,pdata$SeqNum/1000,xlab="Assembly Size (Gb)",ylab="No. contigs/scaffolds (1000s)",col=pdata$col,pch=pdata$pch,main="Contig/scaffold count versus total assembly size",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$TotLength,0.0131)),ylim=c(0,max(pdata$SeqNum/1000)))
-abline(v=0.0131, col="grey")
-text(pdata$TotLength,pdata$SeqNum/1000,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=TotLength, y=SeqNum/1000, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Contig/scaffold count versus total assembly size") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("Assembly Size (Gb)") +
+    ylab("No. contigs/scaffolds (1000s)") +
+    xlim(0,max(ggdata$TotLength,0.0131)) +
+    ylim(0,max(ggdata$SeqNum/1000,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE) +
+    geom_vline(xintercept = 0.0131, color = "grey", linetype="dashed", size=0.5)
 ```
 
 A better indicator of the overall coverage of the genome is the number of `Missing` BUSCO genes. As BUSCO is highly dependent on the accuracy of the sequence and the gene models it makes, the `Missing` BUSCOMP ratings arguably give a more consistent proxy for genome completeness. NOTE: this says nothing about the fragmentation or completeness of the genes themselves.
 
 ```{r nobuscoVsize, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$TotLength,pdata$NoBUSCO,xlab="Assembly Size (Gb)",ylab="BUSCO Missing (%)",col=pdata$col,pch=pdata$pch,main="Missing BUSCO versus total assembly size",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$TotLength,0.0131)),ylim=c(0,max(pdata$NoBUSCO)))
-abline(v=0.0131, col="grey")
-text(pdata$TotLength,pdata$NoBUSCO,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=TotLength, y=NoBUSCO, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Missing BUSCO versus total assembly size") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("Assembly Size (Gb)") +
+    ylab("BUSCO Missing (%)") +
+    xlim(0,max(ggdata$TotLength,0.0131)) +
+    ylim(0,max(ggdata$NoBUSCO,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE) +
+    geom_vline(xintercept = 0.0131, color = "grey", linetype="dashed", size=0.5)
 ```
 
 ```{r missingVsize, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$TotLength,pdata$Missing,xlab="Assembly Size (Gb)",ylab="BUSCOMP Missing (%)",col=pdata$col,pch=pdata$pch,main="Missing BUSCOMP versus total assembly size",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$TotLength,0.0131)),ylim=c(0,max(pdata$Missing)))
-abline(v=0.0131, col="grey")
-text(pdata$TotLength,pdata$Missing,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=TotLength, y=Missing, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Missing BUSCOMP versus total assembly size") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("Assembly Size (Gb)") +
+    ylab("BUSCOMP Missing (%)") +
+    xlim(0,max(ggdata$TotLength,0.0131)) +
+    ylim(0,max(ggdata$Missing,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE) +
+    geom_vline(xintercept = 0.0131, color = "grey", linetype="dashed", size=0.5)
 ```
 
 ```{r nobuscompVnobusco, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$NoBUSCO,pdata$Missing,xlab="BUSCO Missing (%)",ylab="BUSCOMP Missing (%)",col=pdata$col,pch=pdata$pch,main="Missing BUSCOMP versus Missing BUSCO",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NoBUSCO)),ylim=c(0,max(pdata$Missing)))
-text(pdata$NoBUSCO,pdata$Missing,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=NoBUSCO, y=Missing, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Missing BUSCOMP versus Missing BUSCO") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("BUSCO Missing (%)") +
+    ylab("BUSCOMP Missing (%)") +
+    xlim(0,max(ggdata$NoBUSCO,0)) +
+    ylim(0,max(ggdata$Missing,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE)
 ```
 
 
@@ -190,31 +240,75 @@ text(pdata$NoBUSCO,pdata$Missing,pdata$label,pos=3,col=pdata$col)
 In general, a good assembly will be in fewer, bigger pieces. This is approximated using NG50 and LG50, which are the min. length and number of contigs/scaffolds required to cover at least half the genome. These stats use the given genome size of 13.1 Mb.
 
 ```{r lg50Vng50, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$NG50Length,pdata$LG50Count,xlab="NG50 (Mb)",ylab="LG50 contig/scaffold count",col=pdata$col,pch=pdata$pch,main="LG50 count versus NG50 length",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NG50Length)),ylim=c(0,max(pdata$LG50Count)))
-text(pdata$NG50Length,pdata$LG50Count,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=NG50Length, y=LG50Count, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("LG50 count versus NG50 length") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("NG50 (Mb)") +
+    ylab("LG50 contig/scaffold count") +
+    xlim(0,max(ggdata$NG50Length,0)) +
+    ylim(0,max(ggdata$LG50Count,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE)
 ```
 
 ```{r completeVng50, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$NG50Length,pdata$Complete,xlab="NG50 (Mb)",ylab="BUSCOMP Complete (%)",col=pdata$col,pch=pdata$pch,main="Complete BUSCOMP versus NG50",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NG50Length)),ylim=c(0,max(pdata$Complete)))
-text(pdata$NG50Length,pdata$Complete,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=NG50Length, y=Complete, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Complete BUSCOMP versus NG50") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("NG50 (Mb)") +
+    ylab("BUSCOMP Complete (%)") +
+    xlim(0,max(ggdata$NG50Length,0)) +
+    ylim(0,max(ggdata$Complete,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE)
 ```
 
 ```{r buscoVng50, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$NG50Length,pdata$BUSCO,xlab="NG50 (Mb)",ylab="BUSCO Complete (%)",col=pdata$col,pch=pdata$pch,main="Complete BUSCO versus NG50",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$NG50Length)),ylim=c(0,max(pdata$BUSCO)))
-text(pdata$NG50Length,pdata$BUSCO,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=NG50Length, y=BUSCO, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Complete BUSCO versus NG50") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("NG50 (Mb)") +
+    ylab("BUSCO Complete (%)") +
+    xlim(0,max(ggdata$NG50Length,0)) +
+    ylim(0,max(ggdata$BUSCO,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE)
 ```
 
 ```{r buscompVbusco, echo=FALSE, fig.width=12, fig.height=8}
-plot(pdata$BUSCO,pdata$Complete,xlab="BUSCO Complete (%)",ylab="BUSCOMP Complete (%)",col=pdata$col,pch=pdata$pch,main="Complete BUSCOMP versus Complete BUSCO",xlog=TRUE,ylog=TRUE,xlim=c(0,max(pdata$BUSCO)),ylim=c(0,max(pdata$Complete)))
-text(pdata$BUSCO,pdata$Complete,pdata$label,pos=3,col=pdata$col)
-
-
+ggdata = pdata
+ggplot(ggdata, aes(x=BUSCO, y=Complete, colour=col, label=label, size=1)) +
+    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +
+    theme_bw() +
+    theme(text = element_text(size=15)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(panel.border = element_rect(colour="black", size=0.5)) +
+    ggtitle("Complete BUSCOMP versus Complete BUSCO") +
+    guides(color = "none") +
+    scale_shape(solid = FALSE) +
+    xlab("BUSCO Complete (%)") +
+    ylab("BUSCOMP Complete (%)") +
+    xlim(0,max(ggdata$BUSCO,0)) +
+    ylim(0,max(ggdata$Complete,0)) +
+    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE)
 ```
 
 **NOTE:** To modify these plots and tables, edit the `*.genomes.tdt` and `*.NxLxxIDxx.rdata.tdt` files and re-knit the `*.NxLxxIDxx.Rmd` file.
@@ -242,8 +336,14 @@ knitr::kable(busco, row.names = FALSE)
 sumdata = busco[! is.na(busco$N) & busco$N > 0,c(1,4:7)]
 colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")
 # BUSCO Plot of summary data table as % (Dataset, Complete, Duplicated, Fragmented, Missing)
-buscoPercPlot = function(sumdata,title=""){
+buscoPercPlot = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
+  if(maketext){
+    sumdata$text = ""
+    for(i in 1:nrow(sumdata)){
+      sumdata$text[i] = paste0("C:",sumdata$Complete[i]+sumdata$Duplicated[i]," [S:",sumdata$Complete[i],", D:",sumdata$Duplicated[i],"], F:",sumdata$Fragmented[i],", M:",sumdata$Missing[i],", n:",sum(sumdata[i,2:5]))
+    }
+  }
   rownames(sumdata) = sumdata$Dataset
   N = sum(sumdata[1,2:5])
   my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F04442")
@@ -252,7 +352,7 @@ buscoPercPlot = function(sumdata,title=""){
   text(0,0.6+0:(dim(sumdata)[1]-1)*1.2,sumdata$text,pos=4)
   par(mar=c(5,4,4,2)+0.1)
 }
-buscoPercPlot(sumdata,"BUSCO Rating Summary")
+buscoPercPlot(sumdata,"BUSCO Rating Summary",maketext=TRUE)
 
 ```
 
@@ -307,6 +407,28 @@ if(nrow(buscofull) > 10 | ncol(buscofull) > 10){
 
 ```
 
+<a name="GroupBUSCO" />
+
+## Genome Group BUSCO charts
+
+```{r HighQualitybuscochart, echo=FALSE, fig.width=12, fig.height=7}
+# HighQuality c(1,2,3,4)
+sumdata = busco[c(1,2,3,4),]
+sumdata = sumdata[! is.na(sumdata$N) & sumdata$N > 0,c(1,4:7)]
+colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")
+buscoPercPlot(sumdata,"HighQuality BUSCO Rating Summary",maketext=TRUE)
+
+```
+
+```{r BUSCOMPbuscochart, echo=FALSE, fig.width=12, fig.height=8}
+# BUSCOMP c(1,2,3,5,6)
+sumdata = busco[c(1,2,3,5,6),]
+sumdata = sumdata[! is.na(sumdata$N) & sumdata$N > 0,c(1,4:7)]
+colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")
+buscoPercPlot(sumdata,"BUSCOMP BUSCO Rating Summary",maketext=TRUE)
+
+```
+
 <a name="BUSCOSeq" />
 
 # BUSCOMP Ratings
@@ -353,9 +475,15 @@ knitr::kable(ratings, row.names = FALSE)
 ```{r buscoseqchart, echo=FALSE, fig.width=12, fig.height=5}
 sumdata = ratings[,c(1,5:10)+1]
 # BUSCO Plot of summary data table as % (Genome, Single, Duplicated, Fragmented, Partial, Ghost, Missing)
-buscompSeqPercPlot = function(sumdata,title=""){
+buscompSeqPercPlot = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
   rownames(sumdata) = sumdata$Genome
+  if(maketext){
+    sumdata$text = ""
+    for(i in 1:nrow(sumdata)){
+      sumdata$text[i] = paste0("C:",sumdata$Single[i]+sumdata$Duplicated[i]," [S:",sumdata$Single[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
+    }
+  }
   N = sum(sumdata[1,2:7])
   my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F0E442", "#F04442", "#F04442")
   par(mar=c(5,12,4,1)+0.1)
@@ -374,27 +502,27 @@ buscompSeqPercPlotNA = function(sumdata,title=""){
   text(0,0.6+0:(dim(sumdata)[1]-1)*1.2,sumdata$text,pos=4)
   par(mar=c(5,4,4,2)+0.1)
 }
-buscompSeqPercPlot(sumdata,"BUSCOSeq Rating Summary")
+buscompSeqPercPlot(sumdata,"BUSCOSeq Rating Summary",maketext=TRUE)
 
 ```
 
 ```
-BUSCOMP BUSCOMP Results [1681 (98.25%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
+BUSCOMP BUSCOMP Results [1689 (98.71%) Complete BUSCOs; No BUSCOMP compilation]:
         C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
 
-HighQuality BUSCOMP Results [1673 (97.78%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
+HighQuality BUSCOMP Results [1684 (98.42%) Complete BUSCOs; No BUSCOMP compilation]:
         C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
 
-PacBioHQ BUSCOMP Results [1673 (97.78%) Complete BUSCOs; 1599 (95.12%) BUSCOMP Seqs]:
+PacBioHQ BUSCOMP Results [1684 (98.42%) Complete BUSCOs; No BUSCOMP compilation]:
         C:99.9%[S:99.8%,D:0.1%,I:95.8%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
 
-PacBioWTDBG2 BUSCOMP Results [1375 (80.36%) Complete BUSCOs; 77 (4.58%) BUSCOMP Seqs]:
+PacBioWTDBG2 BUSCOMP Results [1384 (80.89%) Complete BUSCOs; No BUSCOMP compilation]:
         C:99.9%[S:99.8%,D:0.1%,I:60.6%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
 
-SGD BUSCOMP Results [1672 (97.72%) Complete BUSCOs; 5 (0.30%) BUSCOMP Seqs]:
+SGD BUSCOMP Results [1683 (98.36%) Complete BUSCOs; No BUSCOMP compilation]:
         C:99.9%[S:99.8%,D:0.1%,I:95.7%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681
 
-chrIIIdup BUSCOMP Results [0 (0.00%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]:
+chrIIIdup BUSCOMP Results [45 (2.63%) Complete BUSCOs; No BUSCOMP compilation]:
         C:2.7%[S:0.0%,D:2.7%,I:2.6%],F:0.0%,P:0.1%,G:0.1%,M:97.2%,n:1681
 
 ```
@@ -412,6 +540,24 @@ if(nrow(buscomp) > 10 | ncol(buscomp) > 10){
 }else{
     knitr::kable(buscomp, row.names = FALSE)
 }
+
+```
+
+<a name="GroupBUSCOMP" />
+
+## Genome Group BUSCOMP charts
+
+```{r HighQualitybuscompchart, echo=FALSE, fig.width=12, fig.height=7}
+# HighQuality c(1,2,3,4)sumdata = ratings[c(1,2,3,4),c(1,5:10)+1]
+colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")
+buscompSeqPercPlot(sumdata,"HighQuality BUSCO Rating Summary",maketext=TRUE)
+
+```
+
+```{r BUSCOMPbuscompchart, echo=FALSE, fig.width=12, fig.height=8}
+# BUSCOMP c(1,2,3,5,6)sumdata = ratings[c(1,2,3,5,6),c(1,5:10)+1]
+colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")
+buscompSeqPercPlot(sumdata,"BUSCOMP BUSCO Rating Summary",maketext=TRUE)
 
 ```
 
@@ -619,7 +765,7 @@ missingSeqPlot(buscomp,buscomp,"BUSCOMP")
 
 # Appendix: BUSCOMP run details
 
-    BUSCOMP V0.7.2: run Fri May 10 10:05:24 2019
+    BUSCOMP V0.7.4: run Fri Jun 28 15:02:50 2019
 
 This analysis was run in:
 
@@ -640,10 +786,10 @@ BUSCOMP returned no runtime errors.
 See run log for further details:
 
 ```
-#WARN	00:00:03	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
-#WARN	00:00:03	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
-#WARN	00:00:04	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
-#WARN	00:00:04	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
 ```
 
 ---
@@ -665,4 +811,4 @@ See run log for further details:
 ---
 
 
-<small>Output generated by BUSCOMP v0.7.2 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>
+<small>Output generated by BUSCOMP v0.7.4 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>

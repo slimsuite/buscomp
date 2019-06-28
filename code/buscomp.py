@@ -19,14 +19,14 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.7.2
-Last Edit:    10/05/19
+Version:      0.7.4
+Last Edit:    28/06/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
     BUSCOMP is designed to overcome some of the non-deterministic limitations of BUSCO to:
 
-    1. compile a non-redundant maximal set of non-redundant complete BUSCOs from a set of assemblies, and
+    1. compile a non-redundant maximal set of complete BUSCOs from a set of assemblies, and
     2. use this set to provide a "true" comparison of completeness between different assemblies of the same genome
     with predictable behaviour.
 
@@ -84,6 +84,7 @@ Commandline:
     buscompseq=T/F  : Whether to run full BUSCO comparison using buscofas and minimap2 [True]
     ratefas=FILELIST: Additional fasta files of assemblies to rate with BUSCOMPSeq (No BUSCO run) (wildcards allowed) []
     rmdreport=T/F   : Generate Rmarkdown report and knit into HTML [True]
+    ggplot=T/F      : Whether to use ggplot code for plotting [True]
     fullreport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
     missing=T/F     : Generate summary tables for sets of Missing genes for each assembly/group [True]
     dochtml=T/F     : Generate HTML BUSCOMP documentation (*.info.html) instead of main run [False]
@@ -136,6 +137,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.7.0 - Updated the defaults in the light of test analyses. Tweaked Rmd report.
     # 0.7.1 - Fixed unique group count bug when some genomes are not in a group. Fixed running with non-standard options.
     # 0.7.2 - Added loadsummary=T/F option to regenerate summaries and fixed bugs running without BUSCO results.
+    # 0.7.3 - Fixed bugs calculating Complete BUSCO scores in a couple of places. Added text summaries to plots.
+    # 0.7.4 - Added ggplot option. Added group plots to full reports.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -168,12 +171,14 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [Y] : uniquehit threshold update inc. docs
     # [Y] : mmsecnum threshold update inc. docs
     # [Y] : Fix *.buscomp.tdt output bug if BUSCO sequences not given and buscofas used: runs=../example/fulltables/ buscofas=test1.buscomp.fasta
-    # [ ] : Add option to include text ratings summaries in the bar plots.
+    # [Y] : Add option to include text ratings summaries in the bar plots.
+    # [ ] : Add group plot output.
+    # [ ] : Make the plot unit scaling more responsive to limits, e.g. Mb and straight counts.
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.7.2', 'May 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.7.4', 'June 2019', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -252,6 +257,7 @@ class BUSCOMP(rje_obj.RJE_Object):
     - DocHTML=T/F     : Generate HTML BUSCOMP documentation (*.info.html) instead of main run [False]
     - DupBest=T/F     : Whether to rate "Duplicated" above "Complete" when compiling "best" BUSCOs across Groups [False]
     - FullReport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
+    - GGPlot=T/F      : Whether to use ggplot code for plotting [True]
     - LoadSummary=T/F : Use existing genome summaries including NG50 from `*.genomes.tdt`, if present [True]
     - Missing=T/F     : Generate summary tables for sets of Missing genes for each assembly/group [True]
     - Restrict=T/F    : Restrict analysis to genomes with a loaded alias [False]
@@ -295,7 +301,7 @@ class BUSCOMP(rje_obj.RJE_Object):
         '''Sets Attributes of Object.'''
         ### ~ Basics ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self.strlist = ['BUSCOFas','Genomes','Groups']
-        self.boollist = ['BUSCOMP','BUSCOMPSeq','DocHTML','DupBest','FullReport','LoadSummary','Missing','Restrict','RmdReport','Summarise','UniqueHit']
+        self.boollist = ['BUSCOMP','BUSCOMPSeq','DocHTML','DupBest','GGPlot','FullReport','LoadSummary','Missing','Restrict','RmdReport','Summarise','UniqueHit']
         self.intlist = ['MinLocLen','MinLocID','MMSecNum']
         self.numlist = ['MMPCut']
         self.filelist = []
@@ -305,7 +311,7 @@ class BUSCOMP(rje_obj.RJE_Object):
         ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True,setfile=True)
         self.setStr({})
-        self.setBool({'BUSCOMP':True,'BUSCOMPSeq':True,'DocHTML':False,'FullReport':True,'LoadSummary':True,
+        self.setBool({'BUSCOMP':True,'BUSCOMPSeq':True,'DocHTML':False,'FullReport':True,'GGPlot':True,'LoadSummary':True,
                     'Missing':True,'Restrict':False,'RmdReport':True,'StripNum':True,'Summarise':True,'UniqueHit':True})
         self.setInt({'MinLocLen':20,'MinLocID':0,'MMSecNum':3})
         self.setNum({'MMPCut':0.0})
@@ -334,7 +340,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 #self._cmdReadList(cmd,'path',['Att'])  # String representing directory path 
                 self._cmdReadList(cmd,'file',['BUSCOFas','Genomes','Groups'])  # String representing file path
                 #self._cmdReadList(cmd,'date',['Att'])  # String representing date YYYY-MM-DD
-                self._cmdReadList(cmd,'bool',['BUSCOMP','BUSCOMPSeq','DocHTML','DupBest','FullReport','LoadSummary','Missing','Restrict','RmdReport','Summarise','UniqueHit'])  # True/False Booleans
+                self._cmdReadList(cmd,'bool',['BUSCOMP','BUSCOMPSeq','DocHTML','DupBest','FullReport','GGPlot','LoadSummary','Missing','Restrict','RmdReport','Summarise','UniqueHit'])  # True/False Booleans
                 self._cmdReadList(cmd,'int',['MinLocLen','MinLocID','MMSecNum'])   # Integers
                 self._cmdReadList(cmd,'float',['MMPCut']) # Floats
                 #self._cmdReadList(cmd,'min',['Att'])   # Integer value part of min,max command
@@ -356,7 +362,7 @@ class BUSCOMP(rje_obj.RJE_Object):
 
         BUSCOMP is designed to overcome some of the non-deterministic limitations of BUSCO to:
 
-        1. compile a non-redundant maximal set of non-redundant complete BUSCOs from a set of assemblies, and
+        1. compile a non-redundant maximal set of complete BUSCOs from a set of assemblies, and
         2. use this set to provide a "true" comparison of completeness between different assemblies of the same genome
         with predictable behaviour.
 
@@ -2992,7 +2998,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 genome = self.genomeField(gentry)
                 if full: self.headLog('%s BUSCOMP' % genome)
                 if rawdb and genome in rawdb.fields():
-                    rnum = len(rawdb.indexEntries(genome,'Complete'))
+                    rnum = len(rawdb.indexEntries(genome,'Complete')) + len(rawdb.indexEntries(genome,'Duplicated'))
                     N = rawdb.entryNum()
                     rperc = 0.0
                     if N: rperc = 100.0 * rnum / N
@@ -3394,7 +3400,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 rentry = rdb.data(genome)
                 for field in statfields: rentry[field] = gentry[field]
                 if gentry['N']:
-                    rentry['BUSCO'] = 100.0 * gentry['Complete'] / gentry['N']
+                    rentry['BUSCO'] = 100.0 * (gentry['Complete'] + gentry['Duplicated'])  / gentry['N']
                     rentry['NoBUSCO'] = 100.0 * gentry['Missing'] / gentry['N']
                 else: rentry['BUSCO'] = rentry['NoBUSCO'] = 0.0
                 if rentry['N']:
@@ -3569,6 +3575,14 @@ class BUSCOMP(rje_obj.RJE_Object):
             else:
                 rtxt = rmd.rmdHead(title='BUSCOMP Summary Report',author='%s BUSCOMP Analysis' % self.baseFile(),setup=True)
             kable = {True:None, False:True}[fullreport]
+            if self.getBool('GGPlot'):
+                rtxt += '''
+```{r libraries, echo=FALSE}
+library(ggplot2)
+library(ggrepel)
+```
+
+'''
 
             ## ~ [1a] Table of Contents ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             #toc = '## Contents\n\n'
@@ -3720,10 +3734,13 @@ class BUSCOMP(rje_obj.RJE_Object):
                 xfield = 'TotLength'; xlab = 'Assembly Size (Gb)'
                 title = 'Contig/scaffold count versus total assembly size'
                 plims = 'xlim=c(0,max(pdata$%s,%s)),ylim=c(0,max(pdata$%s))' % (xfield,genGB,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                #!# Make this dashed!
-                rcode += 'abline(v=%s, col="grey")\n' % genGB
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab,xmax=genGB,vline=genGB,xlog=False,ylog=False)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",%s)\n' % (xfield,yfield,xlab,ylab,title,plims)   # Removed ,log="xy"
+                    #!# Make this dashed!
+                    rcode += 'abline(v=%s, col="grey")\n' % genGB
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r numVsize, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 # PLOT 2a. Completeness = NoBUSCO vs Assembly Size
@@ -3734,20 +3751,26 @@ class BUSCOMP(rje_obj.RJE_Object):
                 yfield = 'NoBUSCO'; ylab = 'BUSCO Missing (%)'
                 title = 'Missing BUSCO versus total assembly size'
                 plims = 'xlim=c(0,max(pdata$%s,%s)),ylim=c(0,max(pdata$%s))' % (xfield,genGB,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                #!# Make this dashed!
-                rcode += 'abline(v=%s, col="grey")\n' % genGB
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab,xmax=genGB,vline=genGB)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    #!# Make this dashed!
+                    rcode += 'abline(v=%s, col="grey")\n' % genGB
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r nobuscoVsize, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 # PLOT 2b. Completeness = Missing vs Assembly Size
                 yfield = 'Missing'; ylab = 'BUSCOMP Missing (%)'
                 title = 'Missing BUSCOMP versus total assembly size'
                 plims = 'xlim=c(0,max(pdata$%s,%s)),ylim=c(0,max(pdata$%s))' % (xfield,genGB,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                #!# Make this dashed!
-                rcode += 'abline(v=%s, col="grey")\n' % genGB
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab,xmax=genGB,vline=genGB)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    #!# Make this dashed!
+                    rcode += 'abline(v=%s, col="grey")\n' % genGB
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r missingVsize, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 # PLOT 3. BUSCO versus BUSCOMP 1 = Missing vs NoBUSCO
@@ -3759,8 +3782,12 @@ class BUSCOMP(rje_obj.RJE_Object):
                 xfield = 'NoBUSCO'; xlab = 'BUSCO Missing (%)'
                 title = 'Missing BUSCOMP versus Missing BUSCO'
                 plims = 'xlim=c(0,max(pdata$%s)),ylim=c(0,max(pdata$%s))' % (xfield,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                #!# Add calculation of size to make square boxes.
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r nobuscompVnobusco, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 rtxt += '\n## Genome contiguity assessment plots\n\n'
@@ -3773,24 +3800,33 @@ class BUSCOMP(rje_obj.RJE_Object):
                 xfield = 'NG50Length'; xlab = 'NG50 (Mb)'
                 title = 'LG50 count versus NG50 length'
                 plims = 'xlim=c(0,max(pdata$%s)),ylim=c(0,max(pdata$%s))' % (xfield,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r lg50Vng50, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 # PLOT 5b. Contiguity = Complete vs NG50
                 yfield = 'Complete'; ylab = 'BUSCOMP Complete (%)'
                 title = 'Complete BUSCOMP versus NG50'
                 plims = 'xlim=c(0,max(pdata$%s)),ylim=c(0,max(pdata$%s))' % (xfield,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r completeVng50, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 # PLOT 5c. Contiguity = BUSCO vs NG50
                 yfield = 'BUSCO'; ylab = 'BUSCO Complete (%)'
                 title = 'Complete BUSCO versus NG50'
                 plims = 'xlim=c(0,max(pdata$%s)),ylim=c(0,max(pdata$%s))' % (xfield,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r buscoVng50, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
                 # PLOT 3. BUSCO versus BUSCOMP 2 = Complete vs BUSCO
@@ -3798,12 +3834,17 @@ class BUSCOMP(rje_obj.RJE_Object):
                 xfield = 'BUSCO'; xlab = 'BUSCO Complete (%)'
                 title = 'Complete BUSCOMP versus Complete BUSCO'
                 plims = 'xlim=c(0,max(pdata$%s)),ylim=c(0,max(pdata$%s))' % (xfield,yfield)
-                rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
-                rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
+                if self.getBool('GGPlot'):
+                    rcode = ggPlotCode(xfield,yfield,title,xlab,ylab)
+                else:
+                    rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
+                    rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
                 rtxt += '```{r buscompVbusco, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
 
 
             rtxt += '**NOTE:** To modify these plots and tables, edit the `*.genomes.tdt` and `*.NxLxxIDxx.rdata.tdt` files and re-knit the `*.NxLxxIDxx.Rmd` file.\n\n'
+
+
 
 
             ### ~ [4] BUSCO Summary and compilation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -3812,6 +3853,18 @@ class BUSCOMP(rje_obj.RJE_Object):
             groups = []
             for gentry in gdb.entries(sorted=True):
                 if gentry['Genome'] in self.dict['Groups']: groups.append(gentry['Genome'])
+            ### Group rows data ###
+            grouprows = {}
+            if groups:
+                for group in groups:
+                    grouprows[group] = []
+                    genomes = grpdb.indexDataList('Group',group,'Genome')
+                    for genome in genomes:
+                        gentry = self.aliasEntry(genome)
+                        grouprows[group].append('%s' % gentry['#'])
+                    grouprows[group].append('%s' % self.aliasEntry(group)['#'])
+                    grouprows[group] = 'c(%s)' % string.join(grouprows[group],',')
+
             rtxt += '<a name="BUSCO" />\n\n# BUSCO Ratings\n\n'
             if self.db('busco'):
                 rtxt += 'Compiled BUSCO results for %d assemblies and %d groups have been saved in `%s`. %s\n\n' % (gdb.entryNum()-len(groups),len(groups),genfile,buscoText)
@@ -3824,7 +3877,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 rcode = 'sumdata = busco[! is.na(busco$N) & busco$N > 0,c(1,4:7)]\n'
                 rcode += 'colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")\n'
                 rcode += buscoPercPlot
-                rcode += 'buscoPercPlot(sumdata,"BUSCO Rating Summary")\n'
+                rcode += 'buscoPercPlot(sumdata,"BUSCO Rating Summary",maketext=%s)\n' % str(fullreport).upper()
                 rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(self.db('genomes').entryNum()/2),rcode)
                 ## ~ [2c] Summarise group construction  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
                 rtxt += '<a name="Groups" />\n\n## Genome Groups\n\n'
@@ -3858,6 +3911,22 @@ class BUSCOMP(rje_obj.RJE_Object):
                     rcode = rmd.rmdTable(dbfile,name='buscofull',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
                     rtxt += rcode
                 else: rtxt += '.\n\n'
+
+
+                ## ~ [2c+] Group charts  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+                if groups and fullreport:
+                    rtxt += '<a name="GroupBUSCO" />\n\n## Genome Group BUSCO charts\n\n'
+                    for group in groups:
+                        codename = '%sbuscochart' % string.replace(group,' ','')
+                        rmd.list['CodeChunks'].append(codename)
+                        rcode = ''
+                        rcode += '# %s %s\n' % (group,grouprows[group])
+                        rcode += 'sumdata = busco[%s,]\n' % grouprows[group]
+                        rcode += 'sumdata = sumdata[! is.na(sumdata$N) & sumdata$N > 0,c(1,4:7)]\n'
+                        rcode += 'colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")\n'
+                        rcode += 'buscoPercPlot(sumdata,"%s BUSCO Rating Summary",maketext=%s)\n' % (group,str(fullreport).upper())
+                        rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(len(grouprows[group])/2),rcode)
+
 
                 # BUSCOSeq details and ratings for each genome
                 rtxt += '<a name="BUSCOSeq" />\n\n# BUSCOMP Ratings\n\n'
@@ -3896,7 +3965,7 @@ class BUSCOMP(rje_obj.RJE_Object):
             rmd.list['CodeChunks'].append(codename)
             rcode = 'sumdata = ratings[,c(1,5:10)+1]\n'
             rcode += buscompSeqPercPlot
-            rcode += 'buscompSeqPercPlot(sumdata,"BUSCOSeq Rating Summary")\n'
+            rcode += 'buscompSeqPercPlot(sumdata,"BUSCOSeq Rating Summary",maketext=%s)\n' % str(fullreport).upper()
             rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(self.db('ratings').entryNum()/2),rcode)
             # BUSCOSeq Summary
             rtxt += '```\n'
@@ -3913,6 +3982,20 @@ class BUSCOMP(rje_obj.RJE_Object):
                 rtxt += rcode
             else:
                 rtxt += '.\n\n'
+
+
+            ## ~ [2c+] Group charts  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            if groups and fullreport and self.db('buscomp'):
+                rtxt += '<a name="GroupBUSCOMP" />\n\n## Genome Group BUSCOMP charts\n\n'
+                for group in groups:
+                    codename = '%sbuscompchart' % string.replace(group,' ','')
+                    rmd.list['CodeChunks'].append(codename)
+                    rcode = ''
+                    rcode += '# %s %s' % (group,grouprows[group])
+                    rcode += 'sumdata = ratings[%s,c(1,5:10)+1]\n' % grouprows[group]
+                    rcode += 'colnames(sumdata) = c("Dataset", "Complete", "Duplicated", "Fragmented", "Missing")\n'
+                    rcode += 'buscompSeqPercPlot(sumdata,"%s BUSCO Rating Summary",maketext=%s)\n' % (group,str(fullreport).upper())
+                    rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(len(grouprows[group])/2),rcode)
 
 
             rtxt += '<a name="BUSCOMParisons" />\n\n# BUSCO and BUSCOMP Comparisons\n\n'
@@ -4080,6 +4163,36 @@ coverage.
 #########################################################################################################################
 ### SECTION III: BUSCOMP R CODE                                                                                         #
 #########################################################################################################################
+def ggPlotCode(x,y,title,xlab,ylab,xmax=0,ymax=0,vline=None,xlog=False,ylog=False):
+
+    plotcode = 'ggdata = pdata\n'
+    #plotcode += 'numVsizeGG <- ggplot(ggdata, aes(x=%s, y=%s, colour=col, label=label, size=1)) +' % (x,y)
+    plotcode += 'ggplot(ggdata, aes(x=%s, y=%s, colour=col, label=label, size=1)) +' % (x,y)
+    plotcode += '    geom_point(size = 3,shape=ggdata$pch, colour=ggdata$col, na.rm=TRUE) +'
+    plotcode += '    theme_bw() +'
+    plotcode += '    theme(text = element_text(size=15)) +'
+    plotcode += '    theme(plot.title = element_text(hjust = 0.5)) +'
+    plotcode += '    theme(panel.border = element_rect(colour="black", size=0.5)) +'
+    plotcode += '    ggtitle("%s") +' % title
+    plotcode += '    guides(color = "none") +'
+    plotcode += '    scale_shape(solid = FALSE) +'
+    plotcode += '    xlab("%s") +' % xlab
+    plotcode += '    ylab("%s") +' % ylab
+    plotcode += '    xlim(0,max(ggdata$%s,%s)) +' % (x,xmax)
+    if xlog: plotcode += '    coord_trans(x="log10") + '
+    if ylog: plotcode += '    coord_trans(y="log10") + '
+    plotcode += '    ylim(0,max(ggdata$%s,%s)) +' % (y,ymax)
+    plotcode += '    geom_label_repel(aes(label=label), size = 5, colour=ggdata$col, na.rm=TRUE) +'
+    if vline:
+        plotcode += '    geom_vline(xintercept = %s, color = "grey", linetype="dashed", size=0.5) +' % vline
+
+    plotcode = plotcode[:-2]
+    plotcode = plotcode.replace(' +',' +\n')
+
+    return plotcode
+
+
+#########################################################################################################################
 buscoPlot = '''# BUSCO Plot of summary data table (Dataset, Complete, Duplicated, Fragmented, Missing)
 buscoPlot = function(sumdata,title=""){
   sumdata = sumdata[nrow(sumdata):1,]
@@ -4093,8 +4206,14 @@ buscoPlot = function(sumdata,title=""){
 '''
 
 buscoPercPlot = '''# BUSCO Plot of summary data table as % (Dataset, Complete, Duplicated, Fragmented, Missing)
-buscoPercPlot = function(sumdata,title=""){
+buscoPercPlot = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
+  if(maketext){
+    sumdata$text = ""
+    for(i in 1:nrow(sumdata)){
+      sumdata$text[i] = paste0("C:",sumdata$Complete[i]+sumdata$Duplicated[i]," [S:",sumdata$Complete[i],", D:",sumdata$Duplicated[i],"], F:",sumdata$Fragmented[i],", M:",sumdata$Missing[i],", n:",sum(sumdata[i,2:5]))
+    }
+  }
   rownames(sumdata) = sumdata$Dataset
   N = sum(sumdata[1,2:5])
   my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F04442")
@@ -4107,9 +4226,15 @@ buscoPercPlot = function(sumdata,title=""){
 
 #!# Need to pick better colours for Partial and Ghost
 buscompSeqPercPlot = '''# BUSCO Plot of summary data table as % (Genome, Single, Duplicated, Fragmented, Partial, Ghost, Missing)
-buscompSeqPercPlot = function(sumdata,title=""){
+buscompSeqPercPlot = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
   rownames(sumdata) = sumdata$Genome
+  if(maketext){
+    sumdata$text = ""
+    for(i in 1:nrow(sumdata)){
+      sumdata$text[i] = paste0("C:",sumdata$Single[i]+sumdata$Duplicated[i]," [S:",sumdata$Single[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
+    }
+  }
   N = sum(sumdata[1,2:7])
   my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F0E442", "#F04442", "#F04442")
   par(mar=c(5,12,4,1)+0.1)

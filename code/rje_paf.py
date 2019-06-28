@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.5.0
-Last Edit:    02/05/19
+Version:      0.6.0
+Last Edit:    25/06/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -89,6 +89,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.3.1 - Correct PAF splicing bug.
     # 0.4.0 - Added TmpDir and forking for GABLAM conversion.
     # 0.5.0 - Added uniquehit=T/F : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [False]
+    # 0.6.0 - Added CS alignment manipulation methods.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -119,7 +120,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.5.0', 'May 2019', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.6.0', 'June 2019', '2019')
     description = 'Minimap2 PAF parser and converter'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -215,6 +216,10 @@ pafaln = string.split('tp cm s1 s2 NM MD AS ms nn ts cg cs dv')
 # +	[acgtn]+	Insertion to the reference
 # -	[acgtn]+	Deletion from the reference
 # ~	[acgtn]{2}[0-9]+[acgtn]{2}	Intron length and splice signal
+
+# This module also adds ! [0-9]+ for extended matches of unknown type
+# NOTE: The cs tag (as parsed) is based on the target sequence, such that a -ve strand hit will be the reverse complement
+#       of the true hit and always has target start < end.
 
 ## NOTE: The following settings will be interesting to play with for different applications:
 # -D	If query sequence name/length are identical to the target name/length, ignore diagonal anchors. This option also reduces DP-based extension along the diagonal.
@@ -1307,6 +1312,25 @@ class PAF(rje_obj.RJE_Object):
             else:
                 return os.popen(maprun).read()
         except: self.errorLog('%s.minimap2 error' % self.prog()); raise
+#########################################################################################################################
+    ### <6> ### PAF CS string manipulations                                                                             #
+#########################################################################################################################
+# Op	Regex	Description
+# =	[ACGTN]+	Identical sequence (long form)
+# :	[0-9]+	Identical sequence length
+# *	[acgtn][acgtn]	Substitution: ref to query
+# +	[acgtn]+	Insertion to the reference
+# -	[acgtn]+	Deletion from the reference
+# ~	[acgtn]{2}[0-9]+[acgtn]{2}	Intron length and splice signal
+
+# This module also adds ! [0-9]+ for extended matches of unknown type
+# NOTE: The cs tag (as parsed) is based on the target sequence, such that a -ve strand hit will be the reverse complement
+#       of the true hit and always has target start < end.
+    #i# alnSeqToCS => convert QrySeq, AlnSeq, SbjSeq to a CS string
+    def alnSeqToCS(self):
+        return
+    #i# combineCS => combine two CS strings into either the best version (GABLAM) or a consensus
+    #i# trimCS => return trimmed CS string
 #########################################################################################################################
 ### End of SECTION II: PAF Class                                                                                        #
 #########################################################################################################################

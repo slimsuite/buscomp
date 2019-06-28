@@ -11,7 +11,7 @@
 
 <meta name="author" content="Richard J. Edwards" />
 
-<meta name="date" content="2019-05-10" />
+<meta name="date" content="2019-06-28" />
 
 <title>BUSCOMP Documentation</title>
 
@@ -218,7 +218,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Documentation</h1>
 <h4 class="author"><em>Richard J. Edwards</em></h4>
-<h4 class="date"><em>2019-05-10</em></h4>
+<h4 class="date"><em>2019-06-28</em></h4>
 
 </div>
 
@@ -228,7 +228,7 @@ div.tocify {
 <h1><span class="header-section-number">1</span> BUSCOMP: BUSCO Compiler and Comparison tool</h1>
 <p>BUSCOMP is designed to overcome some of the non-deterministic limitations of BUSCO to:</p>
 <ol style="list-style-type: decimal">
-<li>compile a non-redundant maximal set of non-redundant complete BUSCOs from a set of assemblies, and</li>
+<li>compile a non-redundant maximal set of complete BUSCOs from a set of assemblies, and</li>
 <li>use this set to provide a “true” comparison of completeness between different assemblies of the same genome with predictable behaviour.</li>
 </ol>
 <p>For each BUSCO gene, BUSCOMP will extract the best “Single Complete” sequence from those available, using the <code>full_table_*.tsv</code> results table and <code>single_copy_busco_sequences/</code> directory of hit sequences. BUSCOMP ranks all the hits across all assemblies by Score and keeps the top-ranking hits. Ties are then resolved by Length, keeping the longest sequence. Ties for Score and Length will keep an arbitrary entry as the winner. Single complete hits are given preference over Duplicate hits, even if they have a lower score, because only Single hit have their sequences saved by BUSCO in the <code>single_copy_busco_sequences/</code> directory. This set of predicted gene sequences forms the “BUSCOMPSeq” gene set.</p>

@@ -648,8 +648,8 @@ class Database(rje.RJE_Object):
                 else: self.printLog('#WARNING','Table "%s" already exists!' % newname)
             ### ~ [2] ~ Make new table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             itable.info['Name'] = newname
-            itable.info['Basefile'] = table.info['Basefile']
-            itable.info['Delimit'] = table.info['Delimit']
+            itable.info['Basefile'] = table.getStr('Basefile')
+            itable.info['Delimit'] = table.getStr('Delimit')
             for datatype in ['Keys','Fields']: itable.list[datatype] = table.list[datatype][0:]
             for tkey in table.datakeys(): itable.dict['Data'][tkey] = rje.combineDict({},table.dict['Data'][tkey])
             ## ~ [2a] Add table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
