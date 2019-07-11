@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.6.0
-Last Edit:    25/06/19
+Version:      0.6.1
+Last Edit:    10/07/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -90,6 +90,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.4.0 - Added TmpDir and forking for GABLAM conversion.
     # 0.5.0 - Added uniquehit=T/F : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [False]
     # 0.6.0 - Added CS alignment manipulation methods.
+    # 0.6.1 - Added additional error-handling for CS parsing errors.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -120,7 +121,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.6.0', 'June 2019', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.6.1', 'July 2019', '2019')
     description = 'Minimap2 PAF parser and converter'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -349,7 +350,7 @@ class PAF(rje_obj.RJE_Object):
             return self.db()
         except SystemExit: raise    # Fork child
         except:
-            self.errorLog(self.zen())
+            self.errorLog('RJE_PAF run error')
             return None  # Delete this if method error not terrible
 #########################################################################################################################
     def setup(self):    ### Main class setup method.
@@ -561,8 +562,15 @@ class PAF(rje_obj.RJE_Object):
                             aseq += '|' * ilen
                         elif cs[0] == '*':    # Mismatch
                             ilen = 1
-                            if cs[2] != qfull[0].lower(): qwarnx += 1
-                            if cs[1] != sfull[0].lower(): swarnx += 1
+                            try:
+                                if cs[2] != qfull[0].lower(): qwarnx += 1
+                                if cs[1] != sfull[0].lower(): swarnx += 1
+                            except:
+                                if not qfull: self.errorLog('CS parsing error: query sequence (%s) consumed before CS string (hit:%s)' % (lentry['Qry'],lentry['Hit']),printerror=False)
+                                elif not sfull: self.errorLog('CS parsing error: hit sequence (%s) consumed before CS string (query:%s)' % (lentry['Hit'],lentry['Qry']),printerror=False)
+                                else: self.errorLog('Problem parsing CS element "%s" (query:%s, hit:%s)' % (cs,lentry['Qry'],lentry['Hit']))
+                                self.warnLog('CS parsing prematurely ended (query:%s, hit:%s)' % (lentry['Qry'],lentry['Hit']))
+                                break
                             qseq += qfull[:ilen]; qfull = qfull[ilen:]
                             sseq += sfull[:ilen]; sfull = sfull[ilen:]
                             aseq += ' '
@@ -602,7 +610,9 @@ class PAF(rje_obj.RJE_Object):
                         self.bugPrint(cs)
                         self.debug(aln)
                         self.deBug(lentry)
-                        raise
+                        self.errorLog('Unanticipated CS parsing error (query:%s, hit:%s)' % (lentry['Qry'],lentry['Hit']))
+                        self.warnLog('CS parsing prematurely ended (query:%s, hit:%s)' % (lentry['Qry'],lentry['Hit']))
+                        break
 
                 #self.bugPrint(lentry)
                 if qwarnx: self.warnLog('%s CS mismatch does not match loaded query %s sequence' % (qwarnx,lentry['Qry']),dev=self.debugging())
@@ -615,9 +625,11 @@ class PAF(rje_obj.RJE_Object):
 
                 #:37+ac:83+a:52+c:73*cg*gc:90-g:20-c:54-c:33+t:52+t:53-c:22-a:28*at*ta:15-at*at:25-aa:21+c:12-a:9-a:40+t:28-c:9*ac:64-ca:90-t:54+c:13-t:5-t:7-g:19-a:11-a:90+a:13+aa:14-c:52-g:7-c:7+a:51-t:22+t:11+t:11-t:44-a:12-ct*gt:66-c:62-g:23*ac:32+t:15+a:83-a:29+a:29+c:122+a:17+g:113-a:35+t:137-t:31+t:49+c:76+t:152+c:25+g:43+t:257+a:23+g:591+a:361-a:89+t:310+c:36*ca*at*tg:295+g:503+a:173-g:216+a:50-c:1332-a:1462-a:569-a:801-g:1716+g:34+a:657+a:55+a:30+a:240+a:2737-a:20062+a:685+c:10563+a:143986
 
-                lentry['QrySeq'] = qseq
-                lentry['AlnSeq'] = aseq
-                lentry['SbjSeq'] = sseq
+                #i# Check for mismatched lengths
+                alen = max(len(qseq),len(aseq),len(sseq))
+                lentry['QrySeq'] = qseq + '?' * (len(qseq) - alen)
+                lentry['AlnSeq'] = aseq + ' ' * (len(aseq) - alen)
+                lentry['SbjSeq'] = sseq + '?' * (len(sseq) - alen)
 
                 ## Sort out direction
                 if lentry['Strand'] == '-':
@@ -1304,9 +1316,10 @@ class PAF(rje_obj.RJE_Object):
                     try:
                         mmv = os.popen('%s --version' % self.getStr('Minimap2')).read()
                         if not mmv: raise ValueError('Could not detect minimap2 version: check minimap2=PROG setting')
+                        open('%s.cmd' % self.getStr('PAFIn'),'w').write('#minimap2 v%s\n' % mmv)
                     except: raise ValueError('Could not detect minimap2 version: check minimap2=PROG setting (%s)' % self.getStr('Minimap2'))
                     self.printLog('#SYS','%s > %s' % (maprun,self.getStr('PAFIn')))
-                    open('%s.cmd' % self.getStr('PAFIn'),'w').write('%s\n' % maprun)
+                    open('%s.cmd' % self.getStr('PAFIn'),'a').write('%s\n' % maprun)
                     os.system('%s > %s' % (maprun,self.getStr('PAFIn')))
                 return rje.exists(self.getStr('PAFIn'))
             else:

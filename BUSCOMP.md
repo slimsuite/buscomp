@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compiler and Comparison tool
 
 ```
-BUSCOMP v0.7.4
+BUSCOMP v0.7.6
 ```
 
 For a better rendering and navigation of this document, please download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).

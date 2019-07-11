@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.7.4
-Last Edit:    28/06/19
+Version:      0.7.6
+Last Edit:    10/07/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -139,6 +139,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.7.2 - Added loadsummary=T/F option to regenerate summaries and fixed bugs running without BUSCO results.
     # 0.7.3 - Fixed bugs calculating Complete BUSCO scores in a couple of places. Added text summaries to plots.
     # 0.7.4 - Added ggplot option. Added group plots to full reports.
+    # 0.7.5 - Reinstated BUSCOMP contribution reports when re-running.
+    # 0.7.6 - Added additional error-handling for CS parsing errors.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -178,7 +180,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.7.4', 'June 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.7.6', 'July 2019', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -3007,7 +3009,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                     bperc = 0.0
                     if bnum: bperc = 100.0 * bnum / gentry['N']
                     seqtxt = '[No BUSCO or BUSCOMP compilation]'
-                    if N and gentry['N'] and not rje.exists(self.getStr('BUSCOFas')):
+                    if N and gentry['N'] and seqdb: #not rje.exists(self.getStr('BUSCOFas')):
                         seqtxt = '[%d (%.2f%%) Complete BUSCOs; %d (%.2f%%) BUSCOMP Seqs]' % (rnum,rperc,bnum,bperc)
                     elif N:
                         seqtxt = '[%d (%.2f%%) Complete BUSCOs; No BUSCOMP compilation]' % (rnum,rperc)
@@ -3503,7 +3505,7 @@ class BUSCOMP(rje_obj.RJE_Object):
             if self.yesNo('Edit plotting attributes?',default='N',log=False):
                 i = 0; sum = True
                 while rdb.entryNum():
-                    default = 'E'
+                    default = 'X'
                     gentry = rdb.entries(sorted=True)[i]
                     gtext = ''
                     if sum: gtext += '\n' + rdb.entrySummary(gentry)
