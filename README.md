@@ -16,7 +16,7 @@ If you just want to look at example output, please see the [`./example/run/yeast
 
 BUSCOMP is not yet published, but the paper is in preparation. If you want to use BUSCOMP in a publication in the meantime, please cite the GSA2019 presentation on F1000Research:
 
-* **<u>Edwards RJ</u> (2019):** BUSCOMP: BUSCO compilation and comparison – Assessing completeness in multiple genome assemblies [version 1; not peer reviewed]. _F1000Research_ **8:**995 (slides) (doi: [10.7490/f1000research.1116972.1](https://f1000research.com/slides/8-995))
+* **<u>Edwards RJ</u> (2019):** BUSCOMP: BUSCO compilation and comparison – Assessing completeness in multiple genome assemblies [version 1; not peer reviewed]. _F1000Research_ <b>8:</b>995 (slides) (doi: [10.7490/f1000research.1116972.1](https://f1000research.com/slides/8-995))
 
 ---
 
