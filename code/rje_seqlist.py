@@ -19,8 +19,8 @@
 """
 Module:       rje_seqlist
 Description:  RJE Nucleotide and Protein Sequence List Object (Revised)
-Version:      1.32.1
-Last Edit:    05/04/19
+Version:      1.33.0
+Last Edit:    14/08/19
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -87,13 +87,15 @@ Commandline:
     dna=T/F         : Alternative option to indicate dealing with nucleotide sequences [False]
     autoload=T/F    : Whether to automatically load sequences upon initialisation. [True]
     autofilter=T/F  : Whether to automatically apply sequence filtering. [True]
+    duperr=T/F      : Whether identification of duplicate sequence names should raise an error [True]
 
     ### ~ SEQUENCE FORMATTING ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    reformat=X      : Output format for sequence files (fasta/short/acc/acclist/speclist/index/dna2prot/peptides/(q)region/revcomp) [fasta]
+    reformat=X      : Output format for sequence files (fasta/short/acc/acclist/accdesc/speclist/index/dna2prot/peptides/(q)region/revcomp) [fasta]
     rename=T/F      : Whether to rename sequences [False]
     spcode=X        : Species code for non-gnspacc format sequences [None]
     newacc=X        : New base for sequence accession numbers - will rename sequences [None]
     newgene=X       : New gene for renamed sequences (if blank will use newacc or 'seq' if none read) [None]
+    newdesc=FILE    : File of new names for sequences (over-rules other naming). First word should match input [None]
     concatenate=T   : Concatenate sequences into single output sequence named after file [False]
     split=X         : String to be inserted between each concatenated sequence [''].
     seqshuffle=T/F  : Randomly shuffle each sequence without replacement (maintains monomer composition) [False]
@@ -197,6 +199,10 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.31.1 - Fixed edit bug when not in DNA mode.
     # 1.32.0 - Added genomesize and NG50/LG50 to DNA summarise.
     # 1.32.1 - Fixed LG50/L50 bug.
+    # 1.32.2 - Added reformat=accdesc to generate output without gene and species code.
+    # 1.32.3 - Added checkNames() to check for duplicate sequence names and/or lack of gnspacc format.
+    # 1.32.3 - Added duperr=T/F : Whether identification of duplicate sequence names should raise an error [True]
+    # 1.33.0 - Added newdesc=FILE : File of new names for sequences (over-rules other naming). First word should match input [None]
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -217,7 +223,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('SeqList', '1.32.1', 'April 2019', '2011')
+    (program, version, last_edit, copy_right) = ('SeqList', '1.33.0', 'August 2019', '2011')
     description = 'RJE Nucleotide and Protein Sequence List Object (Revised)'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_zen.Zen().wisdom()]
@@ -283,6 +289,7 @@ class SeqList(rje_obj.RJE_Object):
     - Edit = Option edit file for sequence editing [None]
     - Name = Sequence file name - specifies output. [None]
     - NewAcc = New base for sequence accession numbers - will rename sequences [None]
+    - NewDesc=FILE    : File of new names for sequences (over-rules other naming). First word should match input [None]
     - NewGene = New gene for renamed sequences (if blank will use newacc) [None]
     - Region = Query region to use for peptides/qregion reformatting of fasta alignment [1,-1]
     - ReFormat = Output format for sequence files (fasta/short/acc/acclist/speclist) [fasta]
@@ -304,6 +311,7 @@ class SeqList(rje_obj.RJE_Object):
     - AutoLoad = Whether to automatically load sequences upon initialisation. [True]
     - Concatenate = Concatenate sequences into single output sequence named after file [False]
     - DNA = Alternative option to indicate dealing with nucleotide sequences [False]
+    - DupErr = Whether identification of duplicate sequence names should raise an error [True]
     - Edit = Enter sequence edit mode upon loading (will switch seqmode=list) [False]
     - GrepNR = Whether to use grep based forking NR mode (needs sized-sorted one-line-per-sequence fasta) [True]
     - Maker = Whether to extract MAKER2 statistics (AED, eAED, QI) from sequence names [False]
@@ -350,10 +358,10 @@ class SeqList(rje_obj.RJE_Object):
     def _setAttributes(self):   ### Sets Attributes of Object
         '''Sets Attributes of Object.'''
         ### ~ Basics ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-        self.strlist = ['Edit','Name','NameFormat','NewAcc','Region',
+        self.strlist = ['Edit','Name','NameFormat','NewAcc','NewDesc','Region',
                         'SeqDB','SeqDictType','SeqFormat','SeqIn','SeqMode','SeqType','SeqOut',
                         'Reformat','SpCode','SeqNR','NewGene','Split','SortSeq','SplitSeq','TmpDir']
-        self.boollist = ['AutoFilter','AutoLoad','Concatenate','DNA','Edit','GrepNR','Maker',
+        self.boollist = ['AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GrepNR','Maker',
                          'Mixed','ORFMet','ReName','RevCompNR','SizeSort','TwoPass',
                          'SeqIndex','SeqShuffle','Summarise','UseCase']
         self.intlist = ['MinLen','MaxLen','MinORF','RFTran','TerMinORF']
@@ -364,7 +372,7 @@ class SeqList(rje_obj.RJE_Object):
         ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True)
         self.setStr({'SeqMode':'file','ReFormat':'None','Region':'1,-1','TmpDir':rje.makePath('./tmp/')})
-        self.setBool({'AutoFilter':True,'AutoLoad':True,'ORFMet':True,'SeqIndex':True,'GrepNR':True,'RevCompNR':True,'TwoPass':True})
+        self.setBool({'AutoFilter':True,'AutoLoad':True,'DupErr':True,'ORFMet':True,'SeqIndex':True,'GrepNR':True,'RevCompNR':True,'TwoPass':True})
         self.setInt({'MinORF':-1,'RFTran':1,'TerMinORF':-1})
         self.list['Sampler'] = [0,1]
         #self.setInt({})
@@ -385,12 +393,13 @@ class SeqList(rje_obj.RJE_Object):
                 self._cmdRead(cmd,type='file',att='SeqDB',arg='fasdb')  # No need for arg if arg = att.lower()
                 self._cmdRead(cmd,type='str',att='SortSeq',arg='seqsort')  # No need for arg if arg = att.lower()
                 self._cmdReadList(cmd,'str',['NewAcc','NewGene','Region','SeqFormat','SeqMode','ReFormat','SpCode','SeqType','Split','SortSeq','SplitSeq'])
-                self._cmdReadList(cmd,'file',['Edit','SeqDB','SeqIn','SeqOut'])
+                self._cmdReadList(cmd,'file',['Edit','NewDesc','SeqDB','SeqIn','SeqOut'])
+                self._cmdReadList(cmd,'file',['Edit','NewDesc','SeqDB','SeqIn','SeqOut'])
                 self._cmdReadList(cmd,'path',['TmpDir'])
                 self._cmdReadList(cmd,'int',['MinLen','MaxLen','MinORF','RFTran','TerMinORF'])
                 self._cmdReadList(cmd,'num',['GenomeSize'])
                 self._cmdReadList(cmd,'nlist',['Sampler'])
-                self._cmdReadList(cmd,'bool',['Align','AutoFilter','AutoLoad','Concatenate','DNA','Edit','GrepNR','Maker','Mixed','ORFMet','ReName','RevCompNR','SizeSort','SeqIndex','SeqNR','SeqShuffle','Summarise','TwoPass','UseCase'])
+                self._cmdReadList(cmd,'bool',['Align','AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GrepNR','Maker','Mixed','ORFMet','ReName','RevCompNR','SizeSort','SeqIndex','SeqNR','SeqShuffle','Summarise','TwoPass','UseCase'])
             except: self.errorLog('Problem with cmd:%s' % cmd)
         ## ~ [1a] ~ Tidy Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
         if self.getStrLC('SeqMode') == 'tuple': self.setStr({'SeqMode':'list'})
@@ -420,7 +429,7 @@ class SeqList(rje_obj.RJE_Object):
             self.warnLog('rftran=%d not recognised: will use rftran=1' % self.getInt('RFTran'))
             self.setInt({'RFTran':1})
         ## ~ [1b] ~ REST Command setup/adjustment ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-        if self.getStrLC('Rest') in string.split('fasta/short/acc/acclist/speclist/index/dna2prot/rna2prot/translate/nt2prot/peptides/qregion/region','/'):
+        if self.getStrLC('Rest') in string.split('fasta/short/acc/acclist/accdesc/speclist/index/dna2prot/rna2prot/translate/nt2prot/peptides/qregion/region','/'):
             self.setStr({'ReFormat':self.getStrLC('Rest')})
             self.dict['Output'][self.getStrLC('Rest')] = 'SeqOut'
         elif self.getStrLC('Rest') and self.getStrLC('ReFormat'):
@@ -998,7 +1007,9 @@ class SeqList(rje_obj.RJE_Object):
                 seqdata['LG50Count'] = -1
             # GC content
             if self.dna():
-                seqdata['GCPC'] = 100.0 * seqdata['GC'] / (float(sumlen) - seqdata['GapLength'])
+                if (float(sumlen) - seqdata['GapLength']) > 0:
+                    seqdata['GCPC'] = 100.0 * seqdata['GC'] / (float(sumlen) - seqdata['GapLength'])
+                else: seqdata['GCPC'] = -1
                 self.printLog('#SUM','GC content: %.2f%%' % seqdata['GCPC'])
                 self.printLog('#SUM','Gap (N) length: %s (%.2f%%)' % (rje.iStr(seqdata['GapLength']),100.0 * seqdata['GapLength'] / float(sumlen)))
             return seqdata
@@ -1078,6 +1089,7 @@ class SeqList(rje_obj.RJE_Object):
         >> keepsprotgene:bool[False] = Whether to keep SwissProt gene if recognised.
         '''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            if self.getStrLC('NewDesc'): return self.newDesc()
             #x#if self.getStr('NewAcc').lower() in ['','none']: return False
             newgene = self.getStrLC('NewGene')
             if not self.getStrLC('NewGene'):
@@ -1133,6 +1145,52 @@ class SeqList(rje_obj.RJE_Object):
             self.setStr({'SeqIn':outfile})
         except: self.errorLog('Problem during %s rename.' % self); return False   # Tidy failed
 #########################################################################################################################
+    def newDesc(self):   ### Renames sequences and saves them to file before reloading as normal
+        '''
+        Renames sequences and saves them to file.
+        >> keepsprotgene:bool[False] = Whether to keep SwissProt gene if recognised.
+        '''
+        try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            if not rje.exists(self.getStr('NewDesc')):
+                raise IOError('New description file newdesc="%s" not found!' % self.getStr('NewDesc'))
+            ## ~ [0a] ~ Make description dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            newdesc = {}
+            for dline in open(self.getStr('NewDesc'),'r').readlines():
+                if not dline: continue
+                descdata = string.split(rje.chomp(dline),maxsplit=1)
+                if descdata[0]:
+                    if len(descdata) > 1: newdesc[descdata[0]] = descdata[1]
+                    else: newdesc[descdata[0]] = ''
+            ## ~ [0b] ~ Setup output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            outfile = self.getStr('SeqOut')
+            if outfile == self.getStr('SeqIn'): outfile = ''
+            if self.getBool('AutoFilter') or outfile.lower() in ['','none']: outfile = '%s.new.fas' % rje.baseFile(self.getStr('SeqIn'))
+            else: self.setStr({'SeqOut':'None'})
+            rje.backup(self,outfile)
+            ### ~ [1] Rename Sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            IN = open(self.getStr('SeqIn'),'r')
+            OUT = open(outfile,'a')
+            seqx = 0; descx = 0; blankx = 0
+            ## ~ [1a] Process sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            iline = IN.readline(); name = None; seq = None
+            while iline:
+                if iline[:1] == '>':
+                    name = rje.chomp(iline)[1:]
+                    seqx += 1
+                    sname = string.split(name)[0]
+                    if sname in newdesc:
+                        if newdesc[sname]: name = '%s %s' % (sname,newdesc[sname])
+                        else: name = sname; blankx += 1
+                        descx += 1
+                    OUT.write('>%s\n' % name)
+                    self.progLog('\r#DESC','Updating %s descriptions' % rje.iStr(seqx))
+                else: OUT.write(iline)
+                iline = IN.readline()
+            self.printLog('\r#DESC','Updated %s descriptions for %s sequences (%s blank) -> %s' % (rje.iStr(descx),rje.iStr(seqx),rje.iStr(blankx),outfile))
+            IN.close(); OUT.close()
+            self.setStr({'SeqIn':outfile})
+        except: self.errorLog('Problem during %s newDesc.' % self); return False   # Rename failed
+#########################################################################################################################
     def sizeSort(self,nodup=True):     ### Sort sequences by size and removes duplicates then saves them to file before reloading as normal
         '''Removes redundancy from sequences and saves them to file before reloading as normal.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -1154,7 +1212,9 @@ class SeqList(rje_obj.RJE_Object):
                 line = rje.chomp(SEQ.readline())
                 if line.find('>') == 0:                                     # New Sequence
                     if sequence and name:
-                        if nodup and name in dupcheck: self.dict['Filter']['Duplicate'] += 1
+                        if nodup and name in dupcheck:
+                            self.dict['Filter']['Duplicate'] += 1
+                            if self.getBool('DupErr'): raise ValueError('Duplicate sequence name: "%s". Switch duperr=F to try to ignore.' % name)
                         else:
                             slen = len(sequence)
                             if slen not in sizedict: sizedict[slen] = []
@@ -1164,7 +1224,9 @@ class SeqList(rje_obj.RJE_Object):
                 else: sequence += line[0:]
                 fpos = SEQ.tell()
             if sequence and name:
-                if nodup and name in dupcheck: self.dict['Filter']['Duplicate'] += 1
+                if nodup and name in dupcheck:
+                    self.dict['Filter']['Duplicate'] += 1
+                    if self.getBool('DupErr'): raise ValueError('Duplicate sequence name: "%s". Switch duperr=F to try to ignore.' % name)
                 else:
                     slen = len(sequence)
                     if slen not in sizedict: sizedict[slen] = []
@@ -1219,7 +1281,9 @@ class SeqList(rje_obj.RJE_Object):
                 if fpos < fend: line = rje.chomp(SEQ.readline())
                 if line.find('>') == 0 or fpos >= fend:   # New Sequence or end of file
                     if sequence and name:
-                        if nodup and name in dupcheck: self.dict['Filter']['Duplicate'] += 1
+                        if nodup and name in dupcheck:
+                            self.dict['Filter']['Duplicate'] += 1
+                            if self.getBool('DupErr'): raise ValueError('Duplicate sequence name: "%s". Switch duperr=F to try to ignore.' % name)
                         else:
                             if sortmode.startswith('siz'): skey = len(sequence)
                             elif sortmode.startswith('seq'):
@@ -1816,11 +1880,35 @@ class SeqList(rje_obj.RJE_Object):
                 self.printLog('#INDEX','Index file %s made' % indexfile,screen=screen)
 
             ### ~ [4] ~ Summarise ignored duplicate sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if nodup and self.dict['Filter']['Duplicate']: self.printLog('\r#DUP','%s duplicate sequences ignored' % (rje.iStr(self.dict['Filter']['Duplicate'])),screen=screen)
+            if nodup and self.dict['Filter']['Duplicate']:
+                if self.getBool('DupErr'): raise ValueError('%s+ duplicate sequences. Switch duperr=F to try to ignore.' % rje.iStr(self.dict['Filter']['Duplicate']))
+                self.printLog('\r#DUP','%s duplicate sequences ignored' % (rje.iStr(self.dict['Filter']['Duplicate'])),screen=screen)
             if 'Sequence unavailable' in self.dict['Filter']: self.printLog('\r#NOSEQ','%s unavailable sequences ignored' % (rje.iStr(self.dict['Filter']['Sequence unavailable'])),screen=screen)
             #!# Add rest of code #!#
             return True
         except: self.errorLog('%s.loadSeq error' % self.prog()); return False
+#########################################################################################################################
+    def checkNames(self,gnspacc=False,dupnames=True,warnonly=False):    ### Check sequence names
+        '''
+        Check sequence names.
+        :param gnspacc:bool [False] = Whether to check for Gene_SPEC__AccNum format
+        :param dupnames:bool [True] = Whether to check for duplicate short names
+        :param warnonly:bool [False] = Whether to simply warn about issues, or raise ValueError
+        :return:
+        '''
+        try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            names = []
+            for seq in self.seqs():
+                sname = self.shortName(seq)
+                if dupnames and sname in names:
+                    if not warnonly: raise ValueError('Duplicated sequence name "%s" detected!' % sname)
+                    self.warnLog('Duplicated sequence name "%s" detected!' % sname)
+                if gnspacc and not rje.matchExp('(\S+_\S+__\S+)',sname):
+                    if not warnonly: raise ValueError('Sequence "%s" not in SLiMSuite gene_SPEC__AccNum format!' % sname)
+                    self.warnLog('Sequence "%s" not in SLiMSuite gene_SPEC__AccNum format!' % sname,warntype='gnspacc',suppress=True)
+                names.append(sname)
+            return True
+        except: self.errorLog('Problem encountered during checkNames()'); raise
 #########################################################################################################################
     def checkFileType(self,seqfile,filetype=None):  ### Checks file format if type given. Returns filetype, or False if wrong.
         '''
@@ -1890,8 +1978,11 @@ class SeqList(rje_obj.RJE_Object):
                 fkey = string.split(name)[0]
                 if makeindex:
                     if fkey in self.dict['SeqDict']:
-                        if nodup: self.dict['Filter']['Duplicate'] += 1; return
-                        else: self.errorLog('Sequence name "%s" occurs 2+ times!' % fkey)
+                        if nodup:
+                            self.dict['Filter']['Duplicate'] += 1
+                            if self.getBool('DupErr'): raise ValueError('Duplicate sequence name: "%s". Switch duperr=F to try to ignore.' % fkey)
+                            return
+                        else: self.warnLog('Sequence name "%s" occurs 2+ times!' % fkey)
                     else: self.dict['SeqDict'][fkey] = fpos
                     self.list['Seq'].append(fpos)
                 else: self.list['Seq'].append(fpos)     #!# No duplicate checking if index not used #!#
@@ -1899,8 +1990,11 @@ class SeqList(rje_obj.RJE_Object):
             elif self.mode() == 'index':    # No loading of sequences. Use index file to find sequences on the fly.
                 fkey = string.split(name)[0]
                 if fkey in self.dict['SeqDict']:
-                    if nodup: self.dict['Filter']['Duplicate'] += 1; return
-                    else: self.errorLog('Sequence name "%s" occurs 2+ times!' % fkey)
+                    if nodup:
+                        self.dict['Filter']['Duplicate'] += 1
+                        if self.getBool('DupErr'): raise ValueError('Duplicate sequence name: "%s". Switch duperr=F to try to ignore.' % fkey)
+                        return
+                    else: self.warnLog('Sequence name "%s" occurs 2+ times!' % fkey)
                 else: self.dict['SeqDict'][fkey] = fpos
                 return
             ### ~ [3] ~ Sequence Processing and filtering ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -1910,7 +2004,9 @@ class SeqList(rje_obj.RJE_Object):
                 return self.OLD_addSeq(name,sequence)     # Temporary method
             ### ~ [5] ~ Reduced ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             elif self.mode() in ['list','tuple']:     # Lists of (name,sequence) tuples only.
-                if nodup and (name,sequence) in self.list['Seq']: self.dict['Filter']['Duplicate'] += 1
+                if nodup and (name,sequence) in self.list['Seq']:
+                    self.dict['Filter']['Duplicate'] += 1
+                    if self.getBool('DupErr'): raise ValueError('Duplicate sequence: "%s". Switch duperr=F to try to ignore.' % name)
                 else: self.list['Seq'].append((name,sequence))
             elif self.mode() == 'db':       # Store sequence data in database object.
                 db = self.db(self.getStr('Name'))
@@ -2246,6 +2342,13 @@ class SeqList(rje_obj.RJE_Object):
                     try: (gene,spec,acc) = rje.matchExp('^(\S+)_(\S+)__(\S+)',name)
                     except: acc = string.split(name)[0]; gene = 'seq'; spec = 'UNKSP'
                     if reformat in ['acc','accfas']: SEQOUT.write('>%s\n%s\n' % (acc,sequence))
+                    elif reformat == 'accdesc':
+                        try:
+                            desc = string.split(name,maxsplit=1)[1]
+                            SEQOUT.write('>%s %s\n' % (acc,desc))
+                        except:
+                            SEQOUT.write('>%s\n' % (acc))
+                        SEQOUT.write('%s\n' % (sequence))
                     elif reformat == 'acclist': SEQOUT.write('%s\n' % (acc))
                     elif reformat == 'speclist':
                         if spec not in speclist: speclist.append(spec)

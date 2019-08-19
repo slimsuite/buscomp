@@ -19,8 +19,8 @@
 """
 Module:       rje_db
 Description:  R Edwards Relational Database module
-Version:      1.9.1
-Last Edit:    09/03/19
+Version:      1.9.2
+Last Edit:    19/08/19
 Copyright (C) 2007  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -81,6 +81,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.8.6 - Minor IndexReport tweak.
     # 1.9.0 - Added comment output to saveToFile().
     # 1.9.1 - Updated logging of adding/removing fields: default is now when debugging only.
+    # 1.9.2 - Tweaked entrySummary - added collapse=True.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -99,7 +100,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo():     ### Makes Info object
     '''Makes rje.Info object for program.'''
-    (program, version, last_edit, copy_right) = ('RJE_DB', '1.9.1', 'March 2019', '2008')
+    (program, version, last_edit, copy_right) = ('RJE_DB', '1.9.2', 'August 2019', '2008')
     description = 'R Edwards Relational Database module'
     author = 'Dr Richard J. Edwards.'
     comments = ['Please report bugs to Richard.Edwards@UNSW.edu.au']
@@ -807,12 +808,15 @@ class Table(rje.RJE_Object):
         self.dict['Data'] = {}
         self.dict['Index'] = {}
 #########################################################################################################################
-    def entrySummary(self,entry,fields=[],invert=False):   ### Returns a string summary of an entry - useful for debugging etc.
+    def entrySummary(self,entry,fields=[],invert=False,collapse=False):   ### Returns a string summary of an entry - useful for debugging etc.
         '''Returns a string summary of an entry - useful for debugging etc.'''
         if not fields: fields = self.fields()
-        estr = 'Entry "%s"\n' % self.makeKey(entry)
+        estr = 'Entry "%s"\n' % str(self.makeKey(entry))
+        if collapse: estr += '|--'
         for field in self.fields():
-            if field in fields != invert: estr += '|-- %s:\t%s\n' % (field,entry[field])
+            if field in fields != invert:
+                if collapse: estr += ' %s:"%s";' % (field,entry[field])
+                else: estr += '|-- %s:\t%s\n' % (field,entry[field])
         return estr
 #########################################################################################################################
     def indexDataKeys(self,index,value=None):     ### Return list of datakeys from index & value

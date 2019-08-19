@@ -19,8 +19,8 @@
 """
 Module:       rje_obj
 Description:  Contains revised General Object templates for Rich Edwards scripts and bioinformatics programs
-Version:      2.4.1
-Last Edit:    22/05/19
+Version:      2.5.0
+Last Edit:    23/07/19
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -115,6 +115,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 2.3.0 - Added quiet mode to object and stderr output.
     # 2.4.0 - Added vLog() and bugLog() methods.
     # 2.4.1 - Fixed bug where silent=T wasn't running silent.
+    # 2.5.0 - Added flist command type that reads file lines as a list, ignoring commas.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -549,7 +550,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
     def _cmdRead(self,cmd=None,type='str',att=None,arg=None):     ### Sets self.type[att] from commandline command cmd
         '''
         Sets self.type[att] from commandline command cmd.
-        >> type:str = type of attribute (info,path,opt,int,float,min,max,list,clist,glist,ilist,nlist,file)
+        >> type:str = type of attribute (info,path,opt,int,float,min,max,list,flist,clist,glist,ilist,nlist,file)
         >> att:str = attribute (key of dictionary)
         >> arg:str = commandline argument[att.lower()]
         >> cmd:str = commandline command
@@ -584,6 +585,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         elif type == 'date' and rje.matchExp('^(\d\d\d\d)-?(\d\d)-?(\d\d)$',value):
             self.str[att] = '%s-%s-%s' % rje.matchExp('^(\d\d\d\d)-?(\d\d)-?(\d\d)$',value)
         elif type == 'list': self.list[att] = rje.listFromCommand(value)
+        elif type == 'flist': self.list[att] = rje.listFromCommand(value,purelines=True)
         elif type == 'lclist': self.list[att] = rje.listLower(rje.listFromCommand(value))
         elif type == 'uclist': self.list[att] = rje.listUpper(rje.listFromCommand(value))
         ### ~ [2] Special types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###

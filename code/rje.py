@@ -19,8 +19,8 @@
 """
 Module:       rje
 Description:  Contains SLiMSuite and Sequite General Objects
-Version:      4.21.1
-Last Edit:    22/05/19
+Version:      4.22.0
+Last Edit:    22/07/19
 Copyright (C) 2005  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -168,6 +168,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 4.20.0 - Added quiet mode to log object and output of errors to stderr. Fixed rankList(unique=True)
     # 4.21.0 - Added hashlib MD% functions.
     # 4.21.1 - Fixed bug where silent=T wasn't running silent.
+    # 4.22.0 - Added flist command type that reads file lines as a list, ignoring commas.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -357,7 +358,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def _cmdRead(self,cmd=None,type='info',att=None,arg=None):     ### Sets self.type[att] from commandline command cmd
         '''
         Sets self.type[att] from commandline command cmd.
-        >> type:str = type of attribute (info,path,opt,int,float,min,max,list,clist,glist,ilist,nlist,file)
+        >> type:str = type of attribute (info,path,opt,int,float,min,max,list,flist,clist,glist,ilist,nlist,file)
         >> att:str = attribute (key of dictionary)
         >> arg:str = commandline argument[att.lower()]
         >> cmd:str = commandline command
@@ -388,6 +389,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         elif type == 'max' and matchExp('^\d+,(\d+)',value): self.stat[att] = string.atoi(matchExp('^\d+,(\d+)',value)[0])
         elif type in ['min','max'] and matchExp('^(\d+)',value): self.stat[att] = string.atoi(matchExp('^(\d+)',value)[0])
         elif type == 'list': self.list[att] = listFromCommand(value)
+        elif type == 'flist': self.list[att] = listFromCommand(value,purelines=True)
         elif type == 'lclist': self.list[att] = listLower(listFromCommand(value))
         elif type == 'uclist': self.list[att] = listUpper(listFromCommand(value))
         ### ~ [2] Special types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -4549,11 +4551,12 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
         print 'Log problem'
         raise
 #########################################################################################################################
-def listFromCommand(command,checkfile=True):   ### Returns a list object from a given command string
+def listFromCommand(command,checkfile=True,purelines=False):   ### Returns a list object from a given command string
     '''
     Returns a list object from a given command string. Reads list from file if found. If not, will split on commas.
     >> command:string
     >> checkfile:boolean = whether to check for presence of file and read list from it
+    >> purelines:boolean = whether to ignore commas in lines and return a pure list of file content lines [False]
     << comlist:list
     '''
     try:
@@ -4565,7 +4568,7 @@ def listFromCommand(command,checkfile=True):   ### Returns a list object from a 
             comlist = string.split(string.join(comlist,''),'\r')
             comlist = string.split(string.join(comlist,''),'\n')
             while '' in comlist: comlist.remove('')
-            comlist = readDelimit(string.join(comlist,','),',')
+            if not purelines: comlist = readDelimit(string.join(comlist,','),',')
         ### Split list ###
         else: comlist = readDelimit(command,',')
         ### Tidy and return ###

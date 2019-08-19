@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Summary Report"
 author: "yeast BUSCOMP Analysis"
-date: "2019-07-11"
+date: "2019-08-19"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -30,11 +30,11 @@ library(ggrepel)
 
 # BUSCOMP Run Summary
 
-    BUSCOMP V0.7.6: run Thu Jul 11 15:55:06 2019
+    BUSCOMP V0.8.0: run Mon Aug 19 19:59:44 2019
 
 
 
-See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/code/buscomp/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
+See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
 
 **NOTE:** To edit this document, open `yeast.N3L20ID0U.Rmd` in RStudio, edit and re-knit to HTML.
 
@@ -80,7 +80,7 @@ gentable$Genome = rdata$Genome
 rownames(gentable) = gentable[,1]
 gensum = gentable[! is.na(gentable$N),2:6]
 gensum = gensum[! (gensum$Directory == "" & gensum$Fasta == ""),]
-genstat = gentable[! is.na(gentable$SeqNum),c(4,9:18)]
+genstat = gentable[! is.na(gentable$SeqNum),c(4,9:20)]
 busco = gentable[,c(4,21:25)]
 busco$Single = busco$Complete
 busco$Complete = busco$Single + busco$Duplicated
@@ -444,9 +444,15 @@ buscompSeqPercPlot = function(sumdata,title="",maketext=TRUE){
   par(mar=c(5,4,4,2)+0.1)
 }
 
-buscompSeqPercPlotNA = function(sumdata,title=""){
+buscompSeqPercPlotNA = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
   rownames(sumdata) = sumdata$Genome
+  if(maketext){
+    sumdata$text = ""
+    for(i in 1:nrow(sumdata)){
+      sumdata$text[i] = paste0("C:",sumdata$Single[i]+sumdata$Duplicated[i]," [S:",sumdata$Single[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
+    }
+  }
   N = sum(sumdata[1,2:8])
   my_colors <- c("#56B4E9", "#3492C7", "#F0E442", "#F0E442", "#F04442", "#F04442", "white")
   par(mar=c(5,12,4,1)+0.1)
@@ -534,15 +540,15 @@ Plots for `Missing` BUSCO genes are only produced for `fullreport=T` output.
 
 # Appendix: BUSCOMP run details
 
-    BUSCOMP V0.7.6: run Thu Jul 11 15:55:06 2019
+    BUSCOMP V0.8.0: run Mon Aug 19 19:59:44 2019
 
 This analysis was run in:
 
-    /Users/redwards/code/buscomp/example/run
+    /Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run
 
-* Log file: <a href="/Users/redwards/code/buscomp/example/run/yeast.log">`/Users/redwards/code/buscomp/example/run/yeast.log`</a>
+* Log file: <a href="/Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run/yeast.log">`/Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run/yeast.log`</a>
 * Commandline arguments: `ini=../run/example.ini` `i=-1` `forks=4`
-* Full Command List: `minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2` `ini=../run/example.ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
+* Full Command List: `minimap2=/Users/redwards/Bioware/minimap2/minimap2` `ini=../run/example.ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
 
 <a name="Errors" />
 
@@ -555,10 +561,18 @@ BUSCOMP returned no runtime errors.
 See run log for further details:
 
 ```
-#WARN	00:00:03	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
-#WARN	00:00:03	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
 #WARN	00:00:04	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
 #WARN	00:00:04	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
+#WARN	00:00:04	alnseq=F mode is developmental - please report odd behaviour.
+#WARN	00:00:08	31 end extensions (endextend=10): may be some minor identity underestimates.
+#WARN	00:00:39	alnseq=F mode is developmental - please report odd behaviour.
+#WARN	00:00:44	31 end extensions (endextend=10): may be some minor identity underestimates.
+#WARN	00:01:14	alnseq=F mode is developmental - please report odd behaviour.
+#WARN	00:01:15	4 end extensions (endextend=10): may be some minor identity underestimates.
+#WARN	00:01:17	alnseq=F mode is developmental - please report odd behaviour.
+#WARN	00:01:21	40 end extensions (endextend=10): may be some minor identity underestimates.
 ```
 
 ---
@@ -580,4 +594,4 @@ See run log for further details:
 ---
 
 
-<small>Output generated by BUSCOMP v0.7.6 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>
+<small>Output generated by BUSCOMP v0.8.0 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>
