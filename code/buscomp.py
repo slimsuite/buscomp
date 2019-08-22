@@ -19,7 +19,7 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.8.1
+Version:      0.8.2
 Last Edit:    22/08/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
@@ -92,7 +92,7 @@ Commandline:
     loadsummary=T/F : Use existing genome summaries including NG50 from `*.genomes.tdt`, if present [True]
     ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     minimap2=PROG   : Full path to run minimap2 [minimap2]
-    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
+    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
     minlocid=INT    : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
     minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [20]
     uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [True]
@@ -147,6 +147,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.7.9 - Added listing of numbers to BUSCOMP Missing charts.
     # 0.8.0 - Added alnseq=F as default PAF parsing mode for improved efficiency.
     # 0.8.1 - Set endextend=0 due to bug.
+    # 0.8.2 - Fixed full RMD chart labelling bug. Fixed endextend bug and reinstated endextend=10 default.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -190,7 +191,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.1', 'August 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.2', 'August 2019', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -2680,7 +2681,7 @@ class BUSCOMP(rje_obj.RJE_Object):
             outdir = rje.makePath('%s.minimap/' % self.baseFile())
             rje.mkDir(self,outdir)
             gdb = self.db('genomes')
-            pafdefault = ['uniqueout=T','localaln=F','mockblast=F','uniquehit=T','alnseq=F','endextend=0',
+            pafdefault = ['uniqueout=T','localaln=F','mockblast=F','uniquehit=T','alnseq=F','endextend=10',
                           'minlocid=%d' % self.getInt('MinLocID'),'minloclen=%d' % self.getInt('MinLocLen')]
             pafopt = {'p':self.getNum('MMPCut'),'N':self.getInt('MMSecNum')}
             buscofas = '%s.buscomp.fasta' % self.baseFile()
@@ -4274,7 +4275,7 @@ buscompSeqPercPlotNA = function(sumdata,title="",maketext=TRUE){
   if(maketext){
     sumdata$text = ""
     for(i in 1:nrow(sumdata)){
-      sumdata$text[i] = paste0("C:",sumdata$Single[i]+sumdata$Duplicated[i]," [S:",sumdata$Single[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
+      sumdata$text[i] = paste0("C:",sumdata$Complete[i]+sumdata$Duplicated[i]," [S:",sumdata$Complete[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
     }
   }
   N = sum(sumdata[1,2:8])

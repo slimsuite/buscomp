@@ -19,7 +19,7 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.7.1
+Version:      0.7.2
 Last Edit:    22/08/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
@@ -94,6 +94,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.6.1 - Added additional error-handling for CS parsing errors.
     # 0.7.0 - Added alnseq=T/F : Whether to use alnseq-based processing (True) or CS-Gstring processing (dev only) [False]
     # 0.7.1 - Disabled endextend due to bug.
+    # 0.7.2 - Fixed alnlen bug - minimap2 ignore Ns for alignment length calculation. Fixed endextend bug.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -294,7 +295,7 @@ class PAF(rje_obj.RJE_Object):
         self.filelist = []
         self.listlist = []
         self.dictlist = ['MapOpt']
-        self.objlist = []
+        self.objlist = ['Assembly','Reference']
         ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True,setfile=True)
         self.setStr({'Minimap2':'minimap2','TmpDir':'./tmp/'})
@@ -335,8 +336,8 @@ class PAF(rje_obj.RJE_Object):
                 #self._cmdReadList(cmd,'cdictlist',['Att']) # As cdict but also enters keys into list
             except: self.errorLog('Problem with cmd:%s' % cmd)
         #if not self.getBool('AlnSeq'): self.warnLog('alnseq=F mode is developmental - please report odd behaviour.')
-        if self.getInt('EndExtend') > 0:
-            self.warnLog('Endextend>0 bug may cause some incorrect trimming. Watch for alignment positions warnings and consider running with endextend=0')
+        #if self.getInt('EndExtend') > 0:
+        #    self.warnLog('Endextend>0 bug may cause some incorrect trimming. Watch for alignment positions warnings and consider running with endextend=0')
 #########################################################################################################################
     ### <2> ### Main Class Backbone                                                                                     #
 #########################################################################################################################
@@ -380,15 +381,17 @@ class PAF(rje_obj.RJE_Object):
             ## ~ [1a] Database Object ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             db = self.obj['DB'] = rje_db.Database(self.log,self.cmd_list+['tuplekeys=T','basefile=%s' % self.baseFile()])
             ## ~ [1b] Reference sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-            if not self.getStrLC('Reference'):
+            if self.getBool('AlnSeq') and not self.getStrLC('Reference'):
                 raise ValueError('Reference missing: %s' % rje.argString(self.cmd_list))
-            self.printLog('#REFIN','Loading reference (target) sequences.')
-            self.obj['Reference'] = rje_seqlist.SeqList(self.log,self.cmd_list+['seqin=%s' % self.getStr('Reference'),'autoload=T','seqmode=file'])
+            if self.getStrLC('Reference'):
+                self.printLog('#REFIN','Loading reference (target) sequences.')
+                self.obj['Reference'] = rje_seqlist.SeqList(self.log,self.cmd_list+['seqin=%s' % self.getStr('Reference'),'autoload=T','seqmode=file'])
             ## ~ [1c] Reference sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-            if not self.getStrLC('SeqIn'):
+            if self.getBool('AlnSeq') and not self.getStrLC('SeqIn'):
                 raise ValueError('SeqIn missing: %s' % rje.argString(self.cmd_list))
-            self.printLog('#SEQIN','Loading assembly (query) sequences.')
-            self.obj['Assembly'] = rje_seqlist.SeqList(self.log,self.cmd_list+['seqin=%s' % self.getStr('SeqIn'),'autoload=T','seqmode=file'])
+            if self.getStrLC('SeqIn'):
+                self.printLog('#SEQIN','Loading assembly (query) sequences.')
+                self.obj['Assembly'] = rje_seqlist.SeqList(self.log,self.cmd_list+['seqin=%s' % self.getStr('SeqIn'),'autoload=T','seqmode=file'])
             return True     # Setup successful
         except: self.errorLog('Problem during %s setup.' % self.prog()); return False  # Setup failed
 #########################################################################################################################
@@ -499,9 +502,11 @@ class PAF(rje_obj.RJE_Object):
                 self.progLog('#ALN','Converting PAF cs alignments: %.1f%%' % (lx/ltot)); lx += 100.0
                 if not lentry['cs']: continue
                 cstats = self.statsFromCS(lentry['cs'])
+                #if cstats['n'] > 0 and cstats['AlnLen'] == (lentry['Length'] + cstats['n']):
+                #    self.debug('AlnLen should not include the %d n' % cstats['n'])
                 if cstats['AlnLen'] != lentry['Length']:
                     badlenx += 1
-                    #self.deBug('%s\n-> %s -> %s' % (lentry,lentry['cs'],cstats))
+                    self.deBug('%s\n-> %s -> %s' % (locdb.entrySummary(lentry,collapse=True),lentry['cs'],cstats))
                 if cstats[':'] != lentry['Identity']:
                     badidx += 1
                     #self.deBug('%s\n-> %s -> %s' % (lentry,lentry['cs'],cstats))
@@ -633,16 +638,18 @@ class PAF(rje_obj.RJE_Object):
 
             ### ~ [3] Add missing Queries from SeqList file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             seqlist = self.obj['Assembly']
-            for seq in seqlist.seqs():
-                sname = seqlist.shortName(seq)
-                sdesc = seqlist.seqDesc(seq)
-                if sname not in sumdb.dataKeys():
-                    slen = seqlist.seqLen(seq)
-                    sentry = {'Qry':sname,'HitNum':0,'MaxScore':0,'EVal':1000,'Description':sdesc,'Length':slen,
-                              'Coverage':0,'Identity':0,'Positives':0,
-                              'CovHit':0,'QryStart':0,'QryEnd':0,'Qry_AlnLen':0.0,'Qry_AlnID':0.0}
-                    sumdb.addEntry(sentry)
-                else: sumdb.data(sname)['Description'] = sdesc
+            if not seqlist or not seqlist.seqNum(): self.warnLog('No assembly/seqin file loaded - cannot add missing queries to hitsum')
+            else:
+                for seq in seqlist.seqs():
+                    sname = seqlist.shortName(seq)
+                    sdesc = seqlist.seqDesc(seq)
+                    if sname not in sumdb.dataKeys():
+                        slen = seqlist.seqLen(seq)
+                        sentry = {'Qry':sname,'HitNum':0,'MaxScore':0,'EVal':1000,'Description':sdesc,'Length':slen,
+                                  'Coverage':0,'Identity':0,'Positives':0,
+                                  'CovHit':0,'QryStart':0,'QryEnd':0,'Qry_AlnLen':0.0,'Qry_AlnID':0.0}
+                        sumdb.addEntry(sentry)
+                    else: sumdb.data(sname)['Description'] = sdesc
 
             ### ~ [4] Save to file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if save: sumdb.saveToFile(sfdict={'Qry_AlnLen':4,'Qry_AlnID':4})
@@ -2017,6 +2024,7 @@ class PAF(rje_obj.RJE_Object):
         << dist: dictionary of elements, plus 'AlnLen', 'QryGS', 'SbjGS', 'QryCov', 'SbjCov'
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            ncount = cs.count('n')
             csdict = {}
             aln = cs
             if aln.startswith('Z:'): aln = aln[2:]
@@ -2053,12 +2061,13 @@ class PAF(rje_obj.RJE_Object):
                 elif cs[0] in '+_': qrygs.append('-%d' % ilen)
                 else: raise ValueError('Unexpected cs element: %s' % cs)
             ### ~ [3] Finish ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            csdict['AlnLen'] = sum(csdict.values()) - csdict['~'] - csdict['_']  #i# Ignore introns
+            csdict['AlnLen'] = sum(csdict.values()) - csdict['~'] - csdict['_'] - ncount  #i# Ignore introns and n's
+            csdict['n'] = ncount
             csdict['QryGS'] = string.join(qrygs,'')
             csdict['SbjGS'] = string.join(sbjgs,'')
             #i# Ignore introns
-            csdict['QryCov'] = csdict[':'] + csdict['*'] + csdict['+'] + csdict['!'] #x# + csdict['_']
-            csdict['SbjCov'] = csdict[':'] + csdict['*'] + csdict['-'] #x# + csdict['~']
+            csdict['QryCov'] = csdict[':'] + csdict['*'] + csdict['+'] + csdict['!'] + csdict['?'] #x# + csdict['_']
+            csdict['SbjCov'] = csdict[':'] + csdict['*'] + csdict['-'] + csdict['?'] #x# + csdict['~']
             return csdict
         except: self.errorLog('%s.statsFromCS error' % self.prog()); return False
 #########################################################################################################################
