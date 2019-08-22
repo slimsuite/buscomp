@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.8.0
-Last Edit:    19/08/19
+Version:      0.8.1
+Last Edit:    22/08/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -92,7 +92,7 @@ Commandline:
     loadsummary=T/F : Use existing genome summaries including NG50 from `*.genomes.tdt`, if present [True]
     ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     minimap2=PROG   : Full path to run minimap2 [minimap2]
-    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
+    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
     minlocid=INT    : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
     minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [20]
     uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [True]
@@ -146,6 +146,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.7.8 - Fixed a bug where BUSCOMP was not being compiled for assemblies without BUSCO data.
     # 0.7.9 - Added listing of numbers to BUSCOMP Missing charts.
     # 0.8.0 - Added alnseq=F as default PAF parsing mode for improved efficiency.
+    # 0.8.1 - Set endextend=0 due to bug.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -171,7 +172,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [ ] : Modify use of Identical to be a special subcategory of Single Complete, which can then be compiled.
     # [ ] : Test summarise=F.
     # [Y] : Add restrict=T/F option to restrict output to genomes with loaded prefixes (for re-running on reduced data).
-    # [ ] : Finish documentation in run() docstring.
+    # [Y] : Finish documentation in run() docstring.
     # [ ] : Make the left margin for BUSCO plots more responsive to Genome labels.
     # [ ] : Consider dropping the localnid setting in favour of a global minID threshold?
     # [Y] : minlocid threshold update inc. docs
@@ -182,14 +183,14 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [ ] : Add group plot output.
     # [ ] : Make the plot unit scaling more responsive to limits, e.g. Mb and straight counts.
     # [ ] : Add option for BLAST+ replacement of Minimap2
-    # [ ] : Add checking of input sequence files: fasta format and unique names.
-    # [ ] : Check/fix bug with buscompseq=F.
-    # [ ] : Update GABLAM statistics to work directly from CS strings.
+    # [Y] : Add checking of input sequence files: fasta format and unique names.
+    # [Y] : Check/fix bug with buscompseq=F.
+    # [Y] : Update GABLAM statistics to work directly from CS strings.
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.0', 'August 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.1', 'August 2019', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -2679,7 +2680,7 @@ class BUSCOMP(rje_obj.RJE_Object):
             outdir = rje.makePath('%s.minimap/' % self.baseFile())
             rje.mkDir(self,outdir)
             gdb = self.db('genomes')
-            pafdefault = ['uniqueout=T','localaln=F','mockblast=F','uniquehit=T','alnseq=F',
+            pafdefault = ['uniqueout=T','localaln=F','mockblast=F','uniquehit=T','alnseq=F','endextend=0',
                           'minlocid=%d' % self.getInt('MinLocID'),'minloclen=%d' % self.getInt('MinLocLen')]
             pafopt = {'p':self.getNum('MMPCut'),'N':self.getInt('MMSecNum')}
             buscofas = '%s.buscomp.fasta' % self.baseFile()

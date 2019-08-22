@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.7.0
-Last Edit:    17/08/19
+Version:      0.7.1
+Last Edit:    22/08/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -61,7 +61,7 @@ Commandline:
     ### ~ Minimap2 run/mapping options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     minlocid=PERC   : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
     minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [0]
-    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
+    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
     minimap2=PROG   : Full path to run minimap2 [minimap2]
     mapopt=CDICT    : Dictionary of minimap2 options [N:100,p:0.0001,x:asm5]
     mapsplice=T/F   : Switch default minimap2 options to `-x splice -uf -C5` [False]
@@ -93,6 +93,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.6.0 - Added CS alignment manipulation methods.
     # 0.6.1 - Added additional error-handling for CS parsing errors.
     # 0.7.0 - Added alnseq=T/F : Whether to use alnseq-based processing (True) or CS-Gstring processing (dev only) [False]
+    # 0.7.1 - Disabled endextend due to bug.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -119,11 +120,12 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [ ] : Add fasta output of hit sequences. (Account for introns.)
     # [Y] : Possible update of cs string when using endextend
     # [ ] : Add minlocid etc. cutoffs to speed up processing.
+    # [ ] : Fixed endextend bug
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.7.0', 'August 2019', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.7.1', 'August 2019', '2019')
     description = 'Minimap2 PAF parser and converter'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -261,7 +263,7 @@ class PAF(rje_obj.RJE_Object):
     - UniqueOut=T/F   : Whether to output *.qryunique.tdt and *.hitunique.tdt tables of unique coverage [True]
 
     Int:integer
-    - EndExtend=X         : Extend minimap2 hits to end of sequence if with X bp [10]
+    - EndExtend=X         : Extend minimap2 hits to end of sequence if with X bp [0]
     - MinLocID=PERC   : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
     - MinLocLen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [0]
 
@@ -297,7 +299,7 @@ class PAF(rje_obj.RJE_Object):
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True,setfile=True)
         self.setStr({'Minimap2':'minimap2','TmpDir':'./tmp/'})
         self.setBool({'AlnSeq':True,'LocalAln':False,'MapSplice':False,'MockBLAST':True,'UniqueHit':False,'UniqueOut':True})
-        self.setInt({'EndExtend':10,'MinLocLen':1})
+        self.setInt({'EndExtend':0,'MinLocLen':1})
         self.setNum({'MinLocID':0.0})
         self.dict['MapOpt'] = {} #'N':'100','p':'0.0001','x':'asm5'}
         ### ~ Other Attributes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -332,7 +334,9 @@ class PAF(rje_obj.RJE_Object):
                 self._cmdReadList(cmd,'cdict',['MapOpt']) # Splits comma separated X:Y pairs into dictionary
                 #self._cmdReadList(cmd,'cdictlist',['Att']) # As cdict but also enters keys into list
             except: self.errorLog('Problem with cmd:%s' % cmd)
-        if not self.getBool('AlnSeq'): self.warnLog('alnseq=F mode is developmental - please report odd behaviour.')
+        #if not self.getBool('AlnSeq'): self.warnLog('alnseq=F mode is developmental - please report odd behaviour.')
+        if self.getInt('EndExtend') > 0:
+            self.warnLog('Endextend>0 bug may cause some incorrect trimming. Watch for alignment positions warnings and consider running with endextend=0')
 #########################################################################################################################
     ### <2> ### Main Class Backbone                                                                                     #
 #########################################################################################################################
