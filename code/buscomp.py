@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.8.2
-Last Edit:    22/08/19
+Version:      0.8.3
+Last Edit:    29/10/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -87,7 +87,7 @@ Commandline:
     ggplot=T/F      : Whether to use ggplot code for plotting [True]
     fullreport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
     missing=T/F     : Generate summary tables for sets of Missing genes for each assembly/group [True]
-    dochtml=T/F     : Generate HTML BUSCOMP documentation (*.info.html) instead of main run [False]
+    dochtml=T/F     : Generate HTML BUSCOMP documentation (*.docs.html) instead of main run [False]
     summarise=T/F   : Include summaries of genomes in main `*.genomes.tdt` output [True]
     loadsummary=T/F : Use existing genome summaries including NG50 from `*.genomes.tdt`, if present [True]
     ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -148,6 +148,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.8.0 - Added alnseq=F as default PAF parsing mode for improved efficiency.
     # 0.8.1 - Set endextend=0 due to bug.
     # 0.8.2 - Fixed full RMD chart labelling bug. Fixed endextend bug and reinstated endextend=10 default.
+    # 0.8.3 - Fixed Unique rating bug with no groups.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -187,11 +188,12 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [Y] : Add checking of input sequence files: fasta format and unique names.
     # [Y] : Check/fix bug with buscompseq=F.
     # [Y] : Update GABLAM statistics to work directly from CS strings.
+    # [ ] : Don't plot BUSCO/BUSCOMP stats if relevant analysis not performed.
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.2', 'August 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.3', 'October 2019', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -455,7 +457,7 @@ class BUSCOMP(rje_obj.RJE_Object):
         rmdreport=T/F   : Generate Rmarkdown report and knit into HTML [True]
         fullreport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
         missing=T/F     : Generate summary tables for sets of Missing genes for each assembly/group [True]
-        dochtml=T/F     : Generate HTML BUSCOMP documentation (*.info.html) instead of main run [False]
+        dochtml=T/F     : Generate HTML BUSCOMP documentation (*.docs.html) instead of main run [False]
         summarise=T/F   : Include summaries of genomes in main `*.genomes.tdt` output [True]
         ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         minimap2=PROG   : Full path to run minimap2 [minimap2]
@@ -3112,6 +3114,8 @@ class BUSCOMP(rje_obj.RJE_Object):
                     if not rje.yesNo('Include group "%s" in unique BUSCO assessment?' % group,default=default[group in redundant]):
                         ugroups.remove(group)
             else: ugroups = self.groupDifference(ugroups,redundant)
+            #i# ugroups is a list of groups not contained in other groups
+            #i# ugenomes is a list of entries corresponding to groups and genomes not in groups
             ugenomes = gdb.entries()
             self.debug('%s' % ugenomes)
             for ugroup in ugroups:
@@ -3126,29 +3130,28 @@ class BUSCOMP(rje_obj.RJE_Object):
             else: self.printLog('#UNIQ','No BUSCO or BUSCOMP data for Unique Complete assessment'); return
             for eog in eoglist:
                 buscomp = busco = 'Incomplete'
+                ubusco = []
+                ubuscomp = []
+
                 # Genomes
                 for gentry in gdb.entries(sorted=True):
                     genome = self.genomeField(gentry)
-                    if genome in self.dict['Groups']: continue
                     if rawdb and genome in rawdb.fields() and rawdb.data(eog)[genome] in ['Complete','Duplicated']:
-                        if busco == 'Incomplete': busco = genome
+                        if gentry in ugroups: ubusco.append(gentry)
+                        if genome in self.dict['Groups']: pass
+                        elif busco == 'Incomplete': busco = genome
                         else: busco = 'Multiple'
                     if busdb and genome in busdb.fields() and busdb.data(eog) and busdb.data(eog)[genome] in ['Complete','Duplicated']:
-                        if buscomp == 'Incomplete': buscomp = genome
+                        if gentry in ugroups: ubuscomp.append(gentry)
+                        if genome in self.dict['Groups']: pass
+                        elif buscomp == 'Incomplete': buscomp = genome
                         else: buscomp = 'Multiple'
+                    self.deBug('%s:%s -> %s' % (eog,genome,buscomp))
+
                 # Groups
-                for gentry in gdb.entries(sorted=True):
-                    group = self.genomeField(gentry)
-                    if group not in self.dict['Groups'] and gentry not in ugenomes: continue
-                    if group not in ugroups and group in self.dict['Groups']: continue
-                    if rawdb and group in rawdb.fields() and rawdb.data(eog)[group] in ['Complete','Duplicated']:
-                        if busco == 'Multiple': busco = group
-                        elif busco and busco not in ugroups: pass
-                        else: busco = ''
-                    if busdb and group in busdb.fields() and busdb.data(eog) and busdb.data(eog)[group] in ['Complete','Duplicated']:
-                        if buscomp == 'Multiple': buscomp = group
-                        elif buscomp and buscomp not in ugroups: pass
-                        else: buscomp = ''
+                if busco == 'Multiple' and len(ubusco) == 1: busco = self.genomeField(ubusco[0])
+                if buscomp == 'Multiple' and len(ubuscomp) == 1: buscomp = self.genomeField(ubusco[0])
+
                 uniqdb.addEntry({'BuscoID':eog,'BUSCO':busco,'BUSCOMP':buscomp})
             uniqdb.saveToFile()
 

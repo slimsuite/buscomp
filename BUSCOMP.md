@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compiler and Comparison tool
 
 ```
-BUSCOMP v0.8.2
+BUSCOMP v0.8.3
 ```
 
 For a better rendering and navigation of this document, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -91,7 +91,7 @@ ratefas=FILELIST: Additional fasta files of assemblies to rate with BUSCOMPSeq (
 rmdreport=T/F   : Generate Rmarkdown report and knit into HTML [True]
 fullreport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
 missing=T/F     : Generate summary tables for sets of Missing genes for each assembly/group [True]
-dochtml=T/F     : Generate HTML BUSCOMP documentation (*.info.html) instead of main run [False]
+dochtml=T/F     : Generate HTML BUSCOMP documentation (*.docs.html) instead of main run [False]
 summarise=T/F   : Include summaries of genomes in main `*.genomes.tdt` output [True]
 ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 minimap2=PROG   : Full path to run minimap2 [minimap2]

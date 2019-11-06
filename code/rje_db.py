@@ -1192,6 +1192,9 @@ class Table(rje.RJE_Object):
             return filename
         except: self.errorLog('Problem generating table "%s" filename' % (self.info['Name']))
 #########################################################################################################################
+    def saveTable(self,filename=None,delimit=None,backup=True,append=False,savekeys=[],savefields=[],sfdict={},log=True,headers=True,comments=[],buglog=False):    ### Saves data to delimited file
+        return self.saveToFile(filename,delimit,backup,append,savekeys,savefields,sfdict,log,headers,comments,buglog)
+#########################################################################################################################
     def saveToFile(self,filename=None,delimit=None,backup=True,append=False,savekeys=[],savefields=[],sfdict={},log=True,headers=True,comments=[],buglog=False):    ### Saves data to delimited file
         '''
         Saves data to delimited file.
@@ -1846,7 +1849,7 @@ class Table(rje.RJE_Object):
     def dropEntriesDirect(self,field,values,inverse=False,log=True,force=False):    ### Drops certain entries from Table
         '''
         Drops certain entries from Table.
-        >> filters:list of str = Criteria that entries must meet
+        >> values:list of str = Criteria that entries must meet in field
         >> inverse:bool [False] = Whether entries matching criteria should be exclusively kept rather than dropped.
         >> log:bool [True] = Whether to report reduction in log
         >> force:bool [False] = Whether to force regeneration of index

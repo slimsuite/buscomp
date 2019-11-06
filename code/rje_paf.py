@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.7.2
-Last Edit:    22/08/19
+Version:      0.8.0
+Last Edit:    13/09/19
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -55,7 +55,7 @@ Commandline:
     assembly=FASFILE: As seqin=FASFILE
     uniqueout=T/F   : Whether to output *.qryunique.tdt and *.hitunique.tdt tables of unique coverage [True]
     uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [False]
-    alnseq=T/F      : Whether to use alnseq-based processing (True) or CS-Gstring processing [True]
+    alnseq=T/F      : Whether to use alnseq-based processing (True) or CS-Gstring processing [False]
     localaln=T/F    : Whether to output local alignments in Local Table [False]
     mockblast=T/F   : Whether to output mock BLAST headers even when not appropriate [True]
     ### ~ Minimap2 run/mapping options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -65,6 +65,18 @@ Commandline:
     minimap2=PROG   : Full path to run minimap2 [minimap2]
     mapopt=CDICT    : Dictionary of minimap2 options [N:100,p:0.0001,x:asm5]
     mapsplice=T/F   : Switch default minimap2 options to `-x splice -uf -C5` [False]
+    ### ~ Variant mode (dev only) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    snptableout=T/F : Generated output of filtered variants to SNP Table [False]
+    qcut=X          : Min. quality score for a mapped read to be included [0]
+    minqn=X         : Min. number of non-N reads meeting qcut for output (after indel filtering) [10]
+    rid=T/F         : Whether to include Read ID (number) lists for each allele [True]
+    indels=T/F      : Whether to include indels in "SNP" parsing [True]
+    skiploci=LIST   : List of loci to exclude from pileup parsing (e.g. mitochondria) []
+    mincut=X        : Minimum read count for minor allele (proportion if <1) [0.05]
+    absmincut=X     : Absolute minimum read count for minor allele (used if mincut<1) [2]
+    biallelic=T/F   : Whether to restrict SNPs to pure biallelic SNPs (two alleles meeting mincut) [False]
+    ignoren=T/F     : Whether to exclude "N" calls from alleles [True]
+    ignoreref=T/F   : If False will always keep Reference allele and call fixed change as SNP [True]
     ### ~ Processing options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     forks=X         : Number of parallel sequences to process at once [0]
     killforks=X     : Number of seconds of no activity before killing all remaining forks. [36000]
@@ -80,6 +92,7 @@ sys.path.append(os.path.join(slimsuitepath,'libraries/'))
 sys.path.append(os.path.join(slimsuitepath,'tools/'))
 ### User modules - remember to add *.__doc__ to cmdHelp() below ###
 import rje, rje_obj, rje_db, rje_seqlist, rje_sequence
+#import numpy as np
 #########################################################################################################################
 def history():  ### Program History - only a method for PythonWin collapsing! ###
     '''
@@ -95,6 +108,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.7.0 - Added alnseq=T/F : Whether to use alnseq-based processing (True) or CS-Gstring processing (dev only) [False]
     # 0.7.1 - Disabled endextend due to bug.
     # 0.7.2 - Fixed alnlen bug - minimap2 ignore Ns for alignment length calculation. Fixed endextend bug.
+    # 0.7.3 - Added minlocid and minloclen filtering to PAF parsing to speed up processing. Set default alnseq=F.
+    # 0.8.0 - Added developmental variant calling options.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -126,7 +141,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.7.1', 'August 2019', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.8.0', 'September 2019', '2019')
     description = 'Minimap2 PAF parser and converter'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -257,22 +272,33 @@ class PAF(rje_obj.RJE_Object):
 
     Bool:boolean
     - AlnSeq = Whether to use alnseq-based processing (True) or CS-Gstring processing (dev only) [False]
+    - BiAllelic=T/F   : Whether to restrict SNPs to pure biallelic SNPs (two alleles meeting mincut) [False]
+    - IgnoreN=T/F     : Whether to exclude "N" calls from alleles [True]
+    - IgnoreRef=T/F   : If False will always keep Reference allele and call fixed change as SNP [True]
+    - Indels=T/F      : Whether to include indels in "SNP" parsing [True]
     - LocalAln = Whether to keep local alignments in Local Table [False]
     - MapSplice=T/F   : Switch default minimap2 options to `-x splice -uf -C5` [False]
     - MockBLAST = Whether to output mock BLAST headers even when not appropriate [True]
+    - RID=T/F         : Whether to include Read ID (number) lists for each allele [True]
+    - SNPTableOut=T/F : Generated output of filtered variants to SNP Table [False]
     - UniqueHit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [False]
     - UniqueOut=T/F   : Whether to output *.qryunique.tdt and *.hitunique.tdt tables of unique coverage [True]
 
     Int:integer
+    - AbsMinCut=X     : Absolute minimum read count for minor allele (used if mincut<1) [2]
     - EndExtend=X         : Extend minimap2 hits to end of sequence if with X bp [0]
-    - MinLocID=PERC   : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
     - MinLocLen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [0]
+    - MinQN=X         : Min. number of non-N reads meeting qcut for output (after indel filtering) [10]
+    - QCut=X          : Min. quality score for a mapped read to be included [0]
 
     Num:float
+    - MinCut=X        : Minimum read count for minor allele (proportion if <1) [0.05]
+    - MinLocID=PERC   : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
 
     File:file handles with matching str filenames
     
     List:list
+    - SkipLoci=LIST   : List of loci to exclude from pileup parsing (e.g. mitochondria) []
 
     Dict:dictionary    
     MapOpt=CDICT    : Dictionary of minimap2 options [N:100,p:0.0001,x:asm5]
@@ -289,19 +315,20 @@ class PAF(rje_obj.RJE_Object):
         '''Sets Attributes of Object.'''
         ### ~ Basics ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self.strlist = ['Minimap2','PAFIn','SeqIn','Reference','TmpDir']
-        self.boollist = ['AlnSeq','LocalAln','MapSplice','MockBLAST','UniqueHit','UniqueOut']
-        self.intlist = ['EndExtend','MinLocLen']
-        self.numlist = ['MinLocID']
+        self.boollist = ['AlnSeq','BiAllelic','IgnoreN','IgnoreRef','Indels','LocalAln','MapSplice','MockBLAST','RID','SNPTableOut','UniqueHit','UniqueOut']
+        self.intlist = ['AbsMinCut','EndExtend','MinLocLen','MinQN','QCut']
+        self.numlist = ['MinCut','MinLocID']
         self.filelist = []
-        self.listlist = []
+        self.listlist = ['SkipLoci']
         self.dictlist = ['MapOpt']
         self.objlist = ['Assembly','Reference']
         ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True,setfile=True)
         self.setStr({'Minimap2':'minimap2','TmpDir':'./tmp/'})
-        self.setBool({'AlnSeq':True,'LocalAln':False,'MapSplice':False,'MockBLAST':True,'UniqueHit':False,'UniqueOut':True})
-        self.setInt({'EndExtend':0,'MinLocLen':1})
-        self.setNum({'MinLocID':0.0})
+        self.setBool({'AlnSeq':False,'LocalAln':False,'MapSplice':False,'MockBLAST':True,'UniqueHit':False,'UniqueOut':True,
+                      'BiAllelic':False,'IgnoreN':True,'IgnoreRef':True,'Indels':True,'RID':True,'SNPTableOut':False})
+        self.setInt({'AbsMinCut':2,'EndExtend':0,'MinLocLen':1,'MinQN':10,'QCut':0})
+        self.setNum({'MinCut':0.05,'MinLocID':0.0})
         self.dict['MapOpt'] = {} #'N':'100','p':'0.0001','x':'asm5'}
         ### ~ Other Attributes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setForkAttributes()   # Delete if no forking
@@ -323,13 +350,13 @@ class PAF(rje_obj.RJE_Object):
                 self._cmdReadList(cmd,'path',['TmpDir'])  # String representing directory path
                 self._cmdReadList(cmd,'file',['PAFIn','SeqIn','Reference'])  # String representing file path
                 #self._cmdReadList(cmd,'date',['Att'])  # String representing date YYYY-MM-DD
-                self._cmdReadList(cmd,'bool',['AlnSeq','LocalAln','MapSplice','MockBLAST','UniqueHit','UniqueOut'])  # True/False Booleans
-                self._cmdReadList(cmd,'int',['EndExtend','MinLocLen'])   # Integers
+                self._cmdReadList(cmd,'bool',['AlnSeq','BiAllelic','IgnoreN','IgnoreRef','Indels','LocalAln','MapSplice','MockBLAST','RID','SNPTableOut','UniqueHit','UniqueOut'])  # True/False Booleans
+                self._cmdReadList(cmd,'int',['AbsMinCut','EndExtend','MinLocLen','MinQN','QCut'])   # Integers
                 self._cmdReadList(cmd,'perc',['MinLocID'])   # 0-100 percentage, converted x100 if <=1
-                #self._cmdReadList(cmd,'float',['Att']) # Floats
+                self._cmdReadList(cmd,'float',['MinCut']) # Floats
                 #self._cmdReadList(cmd,'min',['Att'])   # Integer value part of min,max command
                 #self._cmdReadList(cmd,'max',['Att'])   # Integer value part of min,max command
-                #self._cmdReadList(cmd,'list',['Att'])  # List of strings (split on commas or file lines)
+                self._cmdReadList(cmd,'list',['SkipLoci'])  # List of strings (split on commas or file lines)
                 #self._cmdReadList(cmd,'clist',['Att']) # Comma separated list as a *string* (self.str)
                 #self._cmdReadList(cmd,'glist',['Att']) # List of files using wildcards and glob
                 self._cmdReadList(cmd,'cdict',['MapOpt']) # Splits comma separated X:Y pairs into dictionary
@@ -351,6 +378,7 @@ class PAF(rje_obj.RJE_Object):
                 self.minimap2()
             ### ~ [2] ~ Add main run code here ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if not self.parsePAF(): return False
+            if self.dev() and self.getBool('SNPTableOut'): return self.pafToVariants()
             if not self.pafToLocal(minlocid=self.getNum('MinLocID'),minloclen=self.getInt('MinLocLen')): raise ValueError
             self.localToUnique(save=self.getBool('UniqueOut'))   #!# Sort out output of unique tables!
             self.uniqueToHitSum()
@@ -371,7 +399,7 @@ class PAF(rje_obj.RJE_Object):
             if self.getBool('MapSplice'): defaults = {'x':'splice'} #,'uf':'','C5':''}
             else: defaults = {'N':'100','p':'0.0001','x':'asm5'}
             self.dict['MapOpt'] = rje.combineDict(defaults,self.dict['MapOpt'],overwrite=True)
-            self.devLog('#MAPOPT','%s' % self.dict['MapOpt'])
+            #self.devLog('#MAPOPT','%s' % self.dict['MapOpt'])
             if self.getInt('Forks') > 0:
                 if 't' not in self.dict['MapOpt']: self.dict['MapOpt']['t'] = self.getInt('Forks')
             elif self.i() >=0 and rje.yesNo('Forking recommended to speed up operation? Set forks>0?'):
@@ -420,10 +448,12 @@ class PAF(rje_obj.RJE_Object):
 #########################################################################################################################
     ### <3> ### PAF Parsing Methods                                                                                     #
 #########################################################################################################################
-    def parsePAF(self,pafin=None,table='paf'):  ### Parse PAF into Database table.
+    def parsePAF(self,pafin=None,table='paf',filter=True,debugstr='NOTDEBUGGING'):  ### Parse PAF into Database table.
         '''
         Parse PAF into Database table.
         >> pafin:file [None] = PAF file to load, or use
+        >> table:str ['paf'] = Name of table to enter data into
+        >> filter:bool [True] = Whether to impose length/identity filtering during parsing.
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             db = self.db()
@@ -437,6 +467,9 @@ class PAF(rje_obj.RJE_Object):
             self.printLog('\r#PAF','Parsing %s' % pafin)
 
             ### ~ [2] Load PAF file with auto-counter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            lfiltx = 0; ifiltx = 0
+            minloclen = self.getInt('MinLocLen')
+            minlocid = self.getPerc('MinLocID')
             headx = len(pafhead)
             pafdb = db.addEmptyTable(table,['#']+pafhead+pafaln,['#'])
             px = 0
@@ -453,13 +486,35 @@ class PAF(rje_obj.RJE_Object):
                         else: pentry[field] = string.atoi(data[i])
                     for pdat in data[headx:]:
                         pentry[pdat[:2]] = pdat[3:]
+                    if pentry['Qry'].endswith(debugstr): self.bugPrint('%s' % pentry)
+                    if filter:
+                        nn = string.atoi(pentry['nn'][2:])
+                        if (pentry['Length'] + nn) < minloclen:
+                            lfiltx += 1
+                            if pentry['Qry'].endswith(debugstr): self.debug('MinLen: %s' % pentry)
+                            continue
+                        if float(pentry['Identity']+nn)/(pentry['Length']+nn) < minlocid:
+                            if pentry['Qry'].endswith(debugstr): self.debug('MinID: %s' % pentry)
+                            ifiltx += 1; continue
                     # Reformat data to 1->L positions
                     for field in string.split('QryStart SbjStart'): pentry[field] += 1
                     # Tidy the 'cs' field
                     if 'cs' in pentry and pentry['cs'].startswith('Z:'): pentry['cs'] = pentry['cs'][2:]
                     pafdb.addEntry(pentry)
+                    # Debugging temp code
+                    if self.debugging() == 'DISABLE':
+                        cstats = self.statsFromCS(pentry['cs'])
+                        nn = string.atoi(pentry['nn'][2:])
+                        self.bugPrint(cstats)
+                        self.bugPrint(pafdb.entrySummary(pentry,collapse=True))
+                        self.deBug('Length=%s; Identity=%s; nn=%s; :%s; Alnlen=%s' % (pentry['Length'],pentry['Identity'],nn,cstats[':'],cstats['AlnLen']))
+
+
+
             self.printLog('\r#PAF','Parsed %s lines from %s' % (rje.iStr(px),pafin))
             #if not pafdb.entryNum(): self.warnLog('No hits parsed from %s: check minimap2=PROG setting' % pafin)
+            if lfiltx: self.printLog('#FILT','%s PAF lines filtered with (Length+nn) < minloclen=%d' % (rje.iStr(lfiltx),minloclen))
+            if ifiltx: self.printLog('#FILT','%s PAF lines filtered with (Identity+nn)/(Length+nn) < minlocid=%.2f%%' % (rje.iStr(ifiltx),minlocid*100.0))
 
             ### ~ [3] Return PAF Data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.dev(): pafdb.saveToFile()
@@ -491,8 +546,8 @@ class PAF(rje_obj.RJE_Object):
             locdb.makeField(formula='#Identity#',fieldname='BitScore',evalue=-1)
             locdb.makeField(fieldname='Expect',evalue=-1)
             locdb.dataFormat({'Positives':'int','BitScore':'int','Expect':'num','AlnNum':'int'})
-            locdb.keepFields(locfields+['Strand','cs'])
-            locdb.list['Fields'] = locfields+['Strand','cs']
+            locdb.keepFields(locfields+['Strand','nn','cs'])
+            locdb.list['Fields'] = locfields+['Strand','nn','cs']
 
             ### ~ [3] Process CS strings into Local dictionary table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             lx = 0.0; ltot = locdb.entryNum(); px = 0
@@ -504,7 +559,8 @@ class PAF(rje_obj.RJE_Object):
                 cstats = self.statsFromCS(lentry['cs'])
                 #if cstats['n'] > 0 and cstats['AlnLen'] == (lentry['Length'] + cstats['n']):
                 #    self.debug('AlnLen should not include the %d n' % cstats['n'])
-                if cstats['AlnLen'] != lentry['Length']:
+                nn = string.atoi(lentry['nn'][2:])
+                if (cstats['AlnLen'] + nn) != lentry['Length']:
                     badlenx += 1
                     self.deBug('%s\n-> %s -> %s' % (locdb.entrySummary(lentry,collapse=True),lentry['cs'],cstats))
                 if cstats[':'] != lentry['Identity']:
@@ -556,9 +612,9 @@ class PAF(rje_obj.RJE_Object):
             if extx:
                 self.warnLog('%s end extensions (endextend=%d): may be some minor identity underestimates.' % (rje.iStr(extx),self.getInt('EndExtend')))
             if badlenx:
-                self.warnLog('%s Length/AlnLen mismatches from PAF file.' % rje.iStr(badlenx))
+                self.warnLog('%s Length/AlnLen mismatches from PAF file. (May be disparity with N treatment.)' % rje.iStr(badlenx))
             if badidx:
-                self.warnLog('%s Identity mismatches from PAF file.' % rje.iStr(badidx))
+                self.warnLog('%s Identity mismatches from PAF file (PAF identity ignores Ns).' % rje.iStr(badidx))
             if px != ltot:
                 raise ValueError('%s cs alignments missing from PAF file: check --cs flag was used' % rje.iStr(ltot-px))
 
@@ -2082,11 +2138,19 @@ class PAF(rje_obj.RJE_Object):
             return gstr
         except: self.errorLog('%s.revGstring error' % self.prog()); return False
 #########################################################################################################################
-    def invertCS(self,lentry):  ### Generates a list of (qrypos,sbjpos,cs) tuples for a deconstructed cs string
+# Op	Regex	Description
+# =	[ACGTN]+	Identical sequence (long form)
+# :	[0-9]+	Identical sequence length
+# *	[acgtn][acgtn]	Substitution: ref to query
+# +	[acgtn]+	Insertion to the reference
+# -	[acgtn]+	Deletion from the reference
+# ~	[acgtn]{2}[0-9]+[acgtn]{2}	Intron length and splice signal
+#########################################################################################################################
+    def invertCS(self,lentry):  ### Inverts a CS string local entry so that the query is now the hit anf vice versa
         '''
-        Generates a list of (qrypos,sbjpos,cs) tuples for a deconstructed cs string. Positions are the first base of any
-        multibase elements.
+        Inverts a CS string local entry so that the query is now the hit anf vice versa.
         >> lentry:locdb entry = PAF file line loaded into locdb. Needs QryStart QryEnd SbjStart SbjEnd Strand cs
+        << nentry:locdb entry with Qry and Hit reversed.
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             #i# Based on 'PAF to Local Alignment Conversion'
@@ -2103,17 +2167,22 @@ class PAF(rje_obj.RJE_Object):
             nentry = rje.combineDict({},lentry)
             naln = []
             replace = {'-':'+','+':'-','!':'-','~':'_','_':'~'}
+            #i# Reverse complement if switching strands
+            revcomp = lentry['Strand'] == '-'
             ### ~ [2] Process ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             for cs in aln:
                 # Replacements
-                if cs[0] in replace: naln.append('%s%s' % (replace[cs[0]],cs[1:]))
-                elif cs[0] == '*': naln.append('*%s%s' % (cs[2],cs[1]))
+                if cs[0] in replace:
+                    if revcomp: cs = '%s%s' % (cs[0],rje_sequence.reverseComplement(cs[1:]))
+                    naln.append('%s%s' % (replace[cs[0]],cs[1:]))
+                elif cs[0] == '*':
+                    if revcomp: cs = '%s%s' % (cs[0],rje_sequence.reverseComplement(cs[1:]))
+                    naln.append('*%s%s' % (cs[2],cs[1]))
                 else: naln.append(cs)
             ## ~ [2a] Reverse strand ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             if lentry['Strand'] == '-':
                 naln.reverse()
-                #i# No need to reverse complement all the mismatches, insertions and deletions because sequence in CS string always 5' to 3'
-            nentry['cs'] = string.join(naln)
+            nentry['cs'] = string.join(naln,'')
             for x in ['Len','Start','End']:
                 nentry['Qry%s' % x] = lentry['Sbj%s' % x]
                 nentry['Sbj%s' % x] = lentry['Qry%s' % x]
@@ -2121,6 +2190,223 @@ class PAF(rje_obj.RJE_Object):
             nentry['Hit'] = lentry['Qry']
             return nentry
         except: self.errorLog('%s.invertCS error' % self.prog()); return False
+#########################################################################################################################
+    ### <7> ### CS string variant calling functions                                                                     #
+#########################################################################################################################
+# The old samtools settings:
+    # minqn=X         : Min. number of reads meeting qcut (QN) for output [10]
+    # rid=T/F         : Whether to include Read ID (number) lists for each allele [True]
+    # snponly=T/F     : Whether to restrict parsing output to SNP positions (will use mincut settings below) [False]
+    # indels=T/F      : Whether to include indels in "SNP" parsing [True]
+    # skiploci=LIST   : List of loci to exclude from pileup parsing (e.g. mitochondria) []
+    # snptableout=T/F : Output filtered alleles to SNP Table [False]
+    # ### ~ SNP Frequency Options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    # mincut=X        : Minimum read count for minor allele (proportion if <1) [1]
+    # absmincut=X     : Absolute minimum read count for minor allele (used if mincut<1) [2]
+    # biallelic=T/F   : Whether to restrict SNPs to pure biallelic SNPs (two alleles meeting mincut) [False]
+    # ignoren=T/F     : Whether to exclude "N" calls from alleles [True]
+    # ignoreref=T/F   : If False will always keep Reference allele and call fixed change as SNP [False]
+#i# pafhead = Qry QryLen QryStart QryEnd Strand Hit SbjLen SbjStart SbjEnd Identity Length Quality .. cs
+# New PAFTools variant call settings
+    # qcut=X          : Min. mapping quality score (0-255) to include a read [0]
+
+
+# Want to generate/output:
+    # snpdb = self.db('snp')  #Locus	Pos	Ref	N	QN	Seq	Dep	RID
+    #chrI_YEAST__BK006935	26	A	148	148	A:107|C:2	0.74	A:2,3,6,7,8,9,10,12,14,15,17,18,19,20,21,22,23,25,28,29,30,32,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,68,70,71,73,75,76,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,98,99,100,102,103,104,106,108,110,112,116,117,119,120,121,123,124,125,128,129,131,132,135,136,137,138,140,142,146,147,148|C:78,127
+    #==> S288C-ISH.chrI.Q30.10.tdt <==
+
+    #==> S288C-ISH.chrI.rid.tdt <==
+    #RID	Locus	Start	End     Name
+    #176 chrI_YEAST__BK006935	61	351
+
+
+#########################################################################################################################
+    def pafToVariants(self):    ### Performs variant calling on parsed PAF (CS) data
+        '''
+        Performs variant calling on parsed PAF (CS) data.
+        '''
+        try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            db = self.db()
+            #i# PAF data hase already been loaded into PAFDB
+            #i# pafhead = Qry QryLen QryStart QryEnd Strand Hit SbjLen SbjStart SbjEnd Identity Length Quality .. cs
+            pafdb = self.db('paf')
+            rdb = db.addEmptyTable('rid',['Qry','QryStart','QryEnd','SbjStart','SbjEnd','Hit','Strand','cs'],['Qry','QryStart','QryEnd','SbjStart','Hit'])
+            sbjseqs = self.obj['Reference']
+            sbjdict = {}
+            if sbjseqs: sbjdict = sbjseqs.makeSeqNameDic('short')
+
+            ### ~ [2] Convert PAF to Reads (RID) table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            #i# The first step is to invert all of the PAF hits so that the Reference is the Query. This will mean that
+            #i# when self.mapCS(lentry) tuples are created, they will be sorted according to the reference position,
+            #i# which will enable them to be processed in parallel.
+            #i# During this process, reads are filtered according to the QCut mapping quality.
+            qcut = 0 # self.getInt('QCut')
+            strand = '+-'   # self.getStr('Strand')   # Only keep reads on this strand
+            #!# Check revcomp is right with this setting!
+            pafdb.dropEntries(['Quality<%d' % qcut],inverse=False,log=True,logtxt='Mapping Quality < %d' % qcut,purelist=False,keylist=False)
+            pafdb.dropEntriesDirect('Strand',strand,inverse=True,log=True,force=False)
+            for entry in pafdb.entries():
+                rentry = rdb.addEntry(self.invertCS(entry))
+                #self.bugPrint(pafdb.entrySummary(entry,fields=['Qry','QryStart','QryEnd','SbjStart','SbjEnd','Hit','Strand'],collapse=True))
+                #self.bugPrint(pafdb.entrySummary(entry,fields=['cs'],collapse=True))
+                #self.mapCS(entry)
+                #self.bugPrint('>>>>>>> Invert >>>>>>>>>')
+                #self.bugPrint(rdb.entrySummary(rentry,fields=['Qry','QryStart','QryEnd','SbjStart','SbjEnd','Hit','Strand'],collapse=True))
+                #self.bugPrint(rdb.entrySummary(rentry,fields=['cs'],collapse=True))
+                #self.mapCS(rentry)
+
+            #i# Reads are given a RID based on revised QryStart
+            rdb.newKey(['Qry','QryStart','QryEnd','SbjStart','Hit'])    # This is just to get the right sorting
+            rdb.addField('RID'); rid = 0
+            for entry in rdb.entries(sorted=True): rid += 1; entry['RID'] = rid
+            rdb.newKey(['RID'],startfields=True)
+
+            #i# Cut down and rename fields
+            #RID Locus Start End Name Strand cs
+            rdb.renameField('Qry','Locus')
+            rdb.renameField('QryStart','Start')
+            rdb.renameField('QryEnd','End')
+            rdb.renameField('Hit','Name')
+
+            #i# Save cutdown fields to RID table
+            #RID	Locus	Start	End     Name
+            rdb.saveTable(savefields=['RID','Locus','Start','End','Name','Strand','cs'])
+
+            ### ~ [3] ~ Generate RID SNP table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            mindepth = self.getInt('MinQN')   # minqn from samtools
+            indels = self.getBool('Indels') #Whether to include indels in "SNP" parsing [True]
+            skiploci = self.list['SkipLoci']  # List of loci to exclude from pileup parsing (e.g. mitochondria) []
+            snptableout = self.getBool('SNPTableOut') # Output filtered alleles to SNP Table [False]
+            mincut = self.getNum('MinCut')        # Minimum read count for minor allele (proportion if <1) [1]
+            absmincut = self.getInt('AbsMinCut')     # Absolute minimum read count for minor allele (used if mincut<1) [2]
+            biallelic = self.getBool('BiAllelic')   # Whether to restrict SNPs to pure biallelic SNPs (two alleles meeting mincut) [False]
+            ignoren = self.getBool('IgnoreN')     # Whether to exclude "N" calls from alleles [True]
+            ignoreref = self.getBool('IgnoreRef')   # If False will always keep Reference allele and call fixed change as SNP [False]
+            snpdb = db.addEmptyTable('snp',['Locus','Pos','Ref','N','QN','Seq','Dep','VarFreq','RID'],['Locus','Pos'])
+            # Locus	Pos	Ref	N	QN	Seq	Dep	RID
+            #chrI_YEAST__BK006935	26	A	148	148	A:107|C:2	0.74	A:2,3,6,7,8,9,10,12,14,15,17,18,19,20,21,22,23,25,28,29,30,32,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,68,70,71,73,75,76,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,98,99,100,102,103,104,106,108,110,112,116,117,119,120,121,123,124,125,128,129,131,132,135,136,137,138,140,142,146,147,148|C:78,127
+            varlist = []    # List of (qrypos,rid,cs) built from read mapCS lists of (qrypos,sbjpos,cs) tuples for a deconstructed cs string
+            for locus in rdb.indexKeys('Locus'):
+                if locus in skiploci: continue
+                refseq = ''
+                if locus in sbjdict: refseq = sbjseqs.seqSequence(sbjdict[locus])
+                ## ~ [3a] ~ Build RID CS Mapping list ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+                rx = 0.0; rtot = rdb.entryNum()
+                for rentry in rdb.indexEntries('Locus',locus):
+                    self.progLog('\r#MAPCS','Parsing CS Mapping for %s: %.1f%%' % (locus,rx/rtot)); rx += 100.0
+                    rid = rentry['RID']
+                    rentry['QryStart'] = rentry['Start']
+                    rentry['QryEnd'] = rentry['End']
+                    for (qrypos,sbjpos,cs) in self.mapCS(rentry):
+                        if cs: varlist.append((qrypos,cs,rid))
+                    varlist.append((rentry['End']+1,'END',rid))
+                self.progLog('\r#MAPCS','Parsing CS Mapping for %s: sorting...' % locus)
+                varlist.sort()
+                baddep = []
+                ## ~ [3b] ~ Parse out SNPs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+                #i# Need to make sure that the matching RIDs are stored
+                matchrids = []  # List of currently matching RIDs
+                delrids = []    # List of current deletion RIDs
+                rx = 0.0; rtot = len(varlist); vx = 0
+                while varlist:
+                    pos = varlist[0][0]
+                    varn = 0    # Number of variant reads
+                    ## Generate dictionary of c
+                    posvar = {'N':[]}     # cs:[RIDs]
+                    while varlist and varlist[0][0] == pos:
+                        (pos,cs,rid) = varlist.pop(0)
+                        self.progLog('\r#CSVAR','Extracting variants from CS Mapping for %s: %.2f%%' % (locus,rx/rtot)); rx += 100.0
+                        #self.bugPrint('%s %s "%s"\n|-- :%s\n|-- -%s' % (pos,rid,cs,matchrids,delrids))
+                        # Update deletion and match lists
+                        if cs[0] != '-' and rid in delrids: delrids.remove(rid)
+                        if cs[0] not in ':=' and rid in matchrids: matchrids.remove(rid)
+                        if cs == 'END': continue
+                        if cs[0] == '-':  # Deletion from the reference
+                            if rid not in delrids: delrids.append(rid)
+                            continue
+                        if cs[0] in ':=':
+                            if rid not in matchrids: matchrids.append(rid)
+                            continue
+                        # Introns are absent of read coverage, so skip
+                        if cs[0] == '~':  # Intron length and splice signal
+                            continue
+                        # Update posvar dictionary with cs element
+                        if cs[0] == '+' and not indels:  # Insertion to the reference
+                            cs = 'N'
+                        if cs not in posvar: posvar[cs] = []
+                        if cs[0] == '*':  # Substitution: ref to query
+                            pass
+                        posvar[cs].append(rid)
+                        varn += 1
+                    if not varlist: break
+                    # Update deletions and matches
+                    if delrids and indels: posvar['-'] = delrids[0:]
+                    elif delrids: posvar['N'] += delrids[0:]
+                    if matchrids: posvar[':'] = matchrids[0:]
+                    elif not ignoreref: posvar[':'] = []
+                    varn += len(delrids)
+                    varn += len(matchrids)
+                    refdep = len(matchrids)
+                    #i# Filter variants here
+                    if varn < mindepth:
+                        continue
+                    # Drop low abundance and ambiguous variants
+                    vardep = int(varn * mincut + 0.5)        # Minimum read count for minor allele (proportion if <1) [1]
+                    vardep = max(vardep,absmincut)
+                    qn = varn
+                    if ignoren and 'N' in posvar:
+                        qn = varn - len(posvar.pop('N'))
+                    ref = '.'
+                    if refseq: ref = refseq[pos-1].upper()
+                    for cs in posvar.keys():
+                        if cs == ':' and not ignoreref: continue
+                        elif len(posvar[cs]) < vardep: qn -= len(posvar.pop(cs))
+                        elif cs[0] == '*': ref = cs[2].upper()
+                    if len(posvar) < 2: continue   #i# No variants escape filtering
+                    # Apply biallelic filter
+                    if biallelic and len(posvar) != 2: continue
+                    # Add SNP to table
+                    seq = []
+                    rid = []
+                    #if refseq: self.bugPrint('%s: %s' % (refseq[max(0,pos-10):pos-1].lower()+refseq[pos-1].upper()+refseq[pos:pos+10].lower(),posvar))
+                    #if refseq: self.bugPrint(refseq[max(0,pos-10):pos-1].lower()+refseq[pos-1].upper()+refseq[pos:pos+10].lower())
+                    #else: self.bugPrint('?: %s' % (posvar))
+                    for cs in posvar:
+                        posvar[cs].sort()
+                        if cs == ':': alt = ref.upper()
+                        elif cs == '-': alt = '-'
+                        elif cs[0] == '*': alt = cs[1].upper()
+                        elif cs[0] == '+':
+                            alt = cs.upper()
+                            #if ref == '.': alt = cs.upper()
+                            #else: alt = ref + cs[1:].upper()
+                        else: alt = cs[1:].upper()
+                        seq.append('%s:%s' % (alt,len(posvar[cs])))
+                        rid.append('%s:%s' % (alt,str(posvar[cs])[1:-1].replace(' ','')))
+                    seq.sort(); seq = string.join(seq,'|')
+                    rid.sort(); rid = string.join(rid,'|')
+                    ventry = {'Locus':locus,'Pos':pos,'Ref':ref,'N':varn,'QN':qn,'Seq':seq,'Dep':varn,'RID':rid,'VarFreq':float(qn-refdep)/qn}
+                    ventry = snpdb.addEntry(ventry); vx += 1
+                    #self.debug(snpdb.entrySummary(ventry))
+                self.printLog('\r#CSVAR','Extracted %s variants from CS Mapping for %s.   ' % (rje.iStr(vx),locus))
+
+
+# Op	Regex	Description
+# =	[ACGTN]+	Identical sequence (long form)
+# :	[0-9]+	Identical sequence length
+# *	[acgtn][acgtn]	Substitution: ref to query
+# +	[acgtn]+	Insertion to the reference
+# -	[acgtn]+	Deletion from the reference
+# ~	[acgtn]{2}[0-9]+[acgtn]{2}	Intron length and splice signal
+
+
+            ### ~ [4] ~ Save SNP Table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            #!# Include headers containing key settings to check when re-loading data
+            if snptableout: snpdb.saveToFile(sfdict={'VarFreq':3})
+
+
+        except: self.errorLog('%s.pafToVariants error' % self.prog()); return False
 #########################################################################################################################
 ### End of SECTION II: PAF Class                                                                                        #
 #########################################################################################################################

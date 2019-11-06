@@ -19,8 +19,8 @@
 """
 Module:       rje_seqlist
 Description:  RJE Nucleotide and Protein Sequence List Object (Revised)
-Version:      1.33.0
-Last Edit:    14/08/19
+Version:      1.34.0
+Last Edit:    26/10/19
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -95,6 +95,7 @@ Commandline:
     spcode=X        : Species code for non-gnspacc format sequences [None]
     newacc=X        : New base for sequence accession numbers - will rename sequences [None]
     newgene=X       : New gene for renamed sequences (if blank will use newacc or 'seq' if none read) [None]
+    genecounter=T/F : Whether new gene have a numbered suffix (will match newacc numbering) [False]
     newdesc=FILE    : File of new names for sequences (over-rules other naming). First word should match input [None]
     concatenate=T   : Concatenate sequences into single output sequence named after file [False]
     split=X         : String to be inserted between each concatenated sequence [''].
@@ -203,6 +204,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.32.3 - Added checkNames() to check for duplicate sequence names and/or lack of gnspacc format.
     # 1.32.3 - Added duperr=T/F : Whether identification of duplicate sequence names should raise an error [True]
     # 1.33.0 - Added newdesc=FILE : File of new names for sequences (over-rules other naming). First word should match input [None]
+    # 1.33.1 - Fixed bug with appending sequences with gap insertion.
+    # 1.34.0 - Added genecounter=T/F : Whether new gene have a numbered suffix (will match newacc numbering) [False]
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -218,12 +221,14 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [ ] : Add assemble=FILE mode with reformat=assemble: list sequences on each line to join/revcomp into single seqs.
     # [Y] : Add warning if region set but no reformat? (Check whether other programs use it.) Add seqin to REST?
     # [ ] : Add seqbatch=FILES capacity for reading in sequences from multiple files.
-    # [ ] : Add handling of FASTQ files in addition to FASTA.
+    # [Y] : Add handling of FASTQ files in addition to FASTA.
+    # [ ] : Add stripgap=X method, based on rje_seq stripGap() method.
+    # [ ] : Add align=T [alnprog=X] methods directly using rje_seq.
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('SeqList', '1.33.0', 'August 2019', '2011')
+    (program, version, last_edit, copy_right) = ('SeqList', '1.34.0', 'October 2019', '2011')
     description = 'RJE Nucleotide and Protein Sequence List Object (Revised)'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_zen.Zen().wisdom()]
@@ -313,6 +318,7 @@ class SeqList(rje_obj.RJE_Object):
     - DNA = Alternative option to indicate dealing with nucleotide sequences [False]
     - DupErr = Whether identification of duplicate sequence names should raise an error [True]
     - Edit = Enter sequence edit mode upon loading (will switch seqmode=list) [False]
+    - GeneCounter=T/F : Whether new gene have a numbered suffix (will match newacc numbering) [False]
     - GrepNR = Whether to use grep based forking NR mode (needs sized-sorted one-line-per-sequence fasta) [True]
     - Maker = Whether to extract MAKER2 statistics (AED, eAED, QI) from sequence names [False]
     - Mixed = Whether to allow auto-identification of mixed sequences types (else uses first seq only) [False]
@@ -361,7 +367,7 @@ class SeqList(rje_obj.RJE_Object):
         self.strlist = ['Edit','Name','NameFormat','NewAcc','NewDesc','Region',
                         'SeqDB','SeqDictType','SeqFormat','SeqIn','SeqMode','SeqType','SeqOut',
                         'Reformat','SpCode','SeqNR','NewGene','Split','SortSeq','SplitSeq','TmpDir']
-        self.boollist = ['AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GrepNR','Maker',
+        self.boollist = ['AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GeneCounter','GrepNR','Maker',
                          'Mixed','ORFMet','ReName','RevCompNR','SizeSort','TwoPass',
                          'SeqIndex','SeqShuffle','Summarise','UseCase']
         self.intlist = ['MinLen','MaxLen','MinORF','RFTran','TerMinORF']
@@ -399,7 +405,7 @@ class SeqList(rje_obj.RJE_Object):
                 self._cmdReadList(cmd,'int',['MinLen','MaxLen','MinORF','RFTran','TerMinORF'])
                 self._cmdReadList(cmd,'num',['GenomeSize'])
                 self._cmdReadList(cmd,'nlist',['Sampler'])
-                self._cmdReadList(cmd,'bool',['Align','AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GrepNR','Maker','Mixed','ORFMet','ReName','RevCompNR','SizeSort','SeqIndex','SeqNR','SeqShuffle','Summarise','TwoPass','UseCase'])
+                self._cmdReadList(cmd,'bool',['Align','AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GeneCounter','GrepNR','Maker','Mixed','ORFMet','ReName','RevCompNR','SizeSort','SeqIndex','SeqNR','SeqShuffle','Summarise','TwoPass','UseCase'])
             except: self.errorLog('Problem with cmd:%s' % cmd)
         ## ~ [1a] ~ Tidy Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
         if self.getStrLC('SeqMode') == 'tuple': self.setStr({'SeqMode':'list'})
@@ -450,7 +456,7 @@ class SeqList(rje_obj.RJE_Object):
                 if self.getBool('GrepNR'): self.grepNR()
                 else: self.seqNR(twopass=not self.getStrLC('SortSeq'),grepnr=self.getBool('GrepNR'))
             if self.getBool('Concatenate'): self.concatenate()
-            if self.getBool('ReName'): self.rename()
+            if self.getBool('ReName'): self.rename(genecounter=self.getBool('GeneCounter'))
             self.loadSeq()
             if self.getBool('AutoFilter'): self.filterSeqs(screen=self.v()>0)
             if self.getBool('Edit'):
@@ -607,7 +613,7 @@ class SeqList(rje_obj.RJE_Object):
 #########################################################################################################################
     def makeSeqNameDic(self,keytype=None,clear=True,warnings=True):  ### Make SeqDict sequence name dictionary.
         '''
-        >> keytype:str [None] = Type of data to use as key for dictionary (accnum/short/name/max)
+        >> keytype:str [None] = Type of data to use as key for dictionary (accnum/short/name/max/loci)
         >> clear:bool [True] = whether to clear self.dict['SeqDict'] before filling
         >> warnings:bool [True] = whether to warn when keys are getting over-written
         << returns self.dict['SeqDict']
@@ -616,15 +622,15 @@ class SeqList(rje_obj.RJE_Object):
             if keytype: self.setStr({'SeqDictType':keytype.lower()})
             if not self.getStrLC('SeqDictType'): self.setStr({'SeqDictType':'short'})
             keytype = self.getStrLC('SeqDictType')
-            if keytype not in ['name','full','max','short','acc','accnum','id']: raise ValueError('SeqNameDic keytype "%s" not recognised!' % keytype)
+            if keytype not in ['name','full','max','short','acc','accnum','id','loci']: raise ValueError('SeqNameDic keytype "%s" not recognised!' % keytype)
             if clear: self.dict['SeqDict'] = {}
             ### ~ [1] Populate ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             for seq in self.seqs():
                 skeys = []
                 name = self.getSeq(seq,'tuple')[0]
                 if keytype in ['name','full','max']: skeys.append(name)
-                if keytype in ['short','full','max']: skeys.append(string.split(name)[0])
-                if keytype in ['acc','accnum','full','max']: skeys.append(string.split(string.split(name)[0],'__')[-1])
+                if keytype in ['short','full','max','loci']: skeys.append(string.split(name)[0])
+                if keytype in ['acc','accnum','full','max','loci']: skeys.append(string.split(string.split(name)[0],'__')[-1])
                 if keytype in ['id','full','max']: skeys.append(string.split(string.split(name)[0],'__')[0])
                 skeys = rje.sortUnique(skeys)
                 #self.bugPrint('%s >> %s' % (name,skeys))
@@ -2457,6 +2463,50 @@ class SeqList(rje_obj.RJE_Object):
             return tranfas
         except: self.errorLog("Problem with dna2protFasta()"); raise
 #########################################################################################################################
+    def stripGap(self,stripgap=0,codons=False,gaps='-'): ### Removes columns containing gaps from the alignment
+        '''
+        Removes columns containing gaps from the alignment.
+        >> stripgap:num [0] = Number of sequences with gaps before stripping from alignment. Proportion if < 1.
+        >> codons:bool [False] = Whether to treat alignment using a codon model (i.e. strip sets of three bases)
+        >> gaps:list ['-'] = Characters to recognise as gaps (e.g. could add 'X' for tidyXGap equivalent)
+        << tuplist:list of (name,sequence) tuples with gapped columns stripped.
+        '''
+        try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            if stripgap < 0: return    # No gap stripping
+            if not self.opt['Aligned'] and not self.checkAln(aln=True,tidygaps=False,seqkey=seqkey):
+                self.errorLog('SeqList.stripGap() called but sequences not aligned!',printerror=False)
+                raise ValueError
+            if stripgap < 1: stripgap = max(1,int(stripgap*self.seqNum()+0.5))  # Must need at least one seq with gap!
+            if backup:
+                for seq in self.seqs()(): seq.info[backup] = seq.info[seqkey]
+            gaplist = [0] * self.seqLen(seqkey=seqkey)
+            ### ~ [2] Count gaps ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            for seq in self.seqs():
+                for r in range(seq.seqLen()):
+                    if seq.info[seqkey][r] in gaps: gaplist[r] += 1
+            ## ~ [2a] Adjust codon counts ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            if codons:
+                cnum = len(gaplist) / 3
+                if len(gaplist) / 3 != len(gaplist) / 3.0: self.errorLog('Warning! Codons stripGap model invoked but sequence length not multiple of 3!', printerror=False); cnum += 1
+                for cx in range(cnum):
+                    ci = cx * 3
+                    cgap = max(gaplist[ci:ci+3])
+                    for i in range(3):
+                        try: gaplist[ci+i] = cgap
+                        except: pass
+            ### ~ [3] Remake sequences without gappy columns ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            for seq in self.seqs():
+                oldseq = seq.info[seqkey]
+                seq.info[seqkey] = ''
+                for r in range(len(gaplist)):
+                    if gaplist[r] < stripgap: seq.info[seqkey] += oldseq[r]; gaplist[r] = 0
+            stripx = len(gaplist) - gaplist.count(0)
+            if codons and stripx: self.printLog('#GAPS','Stripped %s gapped codons (>%s gapped sequences)' % (stripx/3,stripgap))
+            elif stripx: self.printLog('#GAPS','Stripped %s gapped positions (>%s gapped sequences)' % (stripx,stripgap))
+            return stripx
+        except ValueError: raise
+        except: self.errorLog('Major problem with SeqList.stripGap()'); return -1
+#########################################################################################################################
     def OLDdna2protFasta(self,name,sequence): ### Returns fasta text for translated DNA sequence, using self.attributes.
         '''Returns fasta text for translated DNA sequence, using self.attributes.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -2776,8 +2826,8 @@ class SeqList(rje_obj.RJE_Object):
                     gapx = {True:'N',False:'X'}[self.nt()]
                     gapn = rje.getInt('Length of "%s" linker' % gapx,blank0=True,default='0',confirm=True)
                     for (sname,sseq) in cseq:
-                        sequence += sseq
                         if gapn > 0: sequence += gapx * gapn
+                        sequence += sseq
                         seqname += ' & %s' % sname
                     self.list['Seq'][ei] = (seqname,sequence)
                     self.printLog('#EDIT','Joined %s' % seqname)
@@ -2971,6 +3021,47 @@ def dnaLen(seqlen,dp=2,sf=3):
     if dp == 3: return '%.3f %s' % (rje.dp(seqlen,dp),units)
     if dp == 4: return '%.4f %s' % (rje.dp(seqlen,dp),units)
     return '%s %s' % (rje.dp(seqlen,dp),units)
+#########################################################################################################################
+def batchSummarise(callobj,seqfiles,save=True,overwrite=False):   ### Batch run seqlist summarise on seqfiles and output table of results
+    '''
+    Batch run seqlist summarise on seqfiles and output table of results. General options (dna=T etc.) should be given
+    as part of the callobj.cmd_list.
+    >> callobj:object controlling log output and providing database object. (Will be added if None.)
+    >> seqfiles:list of sequence files to summarise
+    >> save:bool [True] = Whether to save the summarise table to a file.
+    >> overwrite:bool [False] = Whether to overwrite (True) or update (False) existing summary table.
+    << summarise db Table
+    '''
+    try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        if 'DB' in callobj.obj and callobj.obj['DB']: db = callobj.obj['DB']
+        else:
+            callobj.obj['DB'] = db = rje_db.Database(callobj.log,callobj.cmd_list)
+        sdb = None
+        if not overwrite:
+            sdb = callobj.db('summarise')
+            if not sdb:
+                sdb = db.addTable(mainkeys=['File'],name='summarise',expect=False)
+        if not sdb: sdb = db.addEmptyTable('summarise',['File'],['File'])
+        ### ~ [2] Run Summarise ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        callobj.printLog('#BATCH','Batch summarising %s input files' % rje.iLen(seqfiles))
+        for file in seqfiles:
+            seqdata = SeqList(callobj.log,callobj.cmd_list+['seqin=%s' % file,'autoload=T','summarise=F','sortseq=None']).summarise()
+            if seqdata:
+                if 'GC' in seqdata:
+                    seqdata.pop('GC')
+                    seqdata['GCPC'] = '%.2f' % seqdata['GCPC']
+                if 'GapLength' in seqdata: seqdata['GapPC'] = '%.2f' % (100.0*seqdata['GapLength']/seqdata['TotLength'])
+                seqdata['MeanLength'] = '%.1f' % seqdata['MeanLength']
+                for field in string.split('SeqNum, TotLength, MinLength, MaxLength, MeanLength, MedLength, N50Length, L50Count, NG50Length, LG50Count, GapLength, GapPC, GCPC',', '):
+                    if field in seqdata and field not in sdb.fields(): sdb.addField(field)
+                for field in seqdata.keys():
+                    if field not in sdb.fields(): sdb.addField(field)
+                sdb.addEntry(seqdata)
+            else: callobj.errorLog('Summarise failed for %s' % file,printerror=False)
+        ### ~ [3] Output Summarise ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        if save: sdb.saveToFile()
+        return sdb
+    except: callobj.errorLog('%s.batchSummarise error' % callobj.prog()); return False
 #########################################################################################################################
 ### END OF SECTION III                                                                                                  #
 #########################################################################################################################
