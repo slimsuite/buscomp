@@ -19,8 +19,8 @@
 """
 Module:       rje_db
 Description:  R Edwards Relational Database module
-Version:      1.9.2
-Last Edit:    19/08/19
+Version:      1.9.3
+Last Edit:    13/01/20
 Copyright (C) 2007  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -82,6 +82,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.9.0 - Added comment output to saveToFile().
     # 1.9.1 - Updated logging of adding/removing fields: default is now when debugging only.
     # 1.9.2 - Tweaked entrySummary - added collapse=True.
+    # 1.9.3 - Added highest tied ranking.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -100,7 +101,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo():     ### Makes Info object
     '''Makes rje.Info object for program.'''
-    (program, version, last_edit, copy_right) = ('RJE_DB', '1.9.2', 'August 2019', '2008')
+    (program, version, last_edit, copy_right) = ('RJE_DB', '1.9.3', 'January 2020', '2008')
     description = 'R Edwards Relational Database module'
     author = 'Dr Richard J. Edwards.'
     comments = ['Please report bugs to Richard.Edwards@UNSW.edu.au']
@@ -336,6 +337,15 @@ class Database(rje.RJE_Object):
             if not delimit and filename: delimit = rje.delimitFromExt(filename=filename)
             elif not delimit: delimit = self.info['Delimit']
             if not filename and name: filename = '%s.%s.%s' % (self.basefile(),name,rje.delimitExt(delimit))
+            ## Check Ignore list Mainkey clashes
+            ignore = list(ignore)
+            if type(mainkeys) == str: checkkeys = [mainkeys]
+            else: checkkeys = list(mainkeys)
+            for itext in ignore[0:]:
+                for mkey in checkkeys:
+                    if mkey.startswith(itext):
+                        ignore.remove(itext); break
+            ## Mainkeys
             #self.deBug(filename)
             if not rje.exists(filename): raise IOError
             try:
@@ -444,7 +454,6 @@ class Database(rje.RJE_Object):
         >> newkey:list [] = If None, will make a new "AutoID" key field. Else, will use the given Fields.
         >> cleanup:bool [True] = If True will delete any Fields generated just to make the join
         >> delimit:str ['\t'] = Delimiter to be used to join the key fields
-        >> delimit:str ['\t'] = Delimiter to be used to join the key fields
         >> empties:bool [True] = Whether to keep entries that do not link to 1+ tables with empty values or delete them.
         >> check:bool [False] = Whether to check for entries that are not being joined.
         >> keeptable:bool [True] = Whether to add new table to self.list['Tables']
@@ -519,6 +528,7 @@ class Database(rje.RJE_Object):
             ## ~ [2b] Add one more table at a time to the new table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             for joins in join[1:]:
                 jtable = self.getTable(joins[0],errors=True)
+                self.bugPrint(jtable.name())
                 jfield = joins[1]
                 (olddata,newdata,tmpx) = (newdata,{},0)
                 icheck = jtable.dict['Index'][jfield].keys()[0:]
@@ -1474,7 +1484,7 @@ class Table(rje.RJE_Object):
         except: self.log.errorLog(rje_zen.Zen().wisdom())
         self.deleteField(field)        
 #########################################################################################################################
-    def rankField(self,field,newfield='',rev=False,absolute=True,lowest=False,unique=False,warn=True): ### Add ranks of field as new field
+    def rankField(self,field,newfield='',rev=False,absolute=True,lowest=False,unique=False,warn=True,highest=False): ### Add ranks of field as new field
         '''
         Add ranks of field as new field.
         >> field:str = Field to rank on
@@ -1483,6 +1493,7 @@ class Table(rje.RJE_Object):
         >> absolute:boolean [True] = return 1 to n, rather than 0 to 1
         >> lowest:boolean [False] = returns lowest rank rather mean rank in case of ties
         >> unique:boolean [False] = give each element a unique rank (ties rank in random order)
+        >> highest:boolean [False] = returns highest rank rather mean rank in case of ties (only if lowest=False unique=False)
         '''
         try:### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if not newfield: newfield = '%s.Rank' % field
@@ -1491,13 +1502,13 @@ class Table(rje.RJE_Object):
             entries = self.entries()    # Fix order
             for entry in entries: scorelist.append(entry[field])
             ### ~ [1] Rank and add newfield ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            ranks = rje.rankList(scorelist,rev,absolute,lowest,unique)
+            ranks = rje.rankList(scorelist,rev,absolute,lowest,unique,highest)
             for entry in entries: entry[newfield] = ranks.pop(0)
             if newfield not in self.fields(): self.list['Fields'].append(newfield)
             self.printLog('#RANK','Added ranked "%s" as field "%s" to Table "%s"' % (field,newfield,self.info['Name']))
         except: self.errorLog('Problem with Table.rankField()')
 #########################################################################################################################
-    def rankFieldByIndex(self,index,rankfield,newfield='',rev=False,absolute=True,lowest=False,unique=False,warn=True):    ### Add ranks of field with index group as new field
+    def rankFieldByIndex(self,index,rankfield,newfield='',rev=False,absolute=True,lowest=False,unique=False,warn=True,highest=False):    ### Add ranks of field with index group as new field
         '''
         Add ranks of field with index group as new field.
         >> index:str = field upon which to separate rank lists.
@@ -1507,6 +1518,7 @@ class Table(rje.RJE_Object):
         >> absolute:boolean [True] = return 1 to n, rather than 0 to 1
         >> lowest:boolean [False] = returns lowest rank rather mean rank in case of ties
         >> unique:boolean [False] = give each element a unique rank (ties rank in random order)
+        >> highest:boolean [False] = returns highest rank rather mean rank in case of ties (only if lowest=False unique=False)
         '''
         try:### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             self.index(index)
@@ -1517,7 +1529,7 @@ class Table(rje.RJE_Object):
                 scorelist = []
                 entries = self.entryList(self.dict['Index'][index][group])    # Fix order
                 for entry in entries: scorelist.append(entry[rankfield])
-                ranks = rje.rankList(scorelist,rev,absolute,lowest,unique)
+                ranks = rje.rankList(scorelist,rev,absolute,lowest,unique,highest)
                 for entry in entries: entry[newfield] = ranks.pop(0)
             self.list['Fields'].append(newfield)
         except: self.errorLog('Problem with Table.rankFieldByIndex()')
@@ -1811,12 +1823,21 @@ class Table(rje.RJE_Object):
 #########################################################################################################################
     def dropEntry(self,entry):    ### Drops specific entry from Table
         ekey = self.makeKey(entry)
+        if ekey not in self.dict['Data']:
+            if entry not in self.dict['Data'].values():
+                self.warnLog('Could not find table %s entry: %s' % (self.name(),entry))
+                return
+            for ekey in self.dict['Data']:
+                if self.dict['Data'][ekey] == entry: break
         for ikey in self.dict['Index'].keys():
             try:
                 self.dict['Index'][ikey][entry[ikey]].remove(ekey)
                 if not self.dict['Index'][ikey][entry[ikey]]: self.dict['Index'][ikey].pop(entry[ikey])
             except: self.dict['Index'].pop(ikey)
-        self.dict['Data'].pop(ekey)
+        try:
+            self.dict['Data'].pop(ekey)
+        except:
+            self.errorLog('DropEntry error!')
 #########################################################################################################################
     def dropEntries(self,filters,inverse=False,log=True,logtxt='',purelist=False,keylist=False):    ### Drops certain entries from Table
         '''
@@ -1977,7 +1998,7 @@ class Table(rje.RJE_Object):
                             else: entry[field] = False
                     except:
                         fx += 1
-                        self.deBug('%s %s - %s?' % (field,entry[field],self.dict['DataTypes'][field]))
+                        self.deBug('%s "%s" - %s?' % (field,entry[field],self.dict['DataTypes'][field]))
                 if rekey:
                     newkey = self.makeKey(entry)
                     self.dict['Data'][newkey] = self.dict['Data'].pop(oldkey)

@@ -19,8 +19,8 @@
 """
 Module:       rje_obj
 Description:  Contains revised General Object templates for Rich Edwards scripts and bioinformatics programs
-Version:      2.5.0
-Last Edit:    23/07/19
+Version:      2.7.0
+Last Edit:    02/02/20
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -116,6 +116,9 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 2.4.0 - Added vLog() and bugLog() methods.
     # 2.4.1 - Fixed bug where silent=T wasn't running silent.
     # 2.5.0 - Added flist command type that reads file lines as a list, ignoring commas.
+    # 2.5.1 - Started updated formatting for Python3 compatibility.
+    # 2.6.0 - Added threads() method to basic object.
+    # 2.7.0 - Added loggedSystemCall()
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -194,7 +197,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         if parent: return   ### ObjectLite settings - no need for object Lite this way!
         self.str = {'Name':'None','Basefile':'None','Delimit':rje.getDelimit(self.cmd_list),'ErrorLog':'None',
                     'RunPath':rje.makePath(os.path.abspath(os.curdir)),'RPath':'R','Rest':'None'}
-        self.str['Path'] = rje.makePath(os.path.abspath(string.join(string.split(sys.argv[0],os.sep)[:-1]+[''],os.sep)))
+        self.str['Path'] = rje.makePath(os.path.abspath(os.sep.join(sys.argv[0].split(os.sep)[:-1]+[''])))
         self.int = {'Verbose':1,'Interactive':0,'ScreenWrap':200}
         self.bool = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,
                      'Force':False,'Pickle':True,'SoapLab':False,'Test':False,'Backups':True,'Silent':False,'Quiet':False,
@@ -249,7 +252,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
     ### <2> ### General Attribute Get/Set methods                                                                       #
 #########################################################################################################################
     def prog(self): return self.log.name()
-    def type(self): return string.split('%s' % self)[0][1:]
+    def type(self): return '{}'.format(self).split()[0][1:]
     def name(self): return self.getStr('Name',default='%s' % self)
 #########################################################################################################################
     def parent(self): return self.obj['Parent']
@@ -557,10 +560,10 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         ### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if arg == None: arg = att.lower()
-        cmdarg = string.split(cmd,'=')[0].lower()
+        cmdarg = cmd.split('=')[0].lower()
         if cmdarg != arg: return
         value = cmd[len('%s=' % arg):]
-        value = string.replace(value,'#DATE',rje.dateTime(dateonly=True))
+        value = value.replace('#DATE',rje.dateTime(dateonly=True))
         ### ~ [1] Basic commandline types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if type in ['opt','bool']:
             if value[:1].lower() in ['f','0']: self.bool[att] = False
@@ -572,16 +575,16 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         elif type == 'abspath': self.str[att] = rje.makePath(os.path.abspath(os.path.expanduser(value)))
         elif type in ['fullpath','file']: self.str[att] = rje.makePath(os.path.expanduser(value),wholepath=True)
         elif type == 'int':
-            try: self.int[att] = string.atoi(value)
+            try: self.int[att] = int(value)
             except:
-                if rje.matchExp('^(\d+)',value): self.int[att] = string.atoi(rje.matchExp('^(\d+)',value)[0])
-                else: self.int[att] = int(string.atof(value))
+                if rje.matchExp('^(\d+)',value): self.int[att] = int(rje.matchExp('^(\d+)',value)[0])
+                else: self.int[att] = int(float(value))
                 self.warnLog('%s=%s needs integer -> %s=%d' % (arg,value,arg,self.int[att]))
-        elif type in ['float','stat','num']: self.num[att] = string.atof(value)
-        elif type == 'max' and rje.matchExp('^\d+,(\d+)',value): self.int[att] = string.atoi(rje.matchExp('^\d+,(\d+)',value)[0])
-        elif type in ['min','max'] and rje.matchExp('^(\d+)',value): self.int[att] = string.atoi(rje.matchExp('^(\d+)',value)[0])
-        elif type == 'fmax' and rje.matchExp('^[\.\d]+,([\.\d]+)',value): self.num[att] = string.atof(rje.matchExp('^[\.\d]+,([\.\d]+)',value)[0])
-        elif type in ['fmin','fmax'] and rje.matchExp('^([\.\d]+)',value): self.num[att] = string.atof(rje.matchExp('^([\.\d]+)',value)[0])
+        elif type in ['float','stat','num']: self.num[att] = float(value)
+        elif type == 'max' and rje.matchExp('^\d+,(\d+)',value): self.int[att] = int(rje.matchExp('^\d+,(\d+)',value)[0])
+        elif type in ['min','max'] and rje.matchExp('^(\d+)',value): self.int[att] = int(rje.matchExp('^(\d+)',value)[0])
+        elif type == 'fmax' and rje.matchExp('^[\.\d]+,([\.\d]+)',value): self.num[att] = float(rje.matchExp('^[\.\d]+,([\.\d]+)',value)[0])
+        elif type in ['fmin','fmax'] and rje.matchExp('^([\.\d]+)',value): self.num[att] = float(rje.matchExp('^([\.\d]+)',value)[0])
         elif type == 'date' and rje.matchExp('^(\d\d\d\d)-?(\d\d)-?(\d\d)$',value):
             self.str[att] = '%s-%s-%s' % rje.matchExp('^(\d\d\d\d)-?(\d\d)-?(\d\d)$',value)
         elif type == 'list': self.list[att] = rje.listFromCommand(value)
@@ -590,18 +593,18 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         elif type == 'uclist': self.list[att] = rje.listUpper(rje.listFromCommand(value))
         ### ~ [2] Special types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         elif type == 'perc':
-            self.num[att] = string.atof(value)
+            self.num[att] = float(value)
             if self.num[att] < 1.0: self.num[att] *= 100.0
         elif type in ['ilist','nlist']:
             nlist = rje.listFromCommand(value)
             self.list[att] = []
             for nvalue in nlist:
-                if type == 'ilist': self.list[att].append(string.atoi(nvalue))
-                else: self.list[att].append(string.atof(nvalue))
+                if type == 'ilist': self.list[att].append(int(nvalue))
+                else: self.list[att].append(float(nvalue))
         elif type == 'clist':   # Returns a *string* of a CSV list
-            self.str[att] = string.join(rje.listFromCommand(value),',')
+            self.str[att] = ','.join(rje.listFromCommand(value))
         elif type == 'glist':   # 'Glob' List - returns a list of files using wildcards & glob
-            globlist = string.split(value,',')
+            globlist = value.split(',')
             if len(globlist) == 1 and globlist[0].endswith('.fofn'):  # File of file names
                 globlist = rje.listFromCommand(value)
             self.list[att] = []
@@ -617,9 +620,9 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if type == 'cdictlist': self.list[att] = []
             clist = rje.listFromCommand(value)
             for c in clist:
-                data = string.split(c,':')
+                data = c.split(':')
                 if ':' in c:
-                    if len(data) > 2: data = [data[0],string.join(data[1:],':')]
+                    if len(data) > 2: data = [data[0],':'.join(data[1:])]
                     self.dict[att][data[0]] = data[1]
                     if type == 'cdictlist': self.list[att].append(data[0])
         else:
@@ -679,11 +682,11 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if not width and line in '~-=': width = {'=':90,'-':75,'~':60}[line]
         strlist = [hash,line*minside,text,line*minside,hash]
-        while len(string.join(strlist)) < width:
+        while len(rje.jstring.join(strlist)) < width:
             strlist[1] += line
             strlist[3] += line
-        if len(string.join(strlist)) == width + 1 and len(strlist[1]) > minside: strlist[1] = strlist[1][:-1]
-        self.printLog('%s%s%s%s' % (hash,line,line,hash),string.join(strlist))
+        if len(rje.jstring.join(strlist)) == width + 1 and len(strlist[1]) > minside: strlist[1] = strlist[1][:-1]
+        self.printLog('%s%s%s%s' % (hash,line,line,hash),rje.jstring.join(strlist))
 #########################################################################################################################
     def vPrint(self,text,v=1): return self.verbose(v,text=text)
 #########################################################################################################################
@@ -697,9 +700,10 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if i == None: i = self.getInt('Interactive') + 1
         if not self.getBool('Silent') and (self.getInt('Verbose') >= v or self.getInt('Interactive') >= i):
-            print text,
+            print(text),
             if self.getInt('Interactive') >= i:
-                raw_input(" <ENTER> to continue.")
+                if rje.py3: input(" <ENTER> to continue.")
+                else: raw_input(" <ENTER> to continue.")
                 if 'pwin' not in sys.argv + self.cmd_list: newline -= 1
             while newline > 0: print; newline -= 1
             try: sys.stdout.flush()
@@ -718,7 +722,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if screenwrap < 1: screenwrap = self.getInt('ScreenWrap')
         wrapped = []
-        if wordsplit: wraptext = string.split(intext)
+        if wordsplit: wraptext = intext.split()
         else: wraptext = rje.strList(intext)
         splitlen = screenwrap - len(prefix) - len(suffix)
         while wraptext:
@@ -729,7 +733,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if fixwidth and len(addtext) < splitlen: addtext += ' ' * (splitlen - len(addtext))
             wrapped.append('%s%s%s' % (prefix,addtext,suffix))
         while intext.endswith('\n') and len(wrapped) < 2: wrapped.append('')
-        return string.join(wrapped,'\n')
+        return '\n'.join(wrapped)
 #########################################################################################################################
     def debug(self,text): self.deBug(text)
 #########################################################################################################################
@@ -874,8 +878,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if v <= self.v():
                 self.printLog('#LOAD','Loading data from %s ...' % openfile,newline=False,log=False)
             file_lines = open(openfile, 'r').readlines()
-            if len(file_lines) == 1: file_lines = string.split(file_lines[0],'\r')
-            if chomplines: file_lines = string.split(rje.chomp(string.join(file_lines,'!#ENDOFLINE#!')),'!#ENDOFLINE#!')
+            if len(file_lines) == 1: file_lines = file_lines[0].split('\r')
+            if chomplines: file_lines = rje.chomp('!#ENDOFLINE#!'.join(file_lines)).split('!#ENDOFLINE#!')
             if v <= self.v():
                 self.printLog('\r#LOAD','Loading data from %s complete: %s lines.' % (openfile,rje.iLen(file_lines)),log=False)
             return file_lines
@@ -903,18 +907,20 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             self.printLog('#GZIP','%s zipped.' % filename); return True
         else: self.printLog('#ERR','%s missing!' % filename); return False
 #########################################################################################################################
-    def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True): ### Checks whether checkfile needs remake
+    def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True,tiesok=True): ### Checks whether checkfile needs remake
         '''
         Checks whether checkfile needs remake.
         >> checkfile:str = File name of file that may need remaking.
         >> parentfile:str = File name of file that was used to make checkfile. (Should be older)
         >> checkdate:bool = whether to bother checking the comparative dates.
         >> checkforce:bool = whether to use self.force() to identify whether remake should be forced
+        >> tiesok:bool = whether to allowed tied age with parent file
         '''
         if checkforce and self.force(): return True
         if not os.path.exists(checkfile): return True
         if checkdate == None and self.getBool('IgnoreDate',default=False) or checkdate == False: return True
-        if rje.isYounger(checkfile,parentfile) != parentfile: return False
+        if tiesok and rje.isYounger(checkfile,parentfile) != parentfile: return False
+        elif rje.isYounger(parentfile,checkfile) == checkfile: return False
         return True
 #########################################################################################################################
     def sourceDataFile(self,str,ask=True,expect=True,check=True,force=False,download=None,sourceurl=None):   ### Returns source data file.        #V2.0
@@ -997,7 +1003,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if download and str in ['HINT.DROME','HINT.CAEEL']:
                 self.warnLog('Trying to correct for dodgy HINT.DROME/HINT.CAEEL download w/o headers')
                 ## Special fudge
-                open(nowfile,'w').write('%s\n' % string.join('Id_A Id_B Gene_A Gene_B Pubmedid,EvidenceCode,HT'.split(),'\t'))
+                open(nowfile,'w').write('{}\n'.format('\t'.join('Id_A Id_B Gene_A Gene_B Pubmedid,EvidenceCode,HT'.split())))
                 sourcefile = nowfile
                 rje.urlToFile(sourceurl,nowfile,self,backupfile=False)
                 sentry['Status'] = 'Downloaded'
@@ -1050,15 +1056,92 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         except KeyboardInterrupt: raise
         except: self.errorLog('Problem locating %s source data file' % str,quitchoice=self.getBool('Integrity')); return ''
 #########################################################################################################################
+    def loggedSysCall(self,cmd,syslog=None,stderr=True,append=True,verbosity=1,nologline=None,threaded=True):    ### Makes a system call, catching output in log file
+        '''
+        Makes a system call, catching output in log file.
+        :param cmd:str = System call command to catch
+        :param syslog:str [None] = Filename for system log in which to capture output. Will use $BASEFILE.sys.log if None
+        :param stderr:bool [True] = Whether to also capture the STDERR
+        :param append:bool [False] = Whether to append the log if it exists
+        :param verbosity:int [1] = Verbosity level at which output also goes to screen (tee, not redirect)
+        :param nologline:str [None] = Default logline returned if nothing is in the log
+        :return: last line of syslog output
+        '''
+        try:### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            #i# System log filename
+            if not syslog: syslog = '{}.sys.log'.format(self.baseFile())
+            #i# Setup log with command and identify position to capture extra content
+            headline = '[{}] {}\n'.format(rje.dateTime(),cmd)
+            if append: open(syslog,'a').write(headline)
+            else:
+                rje.backup(self,syslog,appendable=False)
+                open(syslog,'w').write(headline)
+            #i# Identify position at end of file
+            fend = rje.endPos(filename=syslog)
+            #i# Generate system command
+            if stderr:
+                if ' > ' in cmd: self.warnLog('Cannot capture stderr or stdout for command: {}'.format(cmd))
+                else: cmd = '{} 2>&1'.format(cmd)
+            if append:
+                if self.v() >= verbosity: cmd = '{} | tee -a {}'.format(cmd,syslog)
+                else: cmd = '{} >> {}'.format(cmd,syslog)
+            else:
+                if self.v() >= verbosity: cmd = '{} | tee {}'.format(cmd,syslog)
+                else: cmd = '{} > {}'.format(cmd,syslog)
+            ### ~ [2] ~ Process System Call ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            if self.dev() and self.getBool('UseQSub'):
+                if not rje.exists('tmp_qsub'): rje.mkDir(self,'tmp_qsub/',log=True)
+                qbase = rje.baseFile(syslog)
+                ppn = self.threads()
+                vmem = self.getInt('QSubVMem')
+                if not threaded: ppn = 1; vmem = 16
+                farmcmd = ['farm={}'.format(cmd),'jobwait=T','qsub=T','basefile={}'.format(qbase),'slimsuite=F',
+                           'qpath={}'.format(mydir),'monitor=F',
+                           'ppn={}'.format(ppn),'vmem={}'.format(vmem),'walltime={}'.format(self.getInt('QSubWall'))]
+                self.printLog('#DEV','Using SLiMFarmer to farm system call in tmp_qsub/')
+                farmer = slimfarmer.SLiMFarmer(self.log,self.cmd_list+farmcmd)
+                self.printLog('#DEV','SLiMFarmer commands: {}'.format(' '.join(farmer.cmd_list)))
+                if not farmer.list['Modules']:
+                    for mod in os.popen('module list 2>&1').read().split():
+                        if '/' in mod: farmer.list['Modules'].append(mod)
+                    if farmer.list['Modules']:
+                        modlist = ','.join(farmer.list['Modules'])
+                        self.printLog('#MOD','Read modules for qsub from environment: {}'.format(modlist))
+                        self.cmd_list.append('modules={}'.format(modlist))
+                        farmer = slimfarmer.SLiMFarmer(self.log,self.cmd_list+farmcmd)
+                        self.printLog('#DEV','SLiMFarmer commands: {}'.format(' '.join(farmer.cmd_list)))
+                    else:
+                        raise ValueError('Trying to run with useqsub=T but modules=LIST not set!')
+                os.chdir('tmp_qsub/')
+                excode = farmer.run()
+                os.chdir(mydir)
+            else:
+                self.printLog('#SYS',cmd)
+                excode = os.system(cmd)
+            if excode > 0: raise ValueError('Non-zero exit status for: {}'.format(cmd))
+            logline = nologline
+            if not logline:
+                logline = 'WARNING: No run log output!'
+            SYSLOG = open(syslog,'r')
+            SYSLOG.seek(fend)
+            for readline in SYSLOG.readlines():
+                readline = rje.chomp(readline)
+                if readline: logline = readline
+            self.printLog('#SYSEND',logline)
+            return logline
+        except:
+            self.errorLog('loggedSysCall() error')
+            return None
+#########################################################################################################################
     ### <4b> ### REST server output methods. (Should be replaced in mature Classes)                                     #
 #########################################################################################################################
     def restOutputError(self,errormsg): ### Returns full error message.
         '''Returns full error message..'''
         try:
-            print errormsg
+            print(errormsg)
             ### Setup error variables
             error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
-            error_type = string.replace(error_type,'exceptions.','')
+            error_type = error_type.replace('exceptions.','')
             error_value = str(sys.exc_info()[1])        # Error Value      : [Errno 9] Bad file descriptor
             error_traceback = traceback.extract_tb(sys.exc_info()[2])
             error_file = str(error_traceback[-1][0])    # File             : C:\Documents and Settings\normdavey\Desktop\Python\BLAST\Main.py
@@ -1075,7 +1158,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             error_txt.append('Method: %s (line %s)\n' % (error_method, error_line))
             error_txt.append('Error: %s\n' % error_error)
             error_txt.append('\nContact webmaster for more details.\n')
-            return string.join(error_txt,'')
+            return ''.join(error_txt)
         except: os._exit(0)
 #########################################################################################################################
     def restSetup(self):    ### Sets up self.dict['Output'] and associated output options if appropriate.
@@ -1113,8 +1196,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if outfmt in ['full','text']: return self.restFullOutput()
             if outfmt == 'version': return rje.Out(self.log,['v=-1']).printIntro(self.log.obj['Info'])
             if outfmt == 'outfmt': return self.restSetup.__doc__
-            if outfmt == 'warnings': return string.join(self.log.list['WarnLog'],'\n')  # List of log warning messages.
-            if outfmt == 'errors': return string.join(self.log.list['ErrorLog'],'\n')   # List of log error messages.
+            if outfmt == 'warnings': return '\n'.join(self.log.list['WarnLog'])  # List of log warning messages.
+            if outfmt == 'errors': return '\n'.join(self.log.list['ErrorLog'])   # List of log error messages.
             if outfmt in self.dict['Output']:
                 outdata = self.dict['Output'][outfmt]
                 if outdata in self.str: outdata = self.str[outdata]
@@ -1210,6 +1293,17 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             return self.restOutputError('%s.restFullOutput() error.' % self.prog())
 #########################################################################################################################
     ### <5> ### Forks                                                                                                   #
+#########################################################################################################################
+    def threads(self):  ### Returns number of threads to use (forks=INT with min=1)
+        '''
+        Returns number of threads to use (forks=INT with min=1)
+        :return: threadnum
+        '''
+        try:
+            return max(1,self.getInt('Forks'))
+        except:
+            if self.debugging(): self.errorLog('self.threads() error',quitchoice=True)
+        return 1
 #########################################################################################################################
     def _activeForks(self,pidlist=[],nowarn=[0]):   ### Checks Process IDs of list and returns list of those still running.
         '''
@@ -1449,7 +1543,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                 fline = FILE.readline()
             ### ~ [1] Scan through file for word ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             while fline:
-                word = string.split(fline)[0]
+                word = fline.split()[0]
                 if word in wordlist:  # Found word!
                     if chomp: fline = rje.chomp(fline)
                     if nextonly: return fline

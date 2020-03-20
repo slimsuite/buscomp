@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compiler and Comparison tool
 
 ```
-BUSCOMP v0.8.3
+BUSCOMP v0.8.6
 ```
 
 For a better rendering and navigation of this document, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -95,7 +95,7 @@ dochtml=T/F     : Generate HTML BUSCOMP documentation (*.docs.html) instead of m
 summarise=T/F   : Include summaries of genomes in main `*.genomes.tdt` output [True]
 ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 minimap2=PROG   : Full path to run minimap2 [minimap2]
-endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
+endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
 minlocid=INT    : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
 minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [1]
 uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [True]

@@ -57,7 +57,7 @@ Input/Output:
     tmconvert=T/F   : Whether to convert TOPO_DOM features, using first description word as Type [False]
     reviewed=T/F    : Whether to restrict input to reviewed entries only [False]
     complete=T/F    : Whether to restrict proteome downloads to "complete proteome" sets [False]
-    uniformat=X     : Desired UniProt format for URL download (over-rules normal processing). Append gz to compress. [txt]
+    uniformat=X     : Desired UniProt format for proteome download. Append gz to compress. [txt]
                         - html | tab | xls | fasta | gff | txt | xml | rdf | list | rss
     onebyone=T/F    : Whether to download one entry at a time. Slower but should maintain order [False]
 

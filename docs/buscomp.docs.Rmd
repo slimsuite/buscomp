@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Documentation"
 author: "Richard J. Edwards"
-date: "2019-10-29"
+date: "2020-03-20"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -109,7 +109,7 @@ dochtml=T/F     : Generate HTML BUSCOMP documentation (*.docs.html) instead of m
 summarise=T/F   : Include summaries of genomes in main `*.genomes.tdt` output [True]
 ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 minimap2=PROG   : Full path to run minimap2 [minimap2]
-endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
+endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
 minlocid=INT    : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
 minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [1]
 uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [True]

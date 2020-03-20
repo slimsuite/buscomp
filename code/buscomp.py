@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.8.3
-Last Edit:    29/10/19
+Version:      0.8.6
+Last Edit:    20/03/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -92,7 +92,7 @@ Commandline:
     loadsummary=T/F : Use existing genome summaries including NG50 from `*.genomes.tdt`, if present [True]
     ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     minimap2=PROG   : Full path to run minimap2 [minimap2]
-    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
+    endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
     minlocid=INT    : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
     minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [20]
     uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [True]
@@ -116,7 +116,8 @@ sys.path.append(os.path.join(slimsuitepath,'tools/'))
 gitcodepath = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)))) + os.path.sep
 sys.path.append(os.path.join(slimsuitepath,'../code/'))
 ### User modules - remember to add *.__doc__ to cmdHelp() below ###
-import rje, rje_obj, rje_db, rje_menu, rje_paf, rje_rmd, rje_seqlist
+import rje, rje_obj, rje_db, rje_menu, rje_paf, rje_rmd\
+, rje_seqlist
 #########################################################################################################################
 def history():  ### Program History - only a method for PythonWin collapsing! ###
     '''
@@ -149,6 +150,9 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.8.1 - Set endextend=0 due to bug.
     # 0.8.2 - Fixed full RMD chart labelling bug. Fixed endextend bug and reinstated endextend=10 default.
     # 0.8.3 - Fixed Unique rating bug with no groups.
+    # 0.8.4 - Set endextend=0 due to another bug.
+    # 0.8.5 - Fixed BUSCO table loading bug introduced by Diploidocus. Added error catching for logbinomial bug.
+    # 0.8.6 - Tweaked code to handle BUSCO v4 files, but not (yet) file organisation.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -193,7 +197,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.3', 'October 2019', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.6', 'March 2020', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -461,7 +465,7 @@ class BUSCOMP(rje_obj.RJE_Object):
         summarise=T/F   : Include summaries of genomes in main `*.genomes.tdt` output [True]
         ### ~ Mapping/Classification options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         minimap2=PROG   : Full path to run minimap2 [minimap2]
-        endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [10]
+        endextend=X     : Extend minimap2 hits to end of sequence if query region with X bp of end [0]
         minlocid=INT    : Minimum percentage identity for aligned chunk to be kept (local %identity) [0]
         minloclen=INT   : Minimum length for aligned chunk to be kept (local hit length in bp) [1]
         uniquehit=T/F   : Option to use *.hitunique.tdt table of unique coverage for GABLAM coverage stats [True]
@@ -2334,7 +2338,7 @@ class BUSCOMP(rje_obj.RJE_Object):
 
                 # - Add to Table:full (+Genome field)
                 self.bugShush()
-                fdb = db.addTable(gentry['Table'],mainkeys='#',headers=fullhead,expect=True,name=gentry['Genome'])
+                fdb = db.addTable(gentry['Table'],mainkeys='auto',headers=fullhead,expect=True,name=gentry['Genome'])
                 logtext += ' (%s entries)' % fdb.entryNum()
                 self.talk(); self.progLog('\r#BUSCO','Processing %s...' % logtext); self.bugShush()
                 fdb.fillBlanks(blank=0,fields=['Score','Length'],fillempty=True,prog=True,log=True)
@@ -2408,7 +2412,13 @@ class BUSCOMP(rje_obj.RJE_Object):
                 buscodb.addField(group,evalue=self.list['Ratings'][-1])
                 for eog in buscodb.dataKeys():
                     for genentry in gentries:
-                        gfield = self.genomeField( genentry )
+                        gfield = self.genomeField(genentry)
+                        if not gfield: raise ValueError('No GenomeField entry for: %s' % genentry)
+                        try:
+                            ranklist.index(buscodb.data(eog)[gfield])
+                            ranklist.index(buscodb.data(eog)[group])
+                        except:
+                            self.errorLog('Problem with %s data - "%s" or "%s" classification not recognised: %s' % (eog, gfield, group, buscodb.data(eog)))
                         if ranklist.index(buscodb.data(eog)[gfield]) < ranklist.index(buscodb.data(eog)[group]):
                             buscodb.data(eog)[group] = buscodb.data(eog)[gfield]
                     grpentry['N'] += 1
@@ -2599,7 +2609,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 if rje.exists(fna):
                     #!# Fix this! 'Qry': 'EOG0907007V:tiger.wtdbg2v1.racon.fasta:ctg_NOTSC__NSCUV1ONT0006:601178-628876'
                     fnalines = open(fna,'r').readlines()
-                    fnalines[0] = string.join(string.split(fnalines[0],':',maxsplit=1))
+                    if string.split(fnalines[0],':',maxsplit=1)[0] == eog:  # BUSCO v3
+                        fnalines[0] = string.join(string.split(fnalines[0],':',maxsplit=1))
+                    else:
+                        fnalines[0] = '{} {}'.format(eog,fnalines[0]) # BUSCO v4
                     for i in range(1,len(fnalines)):
                         if fnalines[i].startswith('>'):
                             self.warnLog('"Single copy" BUSCO %s has 2+ sequences in %s! (Keeping first.)' % (eog,fna))
@@ -2613,7 +2626,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 faa = rje.makePath(gentry['Directory']) + 'single_copy_busco_sequences/%s.faa' % eog
                 if rje.exists(faa):
                     faalines = open(faa,'r').readlines()
-                    faalines[0] = string.join(string.split(faalines[0],':',maxsplit=1))
+                    if string.split(faalines[0],':',maxsplit=1)[0] == eog:  # BUSCO v3
+                        faalines[0] = string.join(string.split(faalines[0],':',maxsplit=1))
+                    else:
+                        faalines[0] = '{} {}'.format(eog,faalines[0]) # BUSCO v4
                     for i in range(1,len(faalines)):
                         if faalines[i].startswith('>'):
                             self.warnLog('"Single copy" BUSCO %s has 2+ sequences in %s! (Keeping first.)' % (eog,faa))
@@ -2683,7 +2699,7 @@ class BUSCOMP(rje_obj.RJE_Object):
             outdir = rje.makePath('%s.minimap/' % self.baseFile())
             rje.mkDir(self,outdir)
             gdb = self.db('genomes')
-            pafdefault = ['uniqueout=T','localaln=F','mockblast=F','uniquehit=T','alnseq=F','endextend=10',
+            pafdefault = ['uniqueout=T','localaln=F','mockblast=F','uniquehit=T','alnseq=F','endextend=0',
                           'minlocid=%d' % self.getInt('MinLocID'),'minloclen=%d' % self.getInt('MinLocLen')]
             pafopt = {'p':self.getNum('MMPCut'),'N':self.getInt('MMSecNum')}
             buscofas = '%s.buscomp.fasta' % self.baseFile()
@@ -3286,7 +3302,12 @@ class BUSCOMP(rje_obj.RJE_Object):
                 xG = float(gentry['GN']+gentry['GG'])
                 if xG:
                     gentry['p'] = xG / (xG+gentry['NN']+gentry['NG'])
-                    gentry['pB'] = rje.logBinomial(gentry['k'],gentry['n'],gentry['p'],exact=False,callobj=self)
+                    try:
+                        gentry['pB'] = rje.logBinomial(gentry['k'],gentry['n'],gentry['p'],exact=False,callobj=self)
+                    except:
+                        self.errorLog('Problem calculating probability of {}+ GG from {} x p(*G)={}'.format(gentry['k'],gentry['n'],gentry['p']))
+                        gentry['p'] = 0.0
+                        gentry['pB'] = 1.0
                 else:
                     gentry['p'] = 0.0
                     gentry['pB'] = 1.0

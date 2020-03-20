@@ -19,8 +19,8 @@
 """
 Module:       rje
 Description:  Contains SLiMSuite and Sequite General Objects
-Version:      4.22.0
-Last Edit:    22/07/19
+Version:      4.22.3
+Last Edit:    13/01/20
 Copyright (C) 2005  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -169,6 +169,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 4.21.0 - Added hashlib MD% functions.
     # 4.21.1 - Fixed bug where silent=T wasn't running silent.
     # 4.22.0 - Added flist command type that reads file lines as a list, ignoring commas.
+    # 4.22.1 - Reformatting for Python3 compatibility.
+    # 4.23.3 - Added highest tied ranking.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -176,7 +178,14 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [Y] : Split general functions into groups, like delimited text functions
     '''
 #########################################################################################################################
-import glob, hashlib, math, os, pickle, random, re, string, sys, time, traceback, urllib2
+import glob, hashlib, math, os, pickle, random, re, string, sys, time, traceback
+py3 = False
+jstring = ' '
+try:
+    import urllib2 as urllib
+except:
+    import urllib.request as urllib
+    py3 = True
 try:
    set
 except NameError:
@@ -251,7 +260,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         self.info = {'Name':'None','Basefile':'None','Delimit':getDelimit(self.cmd_list),'Rest':'None',
                      'RunPath':makePath(os.path.abspath(os.curdir)),'ErrorLog':'None',
                      'RPath':'R'}
-        self.info['Path'] = makePath(os.path.abspath(string.join(string.split(sys.argv[0],os.sep)[:-1]+[''],os.sep)))
+        #self.info['Path'] = makePath(os.path.abspath(string.join(string.split(sys.argv[0],os.sep)[:-1]+[''],os.sep)))
+        self.info['Path'] = makePath(os.path.abspath(os.sep.join(sys.argv[0].split(os.sep)[:-1]+[''])))
         self.stat = {'Verbose':1,'Interactive':0}
         self.opt = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,'Force':False,
                     'Pickle':True,'SoapLab':False,'Test':False,'Backups':True,'Silent':False,'Webserver':False,'Quiet':False,
@@ -290,17 +300,17 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def dev(self): return self.opt['Dev']
     def debugging(self): return self.opt['DeBug']
     def parent(self): return self.obj['Parent']
-    def me(self): return string.split('%s' % self)[0][1:]
+    def me(self): return '{}'.format(self).split()[0][1:]
 #########################################################################################################################
     def yesNo(self,text='',default='Y',confirm=False,i=0):
         if self.i() < i:
-            self.printLog('#AUTO','%s: %s' % (text,default.upper()))
+            self.printLog('#AUTO','{}: {}'.format(text,default.upper()))
             return {'Y':True,'N':False}[default.upper()]
         else: return yesNo(text,default,confirm=confirm)
 #########################################################################################################################
     def choice(self,text='',default='Y',confirm=False,i=0):
         if self.i() < i:
-            self.printLog('#AUTO','%s: %s' % (text,default))
+            self.printLog('#AUTO','{}: {}'.format(text,default))
             return default
         else: return choice(text,default,confirm=confirm)
 #########################################################################################################################
@@ -314,7 +324,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def data(self,table,strict=False):
         try: return self.obj['DB'].getTable(table).data()
         except:
-            if strict: self.errorLog('No DB table "%s"?' % table); raise
+            if strict: self.errorLog('No DB table "{}"?'.format(table)); raise
             else: return {}
 #########################################################################################################################
     def warnChecks(self):   ### Checks certain input paths etc. and warns of anomalies
@@ -343,8 +353,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
                                          'SoapLab','Backups','Webserver','ProgLog','Dev','Warn','OSX','Silent','Quiet'])
         except:
             self.deBug(self.cmd_list)
-            if self.log: self.log.errorLog('Problem with %s.cmd:%s' % (self.me(),cmd))
-            else: print 'ERROR! Problem with %s.cmd:%s' % (self.me(),cmd)
+            if self.log: self.log.errorLog('Problem with {}.cmd:{}'.format(self.me(),cmd))
+            else: print('ERROR! Problem with {}.cmd:{}'.format(self.me(),cmd))
 #########################################################################################################################
     def _cmdReadList(self,cmd=None,type='info',attlist=[]):     ### Sets self.type[att] from commandline command cmd
         '''
@@ -365,10 +375,10 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         '''
         ### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if arg == None: arg = att.lower()
-        cmdarg = string.split(cmd,'=')[0].lower()
-        if cmdarg not in [arg,'-%s' % arg]: return
-        value = cmd[len('%s=' % arg):]
-        value = string.replace(value,'#DATE',dateTime(dateonly=True))
+        cmdarg = cmd.split('=')[0].lower()
+        if cmdarg not in [arg,'-{}'.format(arg)]: return
+        value = cmd[len('{}='.format(arg)):]
+        value = value.replace('#DATE',dateTime(dateonly=True))
         ### ~ [1] Basic commandline types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if type in ['opt','bool']:
             if value[:1].lower() in ['f','0']: self.opt[att] = False
@@ -378,34 +388,34 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         elif type == 'abspath': self.info[att] = makePath(os.path.abspath(os.path.expanduser(value)))
         elif type in ['fullpath','file']: self.info[att] = makePath(os.path.expanduser(value),wholepath=True)
         elif type == 'int':
-            try: self.stat[att] = string.atoi(value)
+            try: self.stat[att] = int(value)
             except:
-                if matchExp('^(\d+)',value): self.stat[att] = string.atoi(matchExp('^(\d+)',value)[0])
-                else: self.stat[att] = int(string.atof(value))
-                self.log.warnLog('%s=%s needs integer -> %s=%d' % (arg,value,arg,self.stat[att]))
-        elif type in ['float','stat','num']: self.stat[att] = string.atof(value)
-        elif type == 'fmax' and matchExp('^[\d\.]+,([\d\.]+)',value): self.stat[att] = string.atof(matchExp('^[\d\.]+,([\d\.]+)',value)[0])
-        elif type in ['fmin','fmax'] and matchExp('^([\d\.]+)',value): self.stat[att] = string.atof(matchExp('^([\d\.]+)',value)[0])
-        elif type == 'max' and matchExp('^\d+,(\d+)',value): self.stat[att] = string.atoi(matchExp('^\d+,(\d+)',value)[0])
-        elif type in ['min','max'] and matchExp('^(\d+)',value): self.stat[att] = string.atoi(matchExp('^(\d+)',value)[0])
+                if matchExp('^(\d+)',value): self.stat[att] = int(matchExp('^(\d+)',value)[0])
+                else: self.stat[att] = int(float(value))
+                self.log.warnLog('{}={} needs integer -> {}={}'.format(arg,value,arg,self.stat[att]))
+        elif type in ['float','stat','num']: self.stat[att] = float(value)
+        elif type == 'fmax' and matchExp('^[\d\.]+,([\d\.]+)',value): self.stat[att] = float(matchExp('^[\d\.]+,([\d\.]+)',value)[0])
+        elif type in ['fmin','fmax'] and matchExp('^([\d\.]+)',value): self.stat[att] = float(matchExp('^([\d\.]+)',value)[0])
+        elif type == 'max' and matchExp('^\d+,(\d+)',value): self.stat[att] = int(matchExp('^\d+,(\d+)',value)[0])
+        elif type in ['min','max'] and matchExp('^(\d+)',value): self.stat[att] = int(matchExp('^(\d+)',value)[0])
         elif type == 'list': self.list[att] = listFromCommand(value)
         elif type == 'flist': self.list[att] = listFromCommand(value,purelines=True)
         elif type == 'lclist': self.list[att] = listLower(listFromCommand(value))
         elif type == 'uclist': self.list[att] = listUpper(listFromCommand(value))
         ### ~ [2] Special types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         elif type == 'perc':
-            self.stat[att] = string.atof(value)
+            self.stat[att] = float(value)
             if self.stat[att] < 1.0: self.stat[att] *= 100.0
         elif type in ['ilist','nlist']:
             nlist = listFromCommand(value)
             self.list[att] = []
             for nvalue in nlist:
-                if type == 'ilist': self.list[att].append(string.atoi(nvalue))
-                else: self.list[att].append(string.atof(nvalue))
+                if type == 'ilist': self.list[att].append(int(nvalue))
+                else: self.list[att].append(float(nvalue))
         elif type == 'clist':   # Returns a *string* of a CSV list
-            self.info[att] = string.join(listFromCommand(value),',')
+            self.info[att] = ','.join(listFromCommand(value))
         elif type == 'glist':   # 'Glob' List - returns a list of files using wildcards & glob
-            globlist = string.split(value,',')
+            globlist = value.split(',')
             if len(globlist) == 1 and globlist[0].endswith('.fofn'):  # File of file names
                 globlist = listFromCommand(value)
             self.list[att] = []
@@ -418,7 +428,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
             if type == 'cdictlist': self.list[att] = []
             clist = listFromCommand(value)
             for c in clist:
-                data = string.split(c,':')
+                data = c.split(':')
                 if len(data) == 2:
                     self.dict[att][data[0]] = data[1]
                     if type == 'cdictlist': self.list[att].append(data[0])
@@ -431,7 +441,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         '''
         for cmd in self.cmd_list:
             try: self._generalCmd(cmd)
-            except: self.log.errorLog('Problem with %s.cmd:%s' % (self.me(),cmd))
+            except: self.log.errorLog('Problem with {}.cmd:{}'.format(self.me(),cmd))
 #########################################################################################################################
     ### <3> ### Input/Output                                                                                            #
 #########################################################################################################################
@@ -447,10 +457,11 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         '''
         if i == None: i = self.stat['Interactive'] + 1
         if not self.opt['Silent'] and (self.stat['Verbose'] >= v or self.stat['Interactive'] >= i):
-            if stderr: sys.stderr.write('%s' % text)
-            else: sys.stdout.write('%s' % text)
+            if stderr: sys.stderr.write('{}'.format(text))
+            else: sys.stdout.write('{}'.format(text))
             if self.stat['Interactive'] >= i:
-                raw_input(" <ENTER> to continue.")
+                if py3: input(" <ENTER> to continue.")
+                else: raw_input(" <ENTER> to continue.")
                 if 'pwin' not in sys.argv + self.cmd_list: newline -= 1
             while newline > 0:
                 if stderr: sys.stderr.write('\n')
@@ -588,7 +599,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
     ### => Now mostly handled in inherited RJE_Object_Shell Class                                                       #
 #########################################################################################################################
     def prog(self): return self.log.info['Name']
-    def name(self): return self.getStr('Name',default='%s' % self)
+    def name(self): return self.getStr('Name',default='{}'.format(self))
 #########################################################################################################################
     def baseFile(self,newbase=None,runpath=False): return self.basefile(newbase,runpath)
     def basefile(self,newbase=None,runpath=False):
@@ -598,7 +609,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             else: return ''
         fullpath = os.path.abspath(self.getStr('Basefile')) == self.getStr('Basefile')
         if runpath and not fullpath and not self.getStr('Basefile').startswith(self.getStr('RunPath')):
-            return '%s%s' % (self.getStr('RunPath'),self.getStr('Basefile'))    #!# Check that this does not break stuff!
+            return '{}{}'.format(self.getStr('RunPath'),self.getStr('Basefile'))    #!# Check that this does not break stuff!
         else: return self.getStr('Basefile')
     def setBasefile(self,basefile=None,cascade=True): ### Sets basefile and cascades to daughter objects
         '''Sets basefile and cascades to daughter objects.'''
@@ -634,7 +645,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         if self.v() < 1: return
         if rand > 0 and random.random() > rand: return
         if 'ProgLog' in self.opt and not self.opt['ProgLog']: return False
-        return self.printLog('\r%s' % id,text,screen=screen,log=False,newline=False,clear=clear)
+        return self.printLog('\r{}'.format(id),text,screen=screen,log=False,newline=False,clear=clear)
     def printLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True,clear=0):
         return self.log.printLog(id,text,timeout,screen and not self.opt['Silent'],log and not self.opt['Silent'],newline,clear=clear)
     def errorLog(self, text='Missing text for errorLog() call!',quitchoice=False,printerror=True,nextline=True,log=True,errorlog=True,warnlist=True):
@@ -665,7 +676,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             self._cmdReadList(cmd,'int',['Forks','KillForks'])
             self._cmdRead(cmd,type='opt',att='NoForks')
             self._cmdRead(cmd,type='opt',att='NoForks',arg='nofork')
-        except: self.log.errorLog('Problem with cmd:%s' % cmd)
+        except: self.log.errorLog('Problem with cmd:{}'.format(cmd))
 #########################################################################################################################
     ### <3> ### Object Attributes                                                                                       #
 #########################################################################################################################
@@ -673,7 +684,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         '''Returns object details as text.'''
         try:
             ### <a> ### Summary
-            if self.info.has_key('Type'): details = '%s (%s)\n' % (self.info['Name'], self.info['Type'])
+            if 'Type' in self.info: details = '%s (%s)\n' % (self.info['Name'], self.info['Type'])
             else: details = '%s\n' % self.info['Name']
             ### <b> ### Info
             for info in self.infolist:
@@ -718,7 +729,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
     def attDetails(self,types=['All'],printblanks=True):     ### Prints Details to screen
         '''Returns object details as text.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if self.info.has_key('Type'): details = '%s (%s)\n' % (self.info['Name'], self.info['Type'])
+            if 'Type' in self.info: details = '%s (%s)\n' % (self.info['Name'], self.info['Type'])
             else: details = '%s\n' % self.info['Name']
             ### ~ [1] ~ Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if 'Info' in types or 'All' in types:
@@ -770,7 +781,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         #!# Lists and Dictionaries not included. #!#
         '''
         try:
-            print '\nEdit %s Attributes.\nEnter new values or leave Blank to retain.\n' % self.info['Name']
+            print('\nEdit {} Attributes.\nEnter new values or leave Blank to retain.\n'.format(self.info['Name']))
             for info in self.infolist: self.info[info] = self._editChoice(info,self.info[info])
             for stat in self.statlist: self.stat[stat] = self._editChoice(stat,self.stat[stat],numeric=True)
             for opt in self.optlist: self.opt[opt] = self._editChoice(opt,self.opt[opt],boolean=True)
@@ -811,7 +822,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         elif type == 'dict': att = self.dict
         elif type == 'obj': att = self.obj
         ### Return ###
-        if att.has_key(key): return att[key]
+        if key in att: return att[key]
         else: return default
 #########################################################################################################################
     def setAttribute(self,type,key,newvalue):    ### Sets object information of correct type from string
@@ -841,8 +852,8 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         >> checkdata:boolean = whether to check self.dict['Data'] if missing
         '''
         if not ikey: return self.info
-        if self.info.has_key(ikey): return self.info[ikey]
-        elif checkdata and self.dict.has_key('Data'):
+        if ikey in self.info: return self.info[ikey]
+        elif checkdata and 'Data' in self.dict:
             return getFromDict(self.dict['Data'],ikey,returnkey=False,case=False,default=default)
         return default
 #########################################################################################################################
@@ -851,7 +862,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
     def getOpt(self,okey=None,default=False):    ### Gets object opt or returns default
         '''Gets object opt or returns default.'''
         if not okey: return self.opt
-        if self.opt.has_key(okey): return self.opt[okey]
+        if okey in self.opt: return self.opt[okey]
         return default
 #########################################################################################################################
     def getInt(self,ikey=None,default=0,checkdata=True):
@@ -868,17 +879,17 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         >> checkdata:boolean = whether to check self.dict['Data'] if missing
         '''
         if not skey: return self.stat
-        if self.stat.has_key(skey): return self.stat[skey]
-        elif checkdata and self.dict.has_key('Data'):
+        if skey in self.stat: return self.stat[skey]
+        elif checkdata and 'Data' in self.dict:
             val =  getFromDict(self.dict['Data'],skey,returnkey=False,case=False,default=default)
-            if val != default: return string.atof(val)
+            if val != default: return float(val)
         return default
 #########################################################################################################################
     def getDict(self,dkey=None,dkeykey=None,default=None):    ### Returns value of self.dict[dkey][dkeykey] else default
         '''Returns value of self.dict[dkey][dkeykey] else default.'''
         if not dkey: return self.dict
         if not dkeykey: return self.dict[dkey]
-        if self.dict.has_key(dkey) and self.dict[dkey].has_key(dkeykey): return self.dict[dkey][dkeykey]
+        if dkey in self.dict and dkeykey in self.dict[dkey]: return self.dict[dkey][dkeykey]
         return default
 #########################################################################################################################
     def setInfo(self,infodic,addtolist=True):  ### Sets object information
@@ -964,7 +975,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         >> datadict = Dictionary of values to add to self.dict[dictkey]
         '''
         try:
-            if not self.dict.has_key(dictkey): self.dict[dictkey] = {}
+            if dictkey not in self.dict: self.dict[dictkey] = {}
             for key in datadict.keys(): self.dict[dictkey][key] = datadict[key]
         except: self.log.errorLog('Problem with setDictData()',True)
 #########################################################################################################################
@@ -982,10 +993,10 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         try:
             ### Setup ###
             dictlist = []
-            if self.dict.has_key('Data'): dictlist = [self.dict['Data']]
+            if 'Data' in self.dict: dictlist = [self.dict['Data']]
             ddict = {'stat':self.stat,'info':self.info,'opt':self.opt}
             for dict in dlist:
-                if ddict.has_key(dict): dictlist.append(ddict[dict])
+                if dict in ddict: dictlist.append(ddict[dict])
                 else: dictlist.append(dict)
             ### Look in dictionaries ###
             data = default
@@ -1052,8 +1063,9 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             if v <= self.stat['Verbose']:
                 self.log.printLog('#LOAD','Loading data from %s ...' % openfile,newline=False,log=False)
             file_lines = open(openfile, 'r').readlines()
-            if len(file_lines) == 1: file_lines = string.split(file_lines[0],'\r')
-            if chomplines: file_lines = string.split(chomp(string.join(file_lines,'!#ENDOFLINE#!')),'!#ENDOFLINE#!')
+            if len(file_lines) == 1: file_lines = file_lines[0].split('\r')
+            #if chomplines: file_lines = string.split(chomp(string.join(file_lines,'!#ENDOFLINE#!')),'!#ENDOFLINE#!')
+            if chomplines: file_lines = chomp('!#ENDOFLINE#!'.join(file_lines)).split('!#ENDOFLINE#!')
             if v <= self.stat['Verbose']:
                 self.log.printLog('\r#LOAD','Loading data from %s complete: %s lines.' % (openfile,integerString(len(file_lines))),log=False)
             return file_lines
@@ -1157,7 +1169,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
                             etype = etype
                         elif matchExp('^(\S+)=(\S.*)$',line):
                             (key,val) = matchExp('^(\S+)=(\S.*)$',line)
-                            if obj_dict.has_key(val): val = obj_dict[val]
+                            if val in obj_dict: val = obj_dict[val]
                             elif matchExp('^<(\S+) object \S.+>',val):
                                 self.log.errorLog('Object %s missing from %s.' % (val,filename),False,False)
                                 val = None
@@ -1171,8 +1183,8 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
                             if etype == 'Dictionaries':    # Dictionaries
                                 if matchExp('^(\S.*):::(\S*.*)$',val):
                                     (newkey,newval) = matchExp('^(\S.*):::(\S*.*)$',val)
-                                    if obj_dict.has_key(newkey): newkey = obj_dict[newkey]
-                                    if obj_dict.has_key(newval): newval = obj_dict[newval]
+                                    if newkey in obj_dict: newkey = obj_dict[newkey]
+                                    if newval in newobj_dict: newval = obj_dict[newval]
                                     if key in obj.dict.keys(): obj.dict[key][newkey] = newval
                                     else: obj.dict[key] = {newkey:newval}
                                     if key not in obj.dictlist: obj.dictlist.append(key)
@@ -1219,7 +1231,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             ### Input ###
             if type == 'Info': self.info[key] = data
             elif type == 'Stat':
-                self.stat[key] = string.atof(data)  #!# Remember to convert to integer later if needed
+                self.stat[key] = float(data)  #!# Remember to convert to integer later if needed
                 if (self.stat[key] - int(self.stat[key])) == 0: self.stat[key] = int(self.stat[key])
             elif type == 'Opt' and data == 'True': self.opt[key] = True
             elif type == 'Opt' and data == 'False': self.opt[key] = False
@@ -1281,10 +1293,13 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
     def restOutputError(self,errormsg): ### Returns full error message.
         '''Returns full error message..'''
         try:
-            print errormsg
+            print(errormsg)
             ### Setup error variables
             error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
-            error_type = string.replace(error_type,'exceptions.','')
+            if py3:
+                error_type = error_type.split("'")[1]
+            else:
+                error_type = error_type.replace('exceptions.','')
             error_value = str(sys.exc_info()[1])        # Error Value      : [Errno 9] Bad file descriptor
             error_traceback = traceback.extract_tb(sys.exc_info()[2])
             error_file = str(error_traceback[-1][0])    # File             : C:\Documents and Settings\normdavey\Desktop\Python\BLAST\Main.py
@@ -1301,7 +1316,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             error_txt.append('Method: %s (line %s)\n' % (error_method, error_line))
             error_txt.append('Error: %s\n' % error_error)
             error_txt.append('\nContact webmaster for more details.\n')
-            return string.join(error_txt,'')
+            return ''.join(error_txt)
         except: os._exit(0)
 #########################################################################################################################
     def restSetup(self):    ### Sets up self.dict['Output'] and associated output options if appropriate.
@@ -1335,8 +1350,8 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             if outfmt in ['full','text']: return self.restFullOutput()
             if outfmt == 'version': return Out(self.log,['v=-1']).printIntro(self.log.obj['Info'])
             if outfmt == 'outfmt': return self.restSetup.__doc__
-            if outfmt == 'warnings': return string.join(self.log.list['WarnLog'],'\n')  # List of log warning messages.
-            if outfmt == 'errors': return string.join(self.log.list['ErrorLog'],'\n')   # List of log error messages.
+            if outfmt == 'warnings': return '\n'.join(self.log.list['WarnLog'])  # List of log warning messages.
+            if outfmt == 'errors': return '\n'.join(self.log.list['ErrorLog'])   # List of log error messages.
             if outfmt in self.dict['Output']:
                 outdata = self.dict['Output'][outfmt]
                 if outdata in self.info: outdata = self.info[outdata]
@@ -1454,7 +1469,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
                     self.errorLog('WARNING!: PID %d returned with exit code %d.' % (pid,exitcode),printerror=False)
             return oldpids
         except:
-            self.log.errorLog('Error in _activeForks(%s)' % (pidlist))
+            self.log.errorLog('Error in _activeForks({})'.format(pidlist))
             raise   
 #########################################################################################################################
 ### End of RJE_Object Class                                                                                             #
@@ -1483,7 +1498,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         self.dict = {}
 #########################################################################################################################
     def prog(self): return self.log.info['Name']
-    def name(self): return self.getStr('Name',default='%s' % self)
+    def name(self): return self.getStr('Name',default='{}'.format(self))
 #########################################################################################################################
     def _setDefaults(self,info='None',opt=False,stat=0.0,obj=None,setlist=False,setdict=False):     ### Default defaults!
         '''
@@ -1508,7 +1523,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         if self.v() < 1: return
         if rand > 0 and random.random() > rand: return
         if 'ProgLog' in self.opt and not self.opt['ProgLog']: return False
-        return self.printLog('\r%s' % id,text,screen=screen,log=False,newline=False,clear=clear)
+        return self.printLog('\r{}'.format(id),text,screen=screen,log=False,newline=False,clear=clear)
     def printLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True,clear=0):
         return self.log.printLog(id,text,timeout,screen and not self.getAttribute('opt','Silent',False),log and not self.getAttribute('opt','Silent',False),newline,clear=clear)
     def errorLog(self, text='Missing text for errorLog() call!',quitchoice=False,printerror=True,nextline=True,log=True,errorlog=True,warnlist=True):
@@ -1531,7 +1546,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
     def attDetails(self,types=['All'],printblanks=True):     ### Prints Details to screen
         '''Returns object details as text.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if self.info.has_key('Type'): details = '%s (%s)\n' % (self.info['Name'], self.info['Type'])
+            if 'Type' in self.info: details = '%s (%s)\n' % (self.info['Name'], self.info['Type'])
             else: details = '%s\n' % self.info['Name']
             ### ~ [1] ~ Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if 'Info' in types or 'All' in types:
@@ -1583,7 +1598,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         #!# Lists and Dictionaries not included. #!#
         '''
         try:
-            print '\nEdit %s Attributes.\nEnter new values or leave Blank to retain.\n' % self.info['Name']
+            print('\nEdit {} Attributes.\nEnter new values or leave Blank to retain.\n'.format(self.info['Name']))
             for info in self.infolist: self.info[info] = self._editChoice(info,self.info[info])
             for stat in self.statlist: self.stat[stat] = self._editChoice(stat,self.stat[stat],numeric=True)
             for opt in self.optlist: self.opt[opt] = self._editChoice(opt,self.opt[opt],boolean=True)
@@ -1623,9 +1638,9 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         elif type == 'list': att = self.list
         elif type == 'dict': att = self.dict
         elif type == 'obj': att = self.obj
-        elif type == 'data' and self.dict.has_key('Data'): att = self.dict['Data']
+        elif type == 'data' and 'Data' in self.dict: att = self.dict['Data']
         ### Return ###
-        if att.has_key(key): return att[key]
+        if key in att: return att[key]
         elif 'Parent' in self.obj and self.obj['Parent']: return self.obj['Parent'].getAttribute(type,key,default)
         else: return default
 #########################################################################################################################
@@ -1638,14 +1653,14 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         >> default:str = values returned if ikey not found.
         >> checkdata:boolean = whether to check self.dict['Data'] if missing
         '''
-        if self.info.has_key(ikey): return self.info[ikey]
-        elif checkdata and self.dict.has_key('Data'):
+        if ikey in self.info: return self.info[ikey]
+        elif checkdata and 'Data' in self.dict:
             return getFromDict(self.dict['Data'],ikey,returnkey=False,case=False,default=default)
         return default
 #########################################################################################################################
     def getOpt(self,okey,default=False):    ### Gets object opt or returns default
         '''Gets object opt or returns default.'''
-        if self.opt.has_key(okey): return self.opt[okey]
+        if okey in self.opt: return self.opt[okey]
         return default
 #########################################################################################################################
     def getStat(self,skey,default=0,checkdata=True):  ### Gets object stat or returns default if not found
@@ -1655,15 +1670,15 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         >> default:num = values returned if ikey not found.
         >> checkdata:boolean = whether to check self.dict['Data'] if missing
         '''
-        if self.stat.has_key(skey): return self.stat[skey]
-        elif checkdata and self.dict.has_key('Data'):
+        if skey in self.stat: return self.stat[skey]
+        elif checkdata and 'Data' in self.dict:
             val =  getFromDict(self.dict['Data'],skey,returnkey=False,case=False,default=default)
-            if val != default: return string.atof(val)
+            if val != default: return float(val)
         return default
 #########################################################################################################################
     def getDict(self,dkey,dkeykey,default=None):    ### Returns value of self.dict[dkey][dkeykey] else default
         '''Returns value of self.dict[dkey][dkeykey] else default.'''
-        if self.dict.has_key(dkey) and self.dict[dkey].has_key(dkeykey): return self.dict[dkey][dkeykey]
+        if dkey in self.dict and dkeykey in self.dict[dkey]: return self.dict[dkey][dkeykey]
         return default
 #########################################################################################################################
     def setAttribute(self,type,key,newvalue):    ### Sets object information of correct type from string
@@ -1758,7 +1773,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         >> datadict = Dictionary of values to add to self.dict[dictkey]
         '''
         try:
-            if not self.dict.has_key(dictkey): self.dict[dictkey] = {}
+            if dictkey not in self.dict: self.dict[dictkey] = {}
             for key in datadict.keys(): self.dict[dictkey][key] = datadict[key]
         except: self.log.errorLog('Problem with setDictData()',True)
 #########################################################################################################################
@@ -1776,10 +1791,10 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         try:
             ### Setup ###
             dictlist = []
-            if self.dict.has_key('Data'): dictlist = [self.dict['Data']]
+            if 'Data' in self.dict: dictlist = [self.dict['Data']]
             ddict = {'stat':self.stat,'info':self.info,'opt':self.opt}
             for dict in dlist:
-                if ddict.has_key(dict): dictlist.append(ddict[dict])
+                if dict in ddict: dictlist.append(ddict[dict])
                 else: dictlist.append(dict)
             ### Look in dictionaries ###
             data = default
@@ -1844,7 +1859,7 @@ class Log(RJE_Object_Shell):
             ### ~ [2] Log File details ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.info['LogFile']:
                 logfile = self.info['LogFile'].encode('ascii', 'ignore').decode('ascii')
-                if logfile != self.info['LogFile']: self.warnLog('Log filename altered due to non-ASCII characters: %s' % logfile)
+                if logfile != self.info['LogFile']: self.warnLog('Log filename altered due to non-ASCII characters: {}'.format(logfile))
                 self.info['LogFile'] = logfile
                 if self.info['LogFile'][-4:] != '.log': self.info['LogFile'] += '.log'
                 if self.info['LogFile'][:1] == '/': self.info['LogFile'] = makePath(self.info['LogFile'],wholepath=True)
@@ -1854,29 +1869,29 @@ class Log(RJE_Object_Shell):
                 else:
                     try:
                         mkDir(self,self.info['RunPath'])
-                        self.info['LogFile'] = makePath('%s/%s' % (os.path.abspath(self.info['RunPath']),self.info['LogFile']),wholepath=True)
-                    except: self.info['LogFile'] = makePath('%s/%s' % (os.path.abspath(os.curdir),self.info['LogFile']),wholepath=True)
+                        self.info['LogFile'] = makePath('{}/{}'.format(os.path.abspath(self.info['RunPath']),self.info['LogFile']),wholepath=True)
+                    except: self.info['LogFile'] = makePath('{}/{}'.format(os.path.abspath(os.curdir),self.info['LogFile']),wholepath=True)
 
                 if '#DATE' in self.info['LogFile']: self.info['LogFile'] = string.replace(self.info['LogFile'],'#DATE',dateTime(dateonly=True))
                 if self.opt['NewLog']:
-                    self.verbose(0,2,'Make new file: %s' % self.info['LogFile'],2)
+                    self.verbose(0,2,'Make new file: {}'.format(self.info['LogFile']),2)
                     if checkForFile(self.info['LogFile']): os.unlink(self.info['LogFile'])
-                else: self.verbose(0,2,'Append file: %s' % self.info['LogFile'],2)
+                else: self.verbose(0,2,'Append file: {}'.format(self.info['LogFile']),2)
                 self.info['LogFile'] = os.path.abspath(self.info['LogFile'])
             ### ~ [3] ErrorLog File details ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.info['ErrorLog'].lower() not in ['','none']:
                 logfile = self.info['ErrorLog'].encode('ascii', 'ignore').decode('ascii')
-                if logfile != self.info['ErrorLog']: self.warnLog('ErrorLog filename altered due to non-ASCII characters: %s' % logfile)
+                if logfile != self.info['ErrorLog']: self.warnLog('ErrorLog filename altered due to non-ASCII characters: {}'.format(logfile))
                 self.info['ErrorLog'] = logfile
                 if self.opt['NewLog']:
-                    self.verbose(0,2,'Make new error file: %s' % self.info['ErrorLog'],2)
+                    self.verbose(0,2,'Make new error file: {}'.format(self.info['ErrorLog']),2)
                     if checkForFile(self.info['ErrorLog']): os.unlink(self.info['ErrorLog'])
-                else: self.verbose(0,2,'Append error file: %s' % self.info['ErrorLog'],2)
+                else: self.verbose(0,2,'Append error file: {}'.format(self.info['ErrorLog']),2)
                 self.info['ErrorLog'] = os.path.abspath(self.info['ErrorLog'])
             ### ~ [4] Update files to full paths ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             self.info['Name'] = self.info['LogFile']
         except:
-            self.errorLog('Problem with rje.Log (%s) initiation!' % self.info['LogFile'])
+            self.errorLog('Problem with rje.Log ({}) initiation!'.format(self.info['LogFile']))
             raise
 #########################################################################################################################
     def _cmdList(self):     ### Sets Attributes from commandline
@@ -1892,7 +1907,7 @@ class Log(RJE_Object_Shell):
                 self._cmdRead(cmd,type='info',att='LogFile',arg='logfile')
                 self._cmdRead(cmd,type='info',att='LogFile',arg='basefile')
                 self._cmdReadList(cmd,'opt',['NewLog','Silent','Quiet','WarnAsErr'])
-            except: self.errorLog('Problem with cmd: %s' % cmd)
+            except: self.errorLog('Problem with cmd: {}'.format(cmd))
         if self.opt['Silent'] or self.opt['Quiet']:
             self._generalCmd('v=-1')
             self._generalCmd('i=-1')
@@ -1926,22 +1941,22 @@ class Log(RJE_Object_Shell):
         '''
         try:### ~ [1] ~ Setup text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.dev() and type(text) != str:
-                try: self.warnLog('DEV warning: %s given to printLog() when should be text: "%s"' % (type(text),text))
+                try: self.warnLog('DEV warning: {} given to printLog() when should be text: "{}"'.format(type(text),text))
                 except:
                     ttype = type(text)
                     text = text.encode('ascii', 'replace').decode('ascii')
-                    self.warnLog('DEV warning: %s given to printLog() when should be text: "%s" (decoded)' % (ttype,text))
-            text = '%s' % text
+                    self.warnLog('DEV warning: {} given to printLog() when should be text: "{}" (decoded)'.format(ttype,text))
+            text = '{}'.format(text)
             if clear > 0: self.printLog('\r'+id,' ' * clear,timeout,screen,False,False)
             t = '#~+~~+~#'
             if timeout: t = self.myRunTime(time.time() - self.stat['StartTime'])
-            text = string.join(['\r'+id,t,string.strip(text,'\r\n')],'\t')
-            if text[-1:] <> '\n' and newline: text += '\n'
+            text = '\t'.join(['\r'+id,t,text.strip('\r\n')])
+            if text[-1:] != '\n' and newline: text += '\n'
             text = text.replace(u'\xa0',' ')
             ### ~ [2] ~ Storage ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if self.opt['Webserver']: self.list['Log'].append(string.strip(text,'\r\n'))
+            if self.opt['Webserver']: self.list['Log'].append(text.strip('\r\n'))
             if warnlist and newline:
-                warntext = string.strip(text,'\r\n')
+                warntext = text.strip('\r\n')
                 if id.endswith('#WARN') and (self.opt['Webserver'] or not self.opt['MemSaver']):
                     if warntext not in self.list['WarnLog'][-1:]: self.list['WarnLog'].append(warntext); self.warnx += 1
                 if id.endswith('#ERR') and warntext not in self.list['ErrorLog'][-1:]: self.list['ErrorLog'].append(warntext)
@@ -1952,22 +1967,22 @@ class Log(RJE_Object_Shell):
             else: logfile = self.info['LogFile']
             if self.opt['Quiet']:
                 screen = False
-                if error: sys.stderr.write('%s\n' % text)
-                elif self.opt['WarnAsErr'] and id == '#WARN': sys.stderr.write('%s\n' % text)
+                if error: sys.stderr.write('{}\n'.format(text))
+                elif self.opt['WarnAsErr'] and id == '#WARN': sys.stderr.write('{}\n'.format(text))
             #!# This line should be performed when log file is set and then warn! #!#
             logfile = logfile.encode('ascii', 'ignore').decode('ascii')
             text = text.encode('ascii', 'replace').decode('ascii')
             if logfile and log:
                 LOGOUT = open(str(logfile),'a')
-                LOGOUT.write('%s\n' % string.strip(text,'\r\n'))
+                LOGOUT.write('{}\n'.format(text.strip('\r\n')))
                 LOGOUT.close()
-            if screen and error: sys.stderr.write('%s\n' % text)
-            elif screen and self.opt['WarnAsErr'] and id == '#WARN': sys.stderr.write('%s\n' % text)
+            if screen and error: sys.stderr.write('{}\n'.format(text))
+            elif screen and self.opt['WarnAsErr'] and id == '#WARN': sys.stderr.write('{}\n'.format(text))
             elif screen and (log or self.opt['ProgLog']): self.verbose(0,4,text,0)
             return text
         except:
             if id.endswith('#ERR'):
-                print 'Error causing printLog() issues: %s' % text
+                print('Error causing printLog() issues: {}'.format(text))
                 os._exit(1)     # Need to catch \n and \r line starts too.
             return self.errorLog('printLog() problem')
 #########################################################################################################################
@@ -1983,18 +1998,29 @@ class Log(RJE_Object_Shell):
         new = '\r'
         try:
             new = {True:'\n',False:'\r'}[nextline]
-            if not printerror or not sys.exc_info()[0]: return self.printLog('%s#ERR' % new,text,log=log,warnlist=warnlist)
+            if not printerror or not sys.exc_info()[0]: return self.printLog('{}#ERR'.format(new),text,log=log,warnlist=warnlist)
             try: raise
             except SystemExit: os._exit(1)
             except KeyboardInterrupt: quitchoice = True
             except: pass # sys.stderr = text
-            if string.split(str(sys.exc_info()[0]),'.')[1] == 'SystemExit': os._exit(1)
-        except: return self.printLog('%s#ERR' % new,text,log=log,warnlist=warnlist)
+            if py3:
+                if str(sys.exc_info()[0]).split("'")[1] == 'SystemExit': os._exit(1)
+            else:
+                if str(sys.exc_info()[0]).split('.')[1] == 'SystemExit': os._exit(1)
+        except:
+            if py3:
+                print(sys.exc_info())
+                print(traceback.extract_tb(sys.exc_info()[2]))
+                errorReport(text)
+            return self.printLog('{}#ERR'.format(new),text,log=log,warnlist=warnlist)
 
         try:
             ### Setup error variables
             error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
-            error_type = string.replace(error_type,'exceptions.','')
+            if py3:
+                error_type = error_type.split("'")[1]
+            else:
+                error_type = error_type.replace('exceptions.','')
             error_value = str(sys.exc_info()[1])        # Error Value      : [Errno 9] Bad file descriptor
             error_traceback = traceback.extract_tb(sys.exc_info()[2])
             error_file = str(error_traceback[-1][0])    # File             : C:\Documents and Settings\normdavey\Desktop\Python\BLAST\Main.py
@@ -2003,37 +2029,37 @@ class Log(RJE_Object_Shell):
             error_error = str(error_traceback[-1][3])   # Error            : for lines in fileIn.readlines():
             
             ### Log Error
-            if text[-1:] <> '\n':
+            if text[-1:] != '\n':
                 if printerror:
-                    if text[-1:] != ':' and text[-2:-1] != ':': text = '%s: ' % text
-                    text = '%s%s (%s line %s) %s' % (text,error_type,error_method,error_line,error_value)
+                    if text[-1:] != ':' and text[-2:-1] != ':': text = '{}: '.format(text)
+                    text = '{}{} ({} line {}) {}'.format(text,error_type,error_method,error_line,error_value)
                     #text = '%s%s' % (text,error_type)
-                text = '%s  \n' % text
-            myreturn = self.printLog('%s#ERR' % new,text,log=log,warnlist=warnlist)
+                text = '{}  \n'.format(text)
+            myreturn = self.printLog('{}#ERR'.format(new),text,log=log,warnlist=warnlist)
             if errorlog: self.printLog('\r#ERR',text,screen=not log,log=False,error=True,warnlist=warnlist)
 
             ### Quit Option and Additional Error Info
             logprog = self.info['Name']
             if logprog == 'None': logprog = 'Program'
-            if (self.opt['DeBug'] or quitchoice) and (self.i() >= 0 and yesNo('Quit %s?' % logprog)):
+            if (self.opt['DeBug'] or quitchoice) and (self.i() >= 0 and yesNo('Quit {}?'.format(logprog))):
                 if error_type not in ['KeyboardInterrupt']:
-                    self.verbose(-1,4,'%s: %s\nFile: %s\nMethod: %s (line %s)\nError: %s' % (error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
+                    self.verbose(-1,4,'{}: {}\nFile: {}\nMethod: {} (line {})\nError: {}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
                 os._exit(1)
             elif printerror and error_type not in ['KeyboardInterrupt']:
-                self.verbose(1,1,'%s: %s\nFile: %s\nMethod: %s (line %s)\nError: %s' % (error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
-                if self.dev(): self.printLog('#DEV','%s: %s;| File: %s;| Method: %s (line %s);| Error: %s' % (error_type, error_value, error_file, error_method, error_line, error_error),log=log)
+                self.verbose(1,1,'{}: {}\nFile: {}\nMethod: {} (line {})\nError: {}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
+                if self.dev(): self.printLog('#DEV','{}: {};| File: {};| Method: {} (line {});| Error: {}'.format(error_type, error_value, error_file, error_method, error_line, error_error),log=log)
         except SystemExit: os._exit(1)      #!# Why is this no longer working? #!#
         except KeyboardInterrupt: os._exit(0)
         except MemoryError: raise
         except:
-            print 'That\'s not right: Error in errorLog()!!:',
+            print('That\'s not right: Error in errorLog()!!:'),
             try:
-                print '%s %s' % (sys.exc_info()[0],sys.exc_info()[1])
-                print '%s: %s' % (error_type, error_value)
-                print 'File: %s' % error_file
-                print 'Method: %s (line %s)' % (error_method, error_line)
-                print 'Error: %s' % error_error
-            except: print 'This is really not right!! (Check Excel etc. isn\'t preventing writing to log)'
+                print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+                print('{}: {}'.format(error_type, error_value))
+                print('File: {}'.format(error_file))
+                print('Method: {} (line {})'.format(error_method, error_line))
+                print('Error: {}'.format(error_error))
+            except: print('This is really not right!! (Check Excel etc. isn\'t preventing writing to log)')
             os._exit(1)
         if quitchoice and self.i() < 0: raise
         return myreturn
@@ -2053,19 +2079,19 @@ class Log(RJE_Object_Shell):
             if dev: self.deBug('>> Dev Warning! <<')
             logprog = self.info['Name']
             if logprog == 'None': logprog = 'Program'
-            if quitchoice and self.i() >= 0 and warntype not in self.warnings + self.no_suppression and yesNo('Quit %s following warning?' % logprog):
-                self.printLog('\r#EXIT','%s terminated by user following warning.' % logprog)
+            if quitchoice and self.i() >= 0 and warntype not in self.warnings + self.no_suppression and yesNo('Quit {} following warning?'.format(logprog)):
+                self.printLog('\r#EXIT','{} terminated by user following warning.'.format(logprog))
                 os._exit(1)
             elif quitchoice and self.i() < 0 and warntype == 'fatal':
-                self.printLog('\r#EXIT','%s terminated after warning.' % logprog)
+                self.printLog('\r#EXIT','{} terminated after warning.'.format(logprog))
                 os._exit(1)
             if not warntype or warntype in self.no_suppression: return
             if suppress:
-                if self.i() < 0 or not yesNo('Suppress future "%s" warnings?' % warntype): self.no_suppression.append(warntype)
+                if self.i() < 0 or not yesNo('Suppress future "{}" warnings?'.format(warntype)): self.no_suppression.append(warntype)
                 else:
                     self.warnings.append(warntype)
-                    self.printLog('\r#WARN','Note: future "%s" warnings have been supressed' % warntype,warnlist=False)
-        except: self.errorLog('Log.warnLog(%s) error' % warntype,quitchoice=quitchoice)
+                    self.printLog('\r#WARN','Note: future "{}" warnings have been supressed'.format(warntype),warnlist=False)
+        except: self.errorLog('Log.warnLog({}) error'.format(warntype),quitchoice=quitchoice)
 #########################################################################################################################
     def myRunTime(self, secs):  ### Converts time in seconds into time for easy comprehension
         '''
@@ -2076,13 +2102,13 @@ class Log(RJE_Object_Shell):
         (day,hour,mins,sec) = (0,0,0,int(secs))
         while sec > 59: mins += 1; sec -= 60
         while mins > 59: hour += 1; mins -= 60
-        return '%s:%s:%s' % (preZero(hour,24),preZero(mins,60),preZero(sec,60))
+        return '{}:{}:{}'.format(preZero(hour,24),preZero(mins,60),preZero(sec,60))
 #########################################################################################################################
     def name(self): return self.info['Name']
 #########################################################################################################################
     def runDetails(self):
         info = self.obj['Info']
-        return '%s V%s: run %s' % (info.program,info.version,time.asctime(time.localtime(info.start_time)))
+        return '{} V{}: run {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time)))
 #########################################################################################################################
     ### <3> ### Summarise/Display Warnings/ErrorLog?                                                                    #
 #########################################################################################################################
@@ -2094,13 +2120,13 @@ class Log(RJE_Object_Shell):
         ### Summarise warnings and errors in log
         warnings = self.list['WarnLog'][0:]    # List of log warning messages. Stored when silent=True or memsaver=False.
         errors = self.list['ErrorLog'][0:]     # List of log error messages.
-        if self.warnx: self.warnLog('%s warning messages: check log for details.' % iStr(self.warnx),warnlist=False)
-        if errors: self.warnLog('%s error messages! Check log for details.' % iLen(errors),warnlist=False)
+        if self.warnx: self.warnLog('{} warning messages: check log for details.'.format(iStr(self.warnx),warnlist=False))
+        if errors: self.warnLog('{} error messages! Check log for details.'.format(iLen(errors)),warnlist=False)
         ### End of Program Log entry
-        if proginfo: self.printLog('#LOG', '%s V%s End: %s\n' % (proginfo.program,proginfo.version,time.asctime(time.localtime(time.time()))))
+        if proginfo: self.printLog('#LOG', '{} V{} End: {}\n'.format(proginfo.program,proginfo.version,time.asctime(time.localtime(time.time()))))
         ### Optional repeat of warnings and error messages
-        if warnings and self.i() >= 0 and yesNo('Repeat %s warnings?' % iLen(warnings),default='N'): print string.join(warnings+[''],'\n')
-        if errors and self.i() >= 0 and yesNo('Repeat %s error messages?' % iLen(errors)): print string.join(errors,'\n')
+        if warnings and self.i() >= 0 and yesNo('Repeat {} warnings?'.format(iLen(warnings)),default='N'): print('\n'.join(warnings+['']))
+        if errors and self.i() >= 0 and yesNo('Repeat {} error messages?'.format(iLen(errors))): print('\n'.join(errors))
 #########################################################################################################################
 ### End of Log                                                                                                          #
 #########################################################################################################################
@@ -2175,15 +2201,15 @@ class Out(RJE_Object_Shell):
         >> info:Info Object
         '''
         ## Setup lines ##
-        self.verbose(0,3,'\n%s V%s run: %s' % (info.program,info.version,time.asctime(time.localtime(info.start_time))),2)
+        self.verbose(0,3,'\n{} V{} run: {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),2)
         line = ['  #############################################']
-        line.append('  #|#> %s version %s : %s' % (info.program,info.version,info.description))
-        line.append('  #|#> Copyright (c) %s %s <#~#> Last Modified: %s' % (info.copyright,info.author,info.last_edit))
-        line.append('  #|#> Disclaimer: %s comes with ABSOLUTELY NO WARRANTY;' % info.program)
+        line.append('  #|#> {} version {} : {}'.format(info.program,info.version,info.description))
+        line.append('  #|#> Copyright (c) {} {} <#~#> Last Modified: {}'.format(info.copyright,info.author,info.last_edit))
+        line.append('  #|#> Disclaimer: {} comes with ABSOLUTELY NO WARRANTY;'.format(info.program))
         line.append('  #|#>   This is free software, and you are welcome to redistribute it;')
         line.append('  #|#>   For details see attached license file (gnu_general_public_license.txt)')
         line.append('  #|#>   or http://www.gnu.org/copyleft/gpl.html.')
-        for comment in info.comments: line.append('  #|#> %s' % comment)
+        for comment in info.comments: line.append('  #|#> {}'.format(comment))
         ## Find longest line ##
         maxlen = 0
         for li in line: maxlen = max(len(li),maxlen)
@@ -2198,8 +2224,8 @@ class Out(RJE_Object_Shell):
         ## Print out ##
         spacer = line[0:1]
         spacer = ['  #|#>' + '~' * (maxlen - 5) + '<#|#\n']
-        if info.comments: introtext = string.join(line[0:2]+spacer+line[2:3]+spacer+line[3:7]+spacer+line[7:]+line[0:1],'')
-        else: introtext = string.join(line[0:2]+spacer+line[2:3]+spacer+line[3:]+spacer+line[0:1],'')
+        if info.comments: introtext = ''.join(line[0:2]+spacer+line[2:3]+spacer+line[3:7]+spacer+line[7:]+line[0:1])
+        else: introtext = ''.join(line[0:2]+spacer+line[2:3]+spacer+line[3:]+spacer+line[0:1])
         self.verbose(0,2,introtext,2)
         return introtext
 #########################################################################################################################
@@ -2221,7 +2247,7 @@ class Out(RJE_Object_Shell):
         self.verbose(0,4,"\n"+line[0]+line[1]+" <# #",1)
         self.verbose(0,2,line[0]+line[2]+" <# #\n"+line[0],1)
 
-        gnu_license = '%s comes with ABSOLUTELY NO WARRANTY; This is free software, and you are welcome to redistribute it;\n' % info.program
+        gnu_license = '{} comes with ABSOLUTELY NO WARRANTY; This is free software, and you are welcome to redistribute it;\n'.format(info.program)
         gnu_license += 'For details see attached license file (gnu_general_public_license.txt) or http://www.gnu.org/copyleft/gpl.html.'
         self.verbose(0,1,gnu_license,2)
         self.verbose(0,4,line[0],2)
@@ -2253,12 +2279,12 @@ class UserExit(Exception):
 ##  General Module Functions                                                                                           ##
 #########################################################################################################################
 if __name__ == "__main__":
-    print "This module is not for standalone running!"
+    print("This module is not for standalone running!")
     os._exit(0)
 #########################################################################################################################
 def objtype(obj): ### Returns the type of obj as string
-    typestr = '%s' % type(obj)
-    return string.split(typestr,"'")[1]
+    typestr = '{}'.format(type(obj))
+    return typestr.split("'")[1]
 #########################################################################################################################
 def dateTime(t=(),yymmdd=False,dateonly=False): ### Returns date time string given time tuple t (makes if empty)
     '''Returns date time string given time tuple t (makes if empty).'''
@@ -2333,8 +2359,8 @@ def perCounter(countlist):  ### Counter for functions
     ### <b> ### Print if appropriate
     if verbosity >= 0 and (ploop == 0 or total == max):
         perc = float(total) / float(max)
-        print '%d%%.' % (perc*100),
-    elif verbosity >= 0 and sloop == 0: print '.',
+        print('{}%.'.format(perc*100)),
+    elif verbosity >= 0 and sloop == 0: print('.'),
     return [sloop, ploop, total, max, steps, prints, verbosity]
 #########################################################################################################################
 def setPerc(max,steps,prints,verbosity): ### Set up countlist for perCounter
@@ -2435,7 +2461,7 @@ def preZero(num,max):   ### Adds leading zeros to number and returns as string
     prezero = []
     while (len(str(num))+len(prezero)) < len(str(max)): prezero.append('0')
     prezero.append(str(num))
-    prezero = string.join(prezero,'')
+    prezero = ''.join(prezero)
     if neg: return '-%s' % prezero
     return prezero
 #########################################################################################################################
@@ -2448,8 +2474,8 @@ def strSentence(instr,allwords=False,pure=False):     # Changes to sentence case
     '''
     if allwords:
         newstr = []
-        for word in string.split(instr): newstr.append(strSentence(word,pure=pure))
-        return string.join(newstr)
+        for word in instr.split(): newstr.append(strSentence(word,pure=pure))
+        return jstring.join(newstr)
     if pure: instr[:1].upper() + instr[1:].lower()
     return instr[:1].upper() + instr[1:]
 #########################################################################################################################
@@ -2477,12 +2503,12 @@ def strReplace(strtext,deltext,newtext='',case_sens=True,allocc=False,max=1): ##
     >> max:int = maximum number of replacement (if allocc=False) [1]
     << returns a tuple of (strtext,count), where strtext has replacements made and count is number of replacements.
     '''
+    _stage = '<0> Setup'
     try:
-        _stage = '<0> Setup'
         count = 0
         if deltext == newtext or newtext.find(deltext) >= 0:
             if deltext.find('#') >= 0:
-                print 'Error with strReplace Setup. deltext in newtext - cannot replace like with like.'
+                print('Error with strReplace Setup. deltext in newtext - cannot replace like with like.')
                 raise ValueError
             strtext = strReplace(strtext,deltext,'#',case_sens,allocc,max)[0]
             deltext = '#'
@@ -2495,7 +2521,7 @@ def strReplace(strtext,deltext,newtext='',case_sens=True,allocc=False,max=1): ##
                 strtext = strtext[:findtext] + newtext + strtext[(findtext+len(deltext)):]
                 count += 1
             else: break
-    except: print 'Error with strReplace(%s): %s.' % (_stage,sys.exc_info()[0])
+    except: print('Error with strReplace({}): {}.'.format(_stage,sys.exc_info()[0]))
     return (strtext,count)        
 #########################################################################################################################
 def strEscape(text,charlist):   ### Adds escape \ characters in front of charlist
@@ -2511,11 +2537,11 @@ def strSort(text,unique=False):   ### Returns sorted string
     '''Returns sorted string.'''
     letters = strList(text,unique)
     letters.sort()    
-    return string.join(letters,sep='')
+    return ''.join(letters)
 #########################################################################################################################
 def strList(text,unique=False):   ### Returns string as list
     '''Returns string as list.'''
-    if not unique: return string.split(string.join(text))
+    if not unique: return jstring.join(text).split()
     letters = []
     for x in text:
         if not unique or x not in letters: letters.append(x)
@@ -2523,7 +2549,7 @@ def strList(text,unique=False):   ### Returns string as list
 #########################################################################################################################
 def strRearrange(text): ### Returns all possible orders of letters as list
     '''Returns all possible orders of letters as list.'''
-    letters = string.split(string.join(text))
+    letters = jstring.join(text).split()
     bases = ['']; variants = []
     for i in range(len(text)):
         variants = []
@@ -2553,8 +2579,8 @@ def integerString(number):  ### Returns a string with commas for long integer, e
         intlist = [intstring[-3:]] + intlist
         intstring = intstring[:-3]
     intlist = [intstring] + intlist
-    if intlist[0] == '-': return '-%s' % string.join(intlist[1:],',')
-    return string.join(intlist,',')
+    if intlist[0] == '-': return '-{}'.format(','.join(intlist[1:]))
+    return ','.join(intlist)
 #########################################################################################################################
 def randomString(length,choices=''):   ### Returns a random string of given length
     '''
@@ -2571,7 +2597,7 @@ def shuffleString(instr):   ### Returns a randomly shuffled version of input str
     '''Returns a randomly shuffled version of input string.'''
     rstring = strList(instr)
     random.shuffle(rstring)
-    return string.join(rstring,'')
+    return ''.join(rstring)
 #########################################################################################################################
 def stringStrip(instr,striplist):   ### Returns string with striplist strings removed
     '''Returns string with striplist strings removed.'''
@@ -2601,11 +2627,11 @@ def getInt(text='Integer Value?:',blank0=False,default='0',confirm=False):     #
     try:
         if blank0: default = '0'
         c = choice(text,default,confirm)
-        integer = string.atoi(c)
+        integer = int(c)
         return integer
     except KeyboardInterrupt: raise
     except:
-        print 'Must be a number! (Integer) [Or blank for %s]' % default
+        print('Must be a number! (Integer) [Or blank for {}]'.format(default))
         return getInt(text,blank0,default,confirm)
 #########################################################################################################################
 def getFloat(text='Numerical Value?:',default='0.0',confirm=False):     ### Asks for a choice and returns integer
@@ -2614,10 +2640,10 @@ def getFloat(text='Numerical Value?:',default='0.0',confirm=False):     ### Asks
     >> text:str = Prompt Text
     >> default:str = Default value as string
     '''
-    try: return string.atof(choice(text,default,confirm))
+    try: return float(choice(text,default,confirm))
     except KeyboardInterrupt: raise
     except:
-        print 'Must be a number! (Float) [Or blank for %s]' % default
+        print('Must be a number! (Float) [Or blank for {}]'.format(default))
         return getFloat(text,default,confirm)
 #########################################################################################################################
 def getBool(text='Numerical Value?:',default=False,confirm=False):     ### Asks for a choice and returns boolean
@@ -2630,7 +2656,7 @@ def getBool(text='Numerical Value?:',default=False,confirm=False):     ### Asks 
     if bool.lower().find('t') == 0: return True
     elif bool.lower().find('f') == 0: return False
     else:
-        print 'Must be True or False! [Or blank for %s]' % default
+        print('Must be True or False! [Or blank for %s]'.format(default))
         return getBool(text,default,confirm)
 #########################################################################################################################
 def getFileName(text='File Name?',default='',mustexist=True,confirm=False): ### Asks for a filename
@@ -2644,7 +2670,7 @@ def getFileName(text='File Name?',default='',mustexist=True,confirm=False): ### 
     '''
     while 1:
         filename = choice(text,default,confirm)
-        if mustexist and not os.path.exists(filename): print 'File "%s" not found!' % filename
+        if mustexist and not os.path.exists(filename): print('File "{}" not found!'.format(filename))
         else: return filename
 #########################################################################################################################
 def choice(text='?: ',default='',confirm=False,whitespace=True): ### Asks for a choice and returns input
@@ -2658,23 +2684,28 @@ def choice(text='?: ',default='',confirm=False,whitespace=True): ### Asks for a 
     while text[-1] == ' ': text = text[:-1]
     if text[-1] == ':': text = text[:-1]
     if default: text = '%s [default=%s]' % (text,default)
-    print '%s: ' % text,
-    if 'pwin' in sys.argv: mychoice = raw_input('%s: ' % text)
-    else: mychoice = raw_input()
+    if py3:
+        if 'pwin' in sys.argv: mychoice = input('%s: ' % text)
+        else: mychoice = input('{}: '.format(text))
+    else:
+        print('{}: '.format(text)),
+        if 'pwin' in sys.argv: mychoice = raw_input('%s: ' % text)
+        else: mychoice = raw_input()
+    #print('\n---\n{}\n---\n'.format(mychoice))
     if mychoice == '': mychoice = '%s' % default
     if not whitespace:
-        nospace = string.join(string.split(mychoice),'')
+        nospace = ''.join(mychoice.split())
         if nospace != mychoice and not yesNo('Whitespace not permitted: "%s" -> %s - OK?' % (mychoice,nospace)): return choice(text,default,confirm,whitespace)
         mychoice = nospace
     if confirm and mychoice and yesNo('=> New value = "%s"?' % mychoice) == False: return choice(text,default,confirm,whitespace)
-    if 'pwin' in sys.argv: print mychoice   ### Restate if running in PythonWin
+    if 'pwin' in sys.argv: print(mychoice)   ### Restate if running in PythonWin
     if mychoice == '\\t': mychoice = '\t'
     return mychoice
 #########################################################################################################################
 def yesNo(text='',default='Y',confirm=False):    ### Asks for yes or no and returns True or False
     '''Asks for yes or no and returns True or False.'''
     try:
-        answer = choice('%s (y/n)' % text,default,confirm).upper()[:1]
+        answer = choice('{} (y/n)'.format(text),default,confirm).upper()[:1]
         if answer == 'Y': return True
         elif answer == 'N': return False
         else: return yesNo(text,default,confirm)
@@ -2685,7 +2716,10 @@ def errorMsg(): ### Prints error message to screen and asks for death
     '''Prints error message to screen and asks for death.'''
     ### Setup error variables
     error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
-    error_type = string.replace(error_type,'exceptions.','')
+    if py3:
+        error_type = error_type.split("'")[1]
+    else:
+        error_type = error_type.replace('exceptions.','')
     error_value = str(sys.exc_info()[1])        # Error Value      : [Errno 9] Bad file descriptor
     error_traceback = traceback.extract_tb(sys.exc_info()[2])
     error_file = str(error_traceback[-1][0])    # File             : C:\Documents and Settings\normdavey\Desktop\Python\BLAST\Main.py
@@ -2693,12 +2727,12 @@ def errorMsg(): ### Prints error message to screen and asks for death
     error_line = str(error_traceback[-1][1])    # Line             : 15
     error_error = str(error_traceback[-1][3])   # Error            : for lines in fileIn.readlines():
     ### Print Error ###
-    print '%s %s' % (sys.exc_info()[0],sys.exc_info()[1])
-    print '%s: %s' % (error_type, error_value)
-    print 'File: %s' % error_file
-    print 'Method: %s (line %s)' % (error_method, error_line)
-    print 'Error: %s' % error_error
-    if yesNo('Kill me now?'): os.exit(1)
+    print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+    print('{}: {}'.format(error_type, error_value))
+    print('File: {}'.format(error_file))
+    print('Method: {} (line {})'.format(error_method, error_line))
+    print('Error: {}'.format(error_error))
+    if yesNo('Kill me now?'): os._exit(1)
 #########################################################################################################################
 ### End of User Input Functions                                                                                         #
 #########################################################################################################################
@@ -2759,7 +2793,7 @@ def modulus(num):   ### Returns modulus of number
 #########################################################################################################################
 def objFactorial(callobj,m): ### Returns the factorial of the number m
     '''Returns the factorial of the number m.'''
-    if not callobj.list.has_key('Factorial'): callobj.list['Factorial'] = [1,1]
+    if 'Factorial' not in callobj.list: callobj.list['Factorial'] = [1,1]
     if m < len(callobj.list['Factorial']): return callobj.list['Factorial'][m]
     while len(callobj.list['Factorial']) <= m:
         callobj.list['Factorial'].append(callobj.list['Factorial'][-1] * len(callobj.list['Factorial']))
@@ -2825,21 +2859,21 @@ def formula(callobj=None,formula='',data={},varlist=[],operators=[],check=False,
                     
         ### Setup varlist ###
         if varlist:
-            varlist = string.split(string.join(varlist,',').lower(),',')
+            varlist = ','.join(varlist).lower().split(',')
             if vardict:
                 for var in varlist[0:]:
-                    if not vardict.has_key(var): varlist.remove(var)
-        else: varlist = vardict.keys()
+                    if var not in vardict: varlist.remove(var)
+        else: varlist = list(vardict.keys())
                 
         ### Setup formula list ###
         for left in ['[','{']: formula = string.replace(formula,left,'(')
         for right in [']','}']: formula = string.replace(formula,right,')')
         for op in oplist: formula = string.replace(formula,op,',%s,' % op).lower()
-        formula = string.split('(,%s,)' % formula,',')
+        formula = '(,{},)'.format(formula).split(',')
         while formula.count('') > 0: formula.remove('')
         if formula.count('(') != formula.count(')'):
             if callobj: callobj.log.errorLog('Formula brackets do not balance!',printerror=False)
-            else: print 'Formula brackets do not balance!'
+            else: print('Formula brackets do not balance!')
             if not calculate: return False
             else: return '!ERR!'
         for part in formula:
@@ -2878,7 +2912,7 @@ def formula(callobj=None,formula='',data={},varlist=[],operators=[],check=False,
                     if callobj: callobj.deBug('%s - %s' % (formula,vardict))
             if x == 0: return value
             else: formula = formula[:x] + [value] + formula[(y+1):]
-        print '!ERR!'
+        print('!ERR!')
         return value                    
     except:
         if callobj: callobj.log.errorLog('Major problem with rje.formula()')
@@ -2943,7 +2977,7 @@ def logFactorial(m,callobj=None): ### Returns the log factorial of the number m
     '''Returns the factorial of the number m.'''
     try: return callobj.dict['LogFactorial'][m]
     except:
-        if callobj and not callobj.dict.has_key('LogFactorial'): callobj.dict['LogFactorial'] = {}
+        if callobj and 'LogFactorial' not in callobj.dict: callobj.dict['LogFactorial'] = {}
     if callobj: callobj.dict['LogFactorial'][0] = callobj.dict['LogFactorial'][1] = 0.0
     try:
         x = sortKeys(callobj.dict['LogFactorial'])[-1]
@@ -3061,7 +3095,7 @@ def OLDbinomial(observed,trials,prob,exact=False,usepoisson=True,callobj=None): 
 #########################################################################################################################
 def dp(data,dp): ### Returns number rounded to X dp
     '''Returns number rounded to X dp.'''
-    #if dp == 1: data = string.atof('%.1f' % data)
+    #if dp == 1: data = float('%.1f' % data)
     if not type(data) in [float,int]: data = float(data)
     if dp > 0: data = int(data * (10 ** dp) + 0.5) / float(10 ** dp)
     elif dp == 0: data = int(data + 0.5)
@@ -3109,7 +3143,7 @@ def expectString(_expect,strict=True):  ### Returns formatted string for _expect
         else: return '%.2e' % _expect
     except:
         if not strict: return '%s' % _expect
-        print _expect
+        print(_expect)
         raise
 #########################################################################################################################
 def ratio(num,denom,dividezero=0.0):   ### Returns num/denom unless denom=0.0 - returns dividezero unless dividezero=None
@@ -3139,7 +3173,7 @@ def sortKeys(dic,revsort=False):  ### Returns sorted keys of dictionary as list
 #########################################################################################################################
 def dictValues(dict,key,valtype='list'):   ### Returns dict values or empty list if dict does not have key
     '''Returns dict values or empty list if dict does not have key.'''
-    if dict.has_key(key): return dict[key]
+    if key in dict: return dict[key]
     if valtype == 'list': return []
     elif valtype == 'dict': return {}
     elif valtype == 'num': return 0
@@ -3161,7 +3195,7 @@ def getFromDict(dict,key,returnkey=True,case=True,default=None):   ### Returns d
     >> case:bool [True] = whether to use case-sensitive key matching
     >> default [None] = what to return if no entry
     '''
-    if dict.has_key(key): return dict[key]
+    if key in dict: return dict[key]
     elif not case:
         for dkey in dict.keys():
             if dkey.lower() == key.lower(): return dict[dkey]
@@ -3171,7 +3205,7 @@ def getFromDict(dict,key,returnkey=True,case=True,default=None):   ### Returns d
 def dictFreq(dict,total=True,newdict=False):  ### Normalises values of dict by total. Adds 'Total' key if desired. Must be numeric!
     '''Normalises values of dict by total. Adds 'Total' key if desired (total=True). Must be numeric values!'''
     dsum = 0.0
-    if total and dict.has_key('Total'): dsum = float(dict.pop('Total'))
+    if total and 'Total' in dict: dsum = float(dict.pop('Total'))
     if not dsum: dsum = float(sum(dict.values()))
     if newdict: fdict = {}
     else: fdict = dict
@@ -3356,7 +3390,7 @@ def asList(inlist): ### Checks whether inlist is list or string and returns as l
     try: tlist.sort(); return inlist[0:]
     except: return [inlist]
 #########################################################################################################################
-def rankList(scorelist=[],rev=False,absolute=False,lowest=False,unique=False):  ### Returns rank of scores as list
+def rankList(scorelist=[],rev=False,absolute=False,lowest=False,unique=False,highest=False):  ### Returns rank of scores as list
     '''
     Returns rank of scores as list.
     >> scorelist = list of scores
@@ -3364,6 +3398,7 @@ def rankList(scorelist=[],rev=False,absolute=False,lowest=False,unique=False):  
     >> absolute:boolean [False] = return 1 to n, rather than 0 to 1
     >> lowest:boolean [False] = returns lowest rank rather mean rank in case of ties
     >> unique:boolean [False] = give each element a unique rank (ties rank in order of entry)
+    >> highest:boolean [False] = returns highest rank rather mean rank in case of ties (only if lowest=False unique=False)
     << ranklist:list of ranks (0 = Lowest, 1 = Highest)
     '''
     if unique: lowest = True
@@ -3374,6 +3409,7 @@ def rankList(scorelist=[],rev=False,absolute=False,lowest=False,unique=False):  
     ranklist = []
     for score in scorelist:
         if lowest: rank = rsorted.index(score)
+        elif highest: rank = rsorted.index(score) + rsorted.count(score) - 1
         else: rank = (rsorted.index(score) * 2.0 + rsorted.count(score) - 1) / 2.0
         if absolute:
             while unique and (rank+1) in ranklist: rank += 1
@@ -3566,7 +3602,7 @@ def checkForFile(file):     ### Returns True if file exists or False if not
     '''Returns True if file exists or False if not.'''
     return file and os.path.exists(file)
 #########################################################################################################################
-def checkForFiles(filelist=[],basename='',log=None,cutshort=True,ioerror=False,missingtext=''):     ###
+def checkForFiles(filelist=[],basename='',log=None,cutshort=True,ioerror=False,missingtext='Not found.'):     ###
     '''
     Returns True if all files exist or False if not.
     @param filelist: list of file extension to be joined to basename.
@@ -3582,7 +3618,7 @@ def checkForFiles(filelist=[],basename='',log=None,cutshort=True,ioerror=False,m
         wfile = '%s%s' % (basename,wext)
         if not os.path.exists(wfile):
             failed = True
-            if log: log.printLog('#CHECK','%s: Missing!%s' % (wfile,missingtext))
+            if log: log.printLog('#CHECK','%s: %s' % (wfile,missingtext))
             if ioerror: raise IOError('Cannot find %s!' % wfile)
             if cutshort: return False
         elif log: log.printLog('#CHECK','%s: Found.' % wfile)
@@ -3602,7 +3638,7 @@ def makePath(path='',wholepath=False,return_blank=True):  ### Returns path that 
     os_path = path.split('/')
     if os_path[-1] != '' and wholepath == False: os_path.append('')
     if wholepath and os_path[-1] == '': os_path = os_path[:-1]
-    return string.join(os_path,os.sep)
+    return os.sep.join(os_path)
 #########################################################################################################################
 def fileTransfer(fromfile=None,tofile=None,deletefrom=True,append=True):    ### Appends fromfile to tofile and deletes fromfile
     '''
@@ -3630,7 +3666,7 @@ def subDir(pathname,exclude=[]):   ### Returns the subdirectories given by glob.
     subdir = []
     for element in dirlist[0:]:
         if os.path.isdir(element):      #X#.find('.') < 0:
-            subdir.append(string.split(element,os.sep)[-1])
+            subdir.append(element.split(os.sep)[-1])
     for ex in exclude:
         if ex in subdir: subdir.remove(ex)
     return subdir
@@ -3833,7 +3869,7 @@ def posFromIndex(target,INDEX,start_pos=0,end_pos=-1,re_index='^(\S+)=',sortuniq
     ## Special RE ##
     leader = ''
     if re_index[:2] != '^(':
-        leader = string.split(re_index,'(')[0]
+        leader = re_index.split('(')[0]
         if leader[:1] == '^':
             leader = leader[1:]
 
@@ -3883,7 +3919,7 @@ def urlToFile(sourceurl,filename,callobj,appendable=True,backupfile=True,log=Tru
         if backupfile and callobj: backup(callobj,filename,appendable=appendable)
         ### ~ [1] Download ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if log and callobj: callobj.progLog('#URL','Downloading %s' % sourceurl)
-        open(filename,'a').write(urllib2.urlopen(sourceurl).read())
+        open(filename,'a').write(urllib.urlopen(sourceurl).read())
         if log and callobj: callobj.printLog('\r#URL','Downloaded %s -> %s' % (sourceurl,filename),log=log)
     except:
         if callobj: callobj.errorLog('urlToFile error!'); return False
@@ -3936,7 +3972,7 @@ def deleteDir(callobj,deldir,contentsonly=True,confirm=True,report=True):   ### 
     ### Confirm ###
     if confirm and callobj and (callobj.i() >= 0 or callobj.getBool('DeBug') or callobj.dev()):
         if callobj.i() >= 1 or callobj.getBool('DeBug') or callobj.dev():
-            print '\n%d files in %s:\n - %s\n' % (len(files),deldir,string.join(files,'\n - '))
+            print('\n{} files in {}:\n - {}\n'.format(len(files),deldir,'\n - '.join(files)))
         if not yesNo('Delete %s?' % dtxt): raise KeyboardInterrupt
     ### Delete files ###
     for f in files:
@@ -4126,9 +4162,9 @@ def writeDelimit(OUTFILE=None,outlist=[],delimit='\t',outfile=None): ### Writes 
             element = '"%s"' % element
         writelist.append(element)
     if OUTFILE:
-        OUTFILE.write('%s\n' % string.join(writelist,delimit))
+        OUTFILE.write('%s\n' % delimit.join(writelist))
         if outfile: OUTFILE.close()
-    return string.join(writelist,delimit)
+    return delimit.join(writelist)
 #########################################################################################################################
 def readDelimit(line='',delimit='\t'):  ### Returns list of strings from file line, removing "" where necessary
     '''
@@ -4162,7 +4198,7 @@ def readDelimit(line='',delimit='\t'):  ### Returns list of strings from file li
                     continue
                 minilist.append(splitlist[s])
                 s += 1
-            readlist.append(string.join(minilist,delimit))
+            readlist.append(delimit.join(minilist))
         else: readlist.append(splitlist[s])
         s += 1
     return readlist
@@ -4195,15 +4231,15 @@ def delimitedFileOutput(callobj,filename,headers,delimit=None,datadict={},rje_ba
     if datadict:
         outlist = []
         for h in headers:
-            if datadict.has_key(h): outlist.append(str(datadict[h]))
+            if h in datadict: outlist.append(str(datadict[h]))
             else: outlist.append('')
     else:
         if rje_backup: backup(callobj,filename,unlink=True)
         if callobj.getOpt('Append') and os.path.exists(filename): return  # Don't output headers
-        if callobj.getOpt('MySQL'): outlist = string.split(string.join(headers,',').lower(),',')
+        if callobj.getOpt('MySQL'): outlist = ','.join(headers,',').lower().split(',')
         else: outlist = headers[0:]
     ### Write to file ###
-    if string.split('%s' % filename)[0] == '<open': writeDelimit(filename,outlist=outlist,delimit=delimit)
+    if '{}'.format(filename).split()[0] == '<open': writeDelimit(filename,outlist=outlist,delimit=delimit)
     else: writeDelimit(outlist=outlist,delimit=delimit,outfile=filename)
 #########################################################################################################################
 def delimitedObjDataOutput(callobj,filename,headers,delimit=None,dpdict={}):    ### Outputs object data as single delimited line
@@ -4221,7 +4257,7 @@ def delimitedObjDataOutput(callobj,filename,headers,delimit=None,dpdict={}):    
         for stat in dpdict[dp]:
             datadict[stat] = callobj.getData(stat,default='',dp=dp)
     for stat in headers:
-        if not datadict.has_key(stat):
+        if stat not in datadict:
             datadict[stat] = callobj.getData(stat,default='')
     delimitedFileOutput(callobj,filename,headers,delimit,datadict)
 #########################################################################################################################
@@ -4299,11 +4335,10 @@ def dataDict(callobj,filename,mainkeys=[],datakeys=[],delimit=None,headers=[],ge
                 else:
                     mainkey = []
                     for key in mainkeys: mainkey.append(linedata[key])
-                    if not string.join(mainkey,''): fline = FILE.readline(); continue
-                    mainkey = string.join(mainkey,delimit)
-                    #x#callobj.deBug('%s:%s' % (mainkey,datadict.has_key(mainkey)))
+                    if not ''.join(mainkey): fline = FILE.readline(); continue
+                    mainkey = delimit.join(mainkey)
                 if debug: callobj.deBug('...%s' % datadict)
-                if not datadict.has_key(mainkey): datadict[mainkey] = {}
+                if mainkey not in datadict: datadict[mainkey] = {}
                 elif not lists:
                     warnx += 1
                     if warnx <= 10: warn10.append(string.replace(mainkey,'\t',','))
@@ -4324,8 +4359,8 @@ def dataDict(callobj,filename,mainkeys=[],datakeys=[],delimit=None,headers=[],ge
         FILE.close()
         if warnx: 
             callobj.warnLog('Warning: %s %s entries overwritten due to common key (lists=False)' % (integerString(warnx),callobj.name()))
-            if warnx > 10: callobj.warnLog('Dups: %s ...' % string.join(warn10,' | '))
-            else: callobj.warnLog('Dups: %s.' % string.join(warn10,' | '))
+            if warnx > 10: callobj.warnLog('Dups: {} ...'.format(' | '.join(warn10)))
+            else: callobj.warnLog('Dups: {}.'.format(' | '.join(warn10)))
         if getheaders: datadict['Headers'] = headers[0:]
         return datadict            
     except:
@@ -4357,26 +4392,26 @@ def longCmd(cmd_list,info=None):  ### Extracts long command from command list an
     while i < len(cmd_list):
         cmd = cmd_list[i]
         if re.search('^(\S+=)"(.+)$',cmd):
-            thiscmd = [string.join(matchExp('^(\S+=)"(.+)$',cmd),'')]
+            thiscmd = [''.join(matchExp('^(\S+=)"(.+)$',cmd))]
             while cmd_list[i][-1] != '"' and i < (len(cmd_list) - 1):
                 i += 1
                 thiscmd.append(cmd_list[i])
-            longcmd.append(string.join(thiscmd,' ')[:-1])
+            longcmd.append(' '.join(thiscmd)[:-1])
         elif matchExp('^"(.+)$',cmd):
             thiscmd = [matchExp('^"(.+)$',cmd)[0]]
             while cmd_list[i][-1] != '"' and i < (len(cmd_list) - 1):
                 i += 1
                 thiscmd.append(cmd_list[i])
-            longcmd.append(string.join(thiscmd,' ')[:-1])
+            longcmd.append(' '.join(thiscmd)[:-1])
         else: longcmd.append(cmd)
         # Check for odd leading character
         if len(longcmd) > 0:
             try:
                 if ord(longcmd[-1][:1]) == 226:
-                    warnings.append(('#WARN', 'Leading emdash replaced with "-": "%s"' % longcmd[-1]))
+                    warnings.append(('#WARN', 'Leading emdash replaced with "-": "{}"'.format(longcmd[-1])))
                     longcmd[-1] = '-' + longcmd[-1][3:]
             except:
-                warnings.append(('#WARN','Non-ASCII leading character replaced with "-": "%s"' % longcmd[-1]))
+                warnings.append(('#WARN','Non-ASCII leading character replaced with "-": "{}"'.format(longcmd[-1])))
                 longcmd[-1] = '-' + longcmd[-1][1:]
         # Deal with -X -Y commands
         if len(longcmd) > 1 and longcmd[-2][:1] == '-':
@@ -4387,12 +4422,12 @@ def longCmd(cmd_list,info=None):  ### Extracts long command from command list an
                 longcmd[-2] = longcmd[-2][1:]
                 if longcmd[-2][:1] == '-':
                     longcmd[-2] = longcmd[-2][1:]  # Check and remove --
-                    warnings.append(('#WARN','Leading double-dash command corrected: %s' % longcmd[-2]))
+                    warnings.append(('#WARN','Leading double-dash command corrected: {}'.format(longcmd[-2])))
             else:
-                longcmd[-2] = '%s=%s' % (longcmd[-2][1:],longcmd[-1])
+                longcmd[-2] = '{}={}'.format(longcmd[-2][1:],longcmd[-1])
                 if longcmd[-2][:1] == '-':
                     longcmd[-2] = longcmd[-2][1:]  # Check and remove --
-                    warnings.append(('#WARN', 'Leading double-dash command corrected: %s' % longcmd[-2]))
+                    warnings.append(('#WARN', 'Leading double-dash command corrected: {}'.format(longcmd[-2])))
                 longcmd.pop(-1)
         i += 1
     if longcmd:
@@ -4424,9 +4459,9 @@ def iniCmds(ini_path,ini_file,iowarning=True,altpaths=True,info=None):  ### Read
     elif altpaths and checkForFile(alt_ini): openfile = alt_ini
     elif iowarning:
         # Expect this INI file to exist
-        print '#ERR\tINI file %s not found! (Also checked %s and %s)' % (ini_file,ini_path,ini_dir)
-        if info: info.warnings.append(('#ERR','INI file %s not found! (Also checked %s and %s)' % (ini_file,ini_path,ini_dir)))
-        if not yesNo('Continue without %s arguments?' % ini_file): os._exit(0)
+        print('#ERR\tINI file {} not found! (Also checked {} and {})'.format(ini_file,ini_path,ini_dir))
+        if info: info.warnings.append(('#ERR','INI file {} not found! (Also checked {} and {})'.format(ini_file,ini_path,ini_dir)))
+        if not yesNo('Continue without {} arguments?'.format(ini_file)): os._exit(0)
         return []
     else:
         # Do not expect this file to exist (optional default)
@@ -4443,8 +4478,8 @@ def iniCmds(ini_path,ini_file,iowarning=True,altpaths=True,info=None):  ### Read
             comment = iniline.find('\t#')
             iniline = iniline[:comment]
         else: iniline = chomp(iniline)
-        inicmds += iniline.split(None,)
-    if info: info.warnings.append(('#INI', 'INI file: %s; Commands loaded: %s' % (openfile, string.join(inicmds))))
+        inicmds += iniline.split()
+    if info: info.warnings.append(('#INI', 'INI file: {}; Commands loaded: {}'.format(openfile, ' '.join(inicmds))))
     return inicmds
 #########################################################################################################################
 def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands, reading from ini file as appropriate.
@@ -4464,8 +4499,9 @@ def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands
             rjepath = makePath(os.path.split(os.path.expanduser(sys.argv[0]))[0]); path = rjepath
             if server: argcmd = longCmd(iniCmds(rjepath,'defaults.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,defaults,iowarning=False,info=info),info) + argcmd
             else: argcmd = longCmd(iniCmds(rjepath,'defaults.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,'rje.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,defaults,iowarning=False,info=info),info) + argcmd
+            if py3: print('<<<')
     except:
-        print '#ERR\tMajor error in getCmdList() looking for defaults:', sys.exc_info()[0]
+        print('#ERR\tMajor error in getCmdList() looking for defaults:', sys.exc_info()[0])
         errorMsg()
         if yesNo('Proceed?') == False: os._exit(0)
     ### <b> ### System Arguments
@@ -4480,7 +4516,7 @@ def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands
             if argcmd and nextcmd[:4].lower() in ['-ini']: argcmd = longCmd(iniCmds(path,argcmd.pop(0),info=info),info) + argcmd
         return longCmd(cmd_list,info)
     except:
-        print '#ERR\tMajor error in getCmdList() processing system arguments:', sys.exc_info()[0]
+        print('#ERR\tMajor error in getCmdList() processing system arguments:', sys.exc_info()[0])
         errorMsg()
         if yesNo('Proceed?') == False: os._exit(0)
         return longCmd(cmd_list,info)
@@ -4508,8 +4544,8 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
     << log:Log object
     '''
     ### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    out.verbose(2,3,'Commands: %s' % cmd_list,2)
-    log_file = 'log=%s.log' % info.program.lower()
+    out.verbose(2,3,'Commands: {}'.format(cmd_list),2)
+    log_file = 'log={}.log'.format(info.program.lower())
     argcmd = longCmd(sys.argv[1:])
     cmd_list = [log_file] + cmd_list[0:]
     ### ~ [2] ~ Make and return Log ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -4519,10 +4555,10 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
         log.info['Name'] = info.program
         if printlog:
             log.printLog('#~~#','#~~#',timeout=False,screen=False)
-            log.printLog('#LOG','Activity Log for %s V%s: %s' % (info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
-            log.printLog('#DIR','Run from directory: %s' % os.path.abspath(os.curdir),screen=False)
-            log.printLog('#ARG','Commandline arguments: %s' % string.join(argcmd),screen=False)
-            #log.printLog('#CMD','Program arguments: %s' % string.join(cmd_list),screen=False)
+            log.printLog('#LOG','Activity Log for {} V{}: {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
+            log.printLog('#DIR','Run from directory: {}'.format(os.path.abspath(os.curdir)),screen=False)
+            log.printLog('#ARG','Commandline arguments: {}'.format(jstring.join(argcmd)),screen=False)
+            #log.printLog('#CMD','Program arguments: %s' % jstring.join(cmd_list),screen=False)
             for infowarn in info.warnings:
                 if infowarn[0] == '#WARN':
                     log.warnLog(infowarn[1])
@@ -4532,23 +4568,23 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
                     if fullcmd: log.printLog(infowarn[0], infowarn[1], screen=False, error=True)
                 else:
                     log.printLog(infowarn[0], infowarn[1], screen=False, error=True)
-            if fullcmd: log.printLog('#CMD','Full Command List: %s' % argString(tidyArgs(cmd_list)),screen=False)
-            log.printLog('#VIO','Verbosity: %d; Interactivity: %d.' % (log.v(),log.i()))
-            if log.dev() or log.test(): log.printLog('#DEV','Development mode: %s; Testing mode: %s.' % (log.dev(),log.test()))
+            if fullcmd: log.printLog('#CMD','Full Command List: {}'.format(argString(tidyArgs(cmd_list))),screen=False)
+            log.printLog('#VIO','Verbosity: {}; Interactivity: {}.'.format(log.v(),log.i()))
+            if log.dev() or log.test(): log.printLog('#DEV','Development mode: {}; Testing mode: {}.'.format(log.dev(),log.test()))
             if log.info['ErrorLog'].lower() not in ['','none']:
                 log.printLog('#~~#','#~~#',timeout=False,screen=False,error=True)
-                log.printLog('#LOG','Error Log for %s %s: %s' % (info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False,error=True)
-                log.printLog('#DIR','Run from directory: %s' % os.path.abspath(os.curdir),screen=False,error=True)
-                log.printLog('#ARG','Commandline arguments: %s' % str(argcmd),screen=False,error=True)
+                log.printLog('#LOG','Error Log for {} {}: {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False,error=True)
+                log.printLog('#DIR','Run from directory: {}'.format(os.path.abspath(os.curdir)),screen=False,error=True)
+                log.printLog('#ARG','Commandline arguments: {}'.format(str(argcmd)),screen=False,error=True)
                 for infowarn in info.warnings:
                     if infowarn[0] == '#WARN': log.warnLog(infowarn[1])
                     elif infowarn[0] == '#ERR': log.errorLog(infowarn[1],printerror=False)
-                if fullcmd: log.printLog('#CMD','Full Command List: %s' % argString(tidyArgs(cmd_list)),screen=False,error=True)
-                if log.dev() or log.test(): log.printLog('#DEV','Development mode: %s; Testing mode: %s.' % (log.dev(),log.test()))
+                if fullcmd: log.printLog('#CMD','Full Command List: {}'.format(argString(tidyArgs(cmd_list))),screen=False,error=True)
+                if log.dev() or log.test(): log.printLog('#DEV','Development mode: {}; Testing mode: {}.'.format(log.dev(),log.test()))
                 elif not log.warn(): log.warnLog('Runtime warnings switched off (warn=F).')
         return log
     except:
-        print 'Log problem'
+        print('Log problem')
         raise
 #########################################################################################################################
 def listFromCommand(command,checkfile=True,purelines=False):   ### Returns a list object from a given command string
@@ -4565,17 +4601,17 @@ def listFromCommand(command,checkfile=True,purelines=False):   ### Returns a lis
         ### Check for file ###
         if checkfile and os.path.exists(command) and not os.path.isdir(command):
             comlist = open(command,'r').readlines()
-            comlist = string.split(string.join(comlist,''),'\r')
-            comlist = string.split(string.join(comlist,''),'\n')
+            comlist = ''.join(comlist).split('\r')
+            comlist = ''.join(comlist).split('\n')
             while '' in comlist: comlist.remove('')
-            if not purelines: comlist = readDelimit(string.join(comlist,','),',')
+            if not purelines: comlist = readDelimit(','.join(comlist),',')
         ### Split list ###
         else: comlist = readDelimit(command,',')
         ### Tidy and return ###
         while '' in comlist: comlist.remove('')
         return comlist
     except:
-        print 'listFromCommand problem!'
+        print('listFromCommand problem!')
         raise
 #########################################################################################################################
 def tidyArgs(argcmd,skiplist=['ini'],nopath=False,purgelist=[]):  ### Tidies commandline arguments to remove redundancy
@@ -4595,7 +4631,7 @@ def tidyArgs(argcmd,skiplist=['ini'],nopath=False,purgelist=[]):  ### Tidies com
         #cmd = self.cmdAlias(argcmd.pop(0)) #!# Add general cmdAlias function from slimsuiteREST at some point?
         cmd = argcmd.pop(0)
         jobargs.append(cmd)
-        jobopts.append(string.split(cmd,'=')[0])
+        jobopts.append(cmd.split('=')[0])
     ### ~ [2] ~ Reduce to latest version of commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     argnr = []
     while jobargs:
@@ -4604,9 +4640,9 @@ def tidyArgs(argcmd,skiplist=['ini'],nopath=False,purgelist=[]):  ### Tidies com
         elif opt in purgelist: continue
         if opt in skiplist or opt not in jobopts:
             if nopath and '=/' in cmd:
-                (arg,val) = string.split(cmd,'=',1)
+                (arg,val) = cmf.split('=',1)
                 val = os.path.basename(val)
-                argnr.append('%s=%s' % (arg,val))
+                argnr.append('{}={}'.format(arg,val))
             else: argnr.append(cmd)
     return argnr
 #########################################################################################################################
@@ -4614,11 +4650,11 @@ def argString(arglist):    ### Returns correctly formatted string of commandline
     '''Returns correctly formatted string of commandline arguments.'''
     argstr = []
     for cmd in arglist:
-        if len(string.split(cmd)) > 1 and len(string.split(cmd,'=',1)) == 2:
-            (opt,val) = string.split(cmd,'=',1)
-            argstr.append('%s="%s"' % (opt,val))
+        if len(cmd.split()) > 1 and len(cmd.split('=',1)) == 2:
+            (opt,val) = cmd.split('=',1)
+            argstr.append('{}="{}"'.format(opt,val))
         else: argstr.append(cmd)
-    return string.join(argstr)
+    return jstring.join(argstr)
 #########################################################################################################################
 ###  End of Input Command Functions                                                                                     #
 #########################################################################################################################
@@ -4637,12 +4673,15 @@ def errorReport(text='',quitchoice=False,killme=True):
     except SystemExit: os._exit(1)
     except KeyboardInterrupt: quitchoice = True
     except: pass
-    if string.split(str(sys.exc_info()[0]),'.')[1] == 'SystemExit': os._exit(1)
+    if str(sys.exc_info()[0]).split('.')[1] == 'SystemExit': os._exit(1)
 
     try:
         ### Setup error variables
         error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
-        error_type = string.replace(error_type,'exceptions.','')
+        if py3:
+            error_type = error_type.split("'")[1]
+        else:
+            error_type = error_type.replace('exceptions.','')
         error_value = str(sys.exc_info()[1])        # Error Value      : [Errno 9] Bad file descriptor
         error_traceback = traceback.extract_tb(sys.exc_info()[2])
         error_file = str(error_traceback[-1][0])    # File             : C:\Documents and Settings\normdavey\Desktop\Python\BLAST\Main.py
@@ -4650,21 +4689,23 @@ def errorReport(text='',quitchoice=False,killme=True):
         error_line = str(error_traceback[-1][1])    # Line             : 15
         error_error = str(error_traceback[-1][3])   # Error            : for lines in fileIn.readlines():
         ### Output
-        print '### ----- ERROR! ----- ###'
-        if text: print text
-        print '%s %s' % (sys.exc_info()[0],sys.exc_info()[1])
-        print '%s: %s' % (error_type, error_value)
-        print 'File: %s' % error_file
-        print 'Method: %s (line %s)' % (error_method, error_line)
-        print 'Error: %s' % error_error
-        print '### ------------------ ###'
+        print('### ----- ERROR! ----- ###')
+        if text: print(text)
+        print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+        print('{}: {}'.format(error_type, error_value))
+        print('File: {}'.format(error_file))
+        print('Method: {} (line {})'.format(error_method, error_line))
+        print('Error: {}'.format(error_error))
+        print('### ------------------ ###')
         ### Kill program
         if quitchoice:
-            print 'Quit program (y/n)?',
-            if raw_input().upper().startswith('Y'): os._exit(1)
+            print('Quit program (y/n)?'),
+            if py3:
+                if input().upper().startswith('Y'): os._exit(1)
+            elif raw_input().upper().startswith('Y'): os._exit(1)
         elif killme: os._exit(1)
     except:
-        print 'That\'s not right: Error in errorReport()!!:'
+        print('That\'s not right: Error in errorReport()!!:')
 #########################################################################################################################
 ###  End of Generic Error Handling Functions                                                                            #
 #########################################################################################################################

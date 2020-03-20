@@ -19,8 +19,8 @@
 """
 Module:       rje_disorder
 Description:  Disorder Prediction Module
-Version:      1.5.1
-Last Edit:    28/05/19
+Version:      1.5.20
+Last Edit:    05/02/20
 Copyright (C) 2006  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -82,7 +82,7 @@ Commandline:
     md5acc=T/F      : Whether to use md5sum hexdigest hashing of sequence in place of accession numbers [True]
 
     ### System Settings: ###
-    iupath=PATH     : The full path to the IUPred executable [c:/bioware/iupred/iupred.exe]
+    iupath=PATH     : The full path to the IUPred executable [iupred]
     anchor=PATH     : Full path to ANCHOR executable []
     filoop=INT      : Number of times to try connecting to FoldIndex server [10]
     fisleep=INT     : Number of seconds to sleep between attempts [2]
@@ -119,6 +119,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.4.0 - Fixed up disorder=parse and disorder=foldindex.
     # 1.5.0 - Added iupred2 and anchor2 parsing from URL using accnum. Made default disorder=iushort2.
     # 1.5.1 - Fixed iupred2 URL generation error.
+    # 1.5.2 - Changed iupath default.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -134,7 +135,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo():     ### Makes Info object
     '''Makes rje.Info object for program.'''
-    (program, version, last_edit, cyear) = ('RJE_DISORDER', '1.5.1', 'May 2019', '2008')
+    (program, version, last_edit, cyear) = ('RJE_DISORDER', '1.5.2', 'January 2020', '2008')
     description = 'Disorder Prediction Module'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.']
@@ -243,7 +244,7 @@ class Disorder(rje.RJE_Object):
         self.objlist = []
         ### Defaults ###
         self._setDefaults(info='',opt=False,stat=0.2,obj=None,setlist=True,setdict=True)
-        self.setInfo({'IUPath':rje.makePath('c:/bioware/iupred/iupred.exe',wholepath=True),'IUMethod':'short',
+        self.setInfo({'IUPath':'iupred','IUMethod':'short',
                       'Disorder':'iushort2','Smoothing':'foldfirst','IUScoreDir':''})
         self.setStat({'FILoop':10,'FISleep':2,'MinOrder':-1,'MinRegion':0,'IUCut':0.2})
         self.setOpt({'MD5Acc':True,'DisCalculate':True})
