@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.8.6
-Last Edit:    20/03/20
+Version:      0.8.7
+Last Edit:    01/04/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -153,6 +153,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.8.4 - Set endextend=0 due to another bug.
     # 0.8.5 - Fixed BUSCO table loading bug introduced by Diploidocus. Added error catching for logbinomial bug.
     # 0.8.6 - Tweaked code to handle BUSCO v4 files, but not (yet) file organisation.
+    # 0.8.7 - Fixing issues with prefix parsing from BUSCO directories and files.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -197,7 +198,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.6', 'March 2020', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.7', 'April 2020', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -1415,18 +1416,21 @@ class BUSCOMP(rje_obj.RJE_Object):
                 self.progLog('#RUNDIR','Processing %s...' % rundir)
                 prefix = ''
                 runlist = glob.glob('%s/full_table_*.tsv' % runpath)
-                if self.getBool('BUSCOMPSeq') and len(runlist) == 1:
-                    prefix = rundir[4:]
-                    #i# If runsort=prefix, will recognise and trim numbers off start (can be used for sorting)
-                    runfile2 = runfile = '%s/full_table_%s.tsv' % (runpath,prefix)
-                    if rje.matchExp('^(\d+)_(\S+)',prefix):
-                        prefix2 = rje.matchExp('^(\d+)_(\S+)',prefix)[1]
-                        runfile2 = '%s/full_table_%s.tsv' % (runpath,prefix2)
-                    if runfile not in runlist and runfile2 not in runlist:
-                        self.warnLog('BUSCO run "%s" missing full table' % prefix) # Missing
-                        nonx += 1
-                        continue
-                    runlist = [runfile2]
+
+                #?# Not sure why this code was here so going to try removing it. Seems to break ideal scenarios now.
+                # if self.getBool('BUSCOMPSeq') and len(runlist) == 1:
+                #     prefix = rundir[4:]
+                #     #i# If runsort=prefix, will recognise and trim numbers off start (can be used for sorting)
+                #     runfile2 = runfile = '%s/full_table_%s.tsv' % (runpath,prefix)
+                #     if rje.matchExp('^(\d+)_(\S+)',prefix):
+                #         prefix2 = rje.matchExp('^(\d+)_(\S+)',prefix)[1]
+                #         runfile2 = '%s/full_table_%s.tsv' % (runpath,prefix2)
+                #     if runfile not in runlist and runfile2 not in runlist:
+                #         self.warnLog('BUSCO run "%s" missing full table' % prefix) # Missing
+                #         nonx += 1
+                #         continue
+                #     runlist = [runfile2]
+
                 # Process run file
                 for runfile in runlist:
                     seqdir = rje.makePath(runpath) + 'single_copy_busco_sequences'
@@ -2609,10 +2613,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 if rje.exists(fna):
                     #!# Fix this! 'Qry': 'EOG0907007V:tiger.wtdbg2v1.racon.fasta:ctg_NOTSC__NSCUV1ONT0006:601178-628876'
                     fnalines = open(fna,'r').readlines()
-                    if string.split(fnalines[0],':',maxsplit=1)[0] == eog:  # BUSCO v3
+                    if string.split(fnalines[0],':',maxsplit=1)[0][1:] == eog:  # BUSCO v3
                         fnalines[0] = string.join(string.split(fnalines[0],':',maxsplit=1))
                     else:
-                        fnalines[0] = '{} {}'.format(eog,fnalines[0]) # BUSCO v4
+                        fnalines[0] = '>{} {}'.format(eog,fnalines[0]) # BUSCO v4
                     for i in range(1,len(fnalines)):
                         if fnalines[i].startswith('>'):
                             self.warnLog('"Single copy" BUSCO %s has 2+ sequences in %s! (Keeping first.)' % (eog,fna))
@@ -2626,10 +2630,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 faa = rje.makePath(gentry['Directory']) + 'single_copy_busco_sequences/%s.faa' % eog
                 if rje.exists(faa):
                     faalines = open(faa,'r').readlines()
-                    if string.split(faalines[0],':',maxsplit=1)[0] == eog:  # BUSCO v3
+                    if string.split(faalines[0],':',maxsplit=1)[0][1:] == eog:  # BUSCO v3
                         faalines[0] = string.join(string.split(faalines[0],':',maxsplit=1))
                     else:
-                        faalines[0] = '{} {}'.format(eog,faalines[0]) # BUSCO v4
+                        faalines[0] = '>{} {}'.format(eog,faalines[0]) # BUSCO v4
                     for i in range(1,len(faalines)):
                         if faalines[i].startswith('>'):
                             self.warnLog('"Single copy" BUSCO %s has 2+ sequences in %s! (Keeping first.)' % (eog,faa))
