@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compiler and Comparison tool
 
 ```
-BUSCOMP v0.8.7
+BUSCOMP v0.9.1
 ```
 
 For a better rendering and navigation of this document, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -131,6 +131,15 @@ directory will also be checked. If `buscocompseq=F` then all of the `full_*.tsv`
 directories will be loaded for compilation, but no sequence searching will be performed. The presence of
 sequences available for compilation will be stored in the `Sequences` field of `*.genomes.tdt`.
 
+**BUSCO v4.x:** From `v0.9.1`, BUSCOMP should recognise BUSCO v4 output. Due to the reorganisation and altered
+naming strategy of version 4, the naming of results files is more strict. The main results directory (set by
+`-o` when you run BUSCO) should match the genome assembly prefix with an optional `.busco` suffix. (A leading
+`run_` is also permitted and will be ignored. For example, if `assembly.fasta` was analysed with BUSCO v4,
+BUSCOMP should be able to parse results generated using `-o assembly`, `-o assembly.busco`, `-o run_assembly`, or
+`-o run_assembly.busco`. If none of these settings were used, the results directory can be manually renamed. For
+additional sorting, a XX_ numerical prefix _can_ be used (see below), e.g. `run_01_assembly` will still look
+for `assembly.*` in the `fastadir` path.
+
 ### BUSCOMPSeq Analysis Only
 
 Additional assemblies can rated using the BUSCOMPSeq analysis (see below) without having BUSCO data analysed.
@@ -143,9 +152,10 @@ the absence of _any_ BUSCO results.
 ### Genome Prefixes
 
 Each genome analysed has a "Prefix" that can be used to help sorting (if `runsort=prefix`) and identify relevant
-BUSCO files where the genome (Fasta) name and BUSCO run name do not match. This Prefix is set once as the data
-is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the Genome
-(a.k.a. Alias) and Description fields.)
+BUSCO files where the genome (Fasta) name and BUSCO run name do not match. It is generally assumed that this
+Prefix will match the prefix of the original assembly file on which BUSCO was run. This Prefix is set once as the
+data is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the
+Genome (a.k.a. Alias) and Description fields.)
 
 The assembly Prefix will be set as:
 
@@ -175,8 +185,14 @@ An optional alias table can be provided (`genomes=FILE`) that contains `Prefix` 
 allowed) and can give alternative names for each genome to be used in other outputs. If running interactively,
 there will also be an option to check/update these aliases manually. Genome aliases are output as part of the
 main `*.genomes.tdt` output, which can also be used as subsequent `genomes=FILE` input (the default, if found).
+
 This table can also have a `Description` field, which will be used to update descriptions for output if found.
-(Empty descriptions will not be mapped.)
+(Empty descriptions will not be mapped.) Otherwise, descriptions can be parsed from a `description_$PREFIX.txt`
+file (exactly matching the `$PREFIX` parsed from a `full_table_*.tsv` file) if found. Alternatively, if the run
+directory has a `run_` prefix AND there is only one `full_table`, or it is a BUSCO v4 output directory, a
+description will be parsed from `description.txt`. In each case, only the first line will be used. If neither
+condition is met, the name of the genome fasta file will be used. Failing that, `Genome` will be used. (Note that
+for BUSCO v4, `description.txt` must be in the same directory as `full_table.tsv`.
 
 **NOTE:** The optional Alias table *can* be used to change a `Genome` name to something other than its Fasta file
 - this mapping is performed _after_ fasta files have been identified.

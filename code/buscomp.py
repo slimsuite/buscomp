@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.8.7
-Last Edit:    01/04/20
+Version:      0.9.1
+Last Edit:    15/04/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -154,6 +154,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.8.5 - Fixed BUSCO table loading bug introduced by Diploidocus. Added error catching for logbinomial bug.
     # 0.8.6 - Tweaked code to handle BUSCO v4 files, but not (yet) file organisation.
     # 0.8.7 - Fixing issues with prefix parsing from BUSCO directories and files.
+    # 0.9.0 - Updated parsing of single_copy_busco_sequences/ to enable multiple directories with "$PREFIX" suffixes.
+    # 0.9.1 - Updated parsing to enable BUSCO v4 results recognition. (run with -o $GENOME.busco)
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -198,7 +200,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.8.7', 'April 2020', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.1', 'April 2020', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -502,6 +504,15 @@ class BUSCOMP(rje_obj.RJE_Object):
         directories will be loaded for compilation, but no sequence searching will be performed. The presence of
         sequences available for compilation will be stored in the `Sequences` field of `*.genomes.tdt`.
 
+        **BUSCO v4.x:** From `v0.9.1`, BUSCOMP should recognise BUSCO v4 output. Due to the reorganisation and altered
+        naming strategy of version 4, the naming of results files is more strict. The main results directory (set by
+        `-o` when you run BUSCO) should match the genome assembly prefix with an optional `.busco` suffix. (A leading
+        `run_` is also permitted and will be ignored. For example, if `assembly.fasta` was analysed with BUSCO v4,
+        BUSCOMP should be able to parse results generated using `-o assembly`, `-o assembly.busco`, `-o run_assembly`, or
+        `-o run_assembly.busco`. If none of these settings were used, the results directory can be manually renamed. For
+        additional sorting, a XX_ numerical prefix _can_ be used (see below), e.g. `run_01_assembly` will still look
+        for `assembly.*` in the `fastadir` path.
+
         ### BUSCOMPSeq Analysis Only
 
         Additional assemblies can rated using the BUSCOMPSeq analysis (see below) without having BUSCO data analysed.
@@ -514,9 +525,10 @@ class BUSCOMP(rje_obj.RJE_Object):
         ### Genome Prefixes
 
         Each genome analysed has a "Prefix" that can be used to help sorting (if `runsort=prefix`) and identify relevant
-        BUSCO files where the genome (Fasta) name and BUSCO run name do not match. This Prefix is set once as the data
-        is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the Genome
-        (a.k.a. Alias) and Description fields.)
+        BUSCO files where the genome (Fasta) name and BUSCO run name do not match. It is generally assumed that this
+        Prefix will match the prefix of the original assembly file on which BUSCO was run. This Prefix is set once as the
+        data is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the
+        Genome (a.k.a. Alias) and Description fields.)
 
         The assembly Prefix will be set as:
 
@@ -546,8 +558,14 @@ class BUSCOMP(rje_obj.RJE_Object):
         allowed) and can give alternative names for each genome to be used in other outputs. If running interactively,
         there will also be an option to check/update these aliases manually. Genome aliases are output as part of the
         main `*.genomes.tdt` output, which can also be used as subsequent `genomes=FILE` input (the default, if found).
+
         This table can also have a `Description` field, which will be used to update descriptions for output if found.
-        (Empty descriptions will not be mapped.)
+        (Empty descriptions will not be mapped.) Otherwise, descriptions can be parsed from a `description_$PREFIX.txt`
+        file (exactly matching the `$PREFIX` parsed from a `full_table_*.tsv` file) if found. Alternatively, if the run
+        directory has a `run_` prefix AND there is only one `full_table`, or it is a BUSCO v4 output directory, a
+        description will be parsed from `description.txt`. In each case, only the first line will be used. If neither
+        condition is met, the name of the genome fasta file will be used. Failing that, `Genome` will be used. (Note that
+        for BUSCO v4, `description.txt` must be in the same directory as `full_table.tsv`.
 
         **NOTE:** The optional Alias table *can* be used to change a `Genome` name to something other than its Fasta file
         - this mapping is performed _after_ fasta files have been identified.
@@ -1402,64 +1420,124 @@ class BUSCOMP(rje_obj.RJE_Object):
             dirx = 0; nonx = 0;
             for runpath in self.list['Runs']:
                 # Identify and check directory
-                if not os.path.isdir(runpath): continue
+                runtype = self.runType(runpath)
+                if not runtype: continue
+                #if not os.path.isdir(runpath): continue
                 runsplit = os.path.split(runpath)
                 if not runsplit[-1]: runsplit = os.path.split(runsplit[0])
                 rundir = runsplit[-1]
-                #i# v0.5.1 no longer skip directories without run data to extract for BUSCOMPSeq
-                #if self.getBool('BUSCOMPSeq') and not rundir.startswith('run_'):
-                #    self.warnLog('Non-BUSCO directory skipped (buscompseq=T): %s' % runpath)
-                #    nonx += 1
-                #    continue
                 dirx += 1
+
+                # V0.9.0 updated and simplified input data parsing strategy: BUSCO v3
+                # Input BUSCO runs are provided by the directories given by `runs=DIRLIST`. These must have a `full_table_*.tsv` files
+                # for each BUSCO genome. The `*` component of the name is used as the genome `Prefix` - a unique identifier
+                # used for each genome. By default, this is also used to set the unique `Genome` identifier. If the run directory
+                # has a `run_` prefix AND there is only one `full_table`, the `Genome` identifier will instead be parsed from
+                # the run directory name. This will have any `.busco` suffix removed. Fasta files must match either the `Prefix` or `Genome` identifier loaded.
+                # Either or both of the `Prefix` and `Genome` identifiers can have leading numbers (`NN_*`) for sorting purposes.
+                # These will be ignored when finding genome fasta files and/or printing to output.
+
+                # If there is a matching `single_copy_busco_sequences_$PREFIX` directory (exactly matching the `$PREFIX` parsed
+                # from a `full_table_*.tsv` file), single copy BUSCO sequences will be used for the BUSCOMP compilation.
+                # Alternatively, if the run directory has a `run_` prefix AND there is only one `full_table`, sequences will
+                # be extracted from the `single_copy_busco_sequences` directory if present.
+
+                # Similarly, a description for the genome will be parsed from a `description_$PREFIX.txt` file (exactly matching the `$PREFIX` parsed
+                # from a `full_table_*.tsv` file) if found. Alternatively, if the run directory has a `run_` prefix AND there is only one `full_table`,
+                # a description will be parsed from `description.txt`. In each case, only the first line will be used.
+                # If neither condition is met, the name of the genome fasta file will be used. Failing that, `Genome` will be used.
+
+                # The final `Genome` and `Description` values can be updated by mapping the `Prefix` or fasta file onto data loaded from the `genomes=FILE` table.
+                # = updateGenomesFromAlias()
+
                 # Extract run file(s)
                 self.progLog('#RUNDIR','Processing %s...' % rundir)
                 prefix = ''
                 runlist = glob.glob('%s/full_table_*.tsv' % runpath)
 
-                #?# Not sure why this code was here so going to try removing it. Seems to break ideal scenarios now.
-                # if self.getBool('BUSCOMPSeq') and len(runlist) == 1:
-                #     prefix = rundir[4:]
-                #     #i# If runsort=prefix, will recognise and trim numbers off start (can be used for sorting)
-                #     runfile2 = runfile = '%s/full_table_%s.tsv' % (runpath,prefix)
-                #     if rje.matchExp('^(\d+)_(\S+)',prefix):
-                #         prefix2 = rje.matchExp('^(\d+)_(\S+)',prefix)[1]
-                #         runfile2 = '%s/full_table_%s.tsv' % (runpath,prefix2)
-                #     if runfile not in runlist and runfile2 not in runlist:
-                #         self.warnLog('BUSCO run "%s" missing full table' % prefix) # Missing
-                #         nonx += 1
-                #         continue
-                #     runlist = [runfile2]
+                #i# NOTE: This might be very confusing because prefix refers to the prefix of the assembly files, whereas
+                #i# genome refers to the alias being used for the genome, NOT the prefix of the genome assembly. (Unless
+                #i# the two are the same!
 
-                # Process run file
+                # V4 conversion
+                if runtype == 'V4':
+                    runpath = glob.glob('%s/run_*' % runpath)[0]
+                    runlist = ['%s/full_table.tsv' % runpath]
+
+                # Process run file(s)
                 for runfile in runlist:
+                    #i# Single BUSCO sequence directory
                     seqdir = rje.makePath(runpath) + 'single_copy_busco_sequences'
-                    #?# Replace Sequences with number of *.fna files
-                    rentry = {'#':gdb.entryNum()+1,'Table':runfile,'Sequences':rundir.startswith('run_') and len(runlist) == 1 and rje.exists(seqdir)}
+                    if runtype == 'V4': seqdir = rje.makePath(runpath) + 'busco_sequences/single_copy_busco_sequences'
+                    #?# Replace Sequences T/F with number of *.fna files
+                    rentry = {'#':gdb.entryNum()+1,'Table':runfile,'Sequences':runtype in ['Single','V4'] and rje.exists(seqdir)}
                     (rentry['Directory'],tsv) = os.path.split(runfile)
-                    prefix = tsv[len('full_table_'):-4]
+                    if runtype == 'V4':
+                        prefix = rundir
+                        if rundir.startswith('run_'): prefix = rundir[4:]
+                    else:
+                        prefix = tsv[len('full_table_'):-4]
+                        prefseqdir = rje.makePath(runpath) + 'single_copy_busco_sequences_' + prefix
+                        if rje.exists(prefseqdir): rentry['Sequences'] = True
                     #self.debug(rentry)
                     rentry['Prefix'] = prefix
                     # Set genome value: chop off .busco at end!
                     genome = prefix
                     # If runpath starts with run and has one tsv then use as alias.
                     #!# Add stripaliasnum option for output.
-                    if rundir.startswith('run_') and len(runlist) == 1:   #X# and not prefix in adb.index('Prefix',force=True,log=False):
+                    if runtype == 'Single' and rundir.startswith('run_'):   #X# and not prefix in adb.index('Prefix',force=True,log=False):
                         genome = rundir[4:]
                     if genome.endswith('.busco'): genome = genome[:-6]
                     rentry['Genome'] = string.join(string.split(genome),'')
                     rentry['Fasta'] = self._findFasta(prefix,genome)
-                    if rentry['Fasta']: rentry['Description'] = rentry['Fasta']
+                    descfile = rje.makePath(runpath) + 'description.txt'
+                    prefdescfile = rje.makePath(runpath) + 'description_' + prefix + '.txt'
+                    if rje.exists(prefdescfile):
+                        rentry['Description'] = rje.chomp(open(prefdescfile,'r').readline())
+                    elif runtype in ['Single','V4'] and rje.exists(descfile):
+                        rentry['Description'] = rje.chomp(open(descfile,'r').readline())
+                    elif rentry['Fasta']: rentry['Description'] = rentry['Fasta']
                     else:
                         self.warnLog('No Fasta file found for %s' % self.genomeString(rentry))
-                        rentry['Description'] = rentry['Directory'] + ' (no Fasta)'
-                    #x#self.debug('%s' % rentry)
+                        rentry['Description'] = rentry['Genome'] + ' (no Fasta)'
+                    self.debug('%s' % rentry)
                     gdb.addEntry(rentry)
                 # Summarise entry
                 self.printLog('#RUNDIR','Processed %s: %d runs (%d total)' % (rundir,len(runlist),gdb.entryNum()))
 
             return True     # Setup successful
         except: self.errorLog('Problem during %s setup.' % self.prog()); return False  # Setup failed
+#########################################################################################################################
+    def runType(self,runpath):  ### Returns the type of BUSCO run directory given by runpath
+        '''
+        Returns the type of BUSCO run directory given by runpath.
+        - Single = Single V3 BUSCO run (default expectation)
+        - Collated = Multiple BUSCO full_table*tsv files in a single directory. (Can be V3 or V4)
+        - V4 = Single V4 BUSCO run directory.
+        - None = No BUSCO results detected.
+        :param runpath:
+        :return: runtype [str]
+        '''
+        try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            if not os.path.isdir(runpath): return None
+            runlist = glob.glob('%s/full_table*tsv' % runpath)
+            if not runlist:
+                self.debug('%s/run_*/full_table.tsv' % runpath)
+                self.debug(glob.glob('%s/run_*/full_table.tsv' % runpath))
+            if len(runlist) == 1 and runlist[0] == '%s/full_table.tsv' % runpath:
+                self.warnLog('Possible internal v4 results directory: %s' % runpath)
+                return None
+            elif len(runlist) == 1: return 'Single'
+            elif not runlist and len(glob.glob('%s/run_*/full_table.tsv' % runpath)) == 1:
+                return 'V4'
+            elif not runlist and len(glob.glob('%s/run_*/full_table.tsv' % runpath)) > 1:
+                self.warnLog('Possible v4 results directory but multiple run_*/full_table.tsv files: %s' % runpath)
+                return None
+            elif not runlist:
+                self.warnLog('No BUSCO results tables found in directory: %s' % runpath)
+                return None
+            else: return 'Collated'
+        except: self.errorLog('Problem during %s runType(%s).' % (self.prog(),runpath)); return None  # Setup failed
 #########################################################################################################################
     def addRateFas(self):    ### Adds additional fasta files for BUSCOMP rating.                                # v0.5.1
         '''
@@ -2609,7 +2687,13 @@ class BUSCOMP(rje_obj.RJE_Object):
                 eog = entry['BuscoID']
                 genome = entry['Genome']
                 gentry = self.aliasEntry(genome)
-                fna = rje.makePath(gentry['Directory']) + 'single_copy_busco_sequences/%s.fna' % eog
+                prefix = gentry['Prefix']
+                seqdir = rje.makePath(gentry['Directory']) + 'single_copy_busco_sequences'
+                prefseqdir = rje.makePath(gentry['Directory']) + 'single_copy_busco_sequences_' + prefix
+                v4seqdir = rje.makePath(gentry['Directory']) + 'busco_sequences/single_copy_busco_sequences'
+                if rje.exists(prefseqdir): seqdir = prefseqdir
+                elif rje.exists(v4seqdir): seqdir = v4seqdir
+                fna = seqdir + '/%s.fna' % eog
                 if rje.exists(fna):
                     #!# Fix this! 'Qry': 'EOG0907007V:tiger.wtdbg2v1.racon.fasta:ctg_NOTSC__NSCUV1ONT0006:601178-628876'
                     fnalines = open(fna,'r').readlines()
@@ -2627,7 +2711,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 else:
                     if entry['Status'] == 'Single':
                         self.warnLog('%s not found (rating=Single)' % fna)
-                faa = rje.makePath(gentry['Directory']) + 'single_copy_busco_sequences/%s.faa' % eog
+                faa = seqdir + '/%s.faa' % eog
                 if rje.exists(faa):
                     faalines = open(faa,'r').readlines()
                     if string.split(faalines[0],':',maxsplit=1)[0][1:] == eog:  # BUSCO v3

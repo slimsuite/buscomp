@@ -11,7 +11,7 @@
 
 <meta name="author" content="Richard J. Edwards" />
 
-<meta name="date" content="2020-04-02" />
+<meta name="date" content="2020-04-15" />
 
 <title>BUSCOMP Documentation</title>
 
@@ -1729,7 +1729,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Documentation</h1>
 <h4 class="author">Richard J. Edwards</h4>
-<h4 class="date">2020-04-02</h4>
+<h4 class="date">2020-04-15</h4>
 
 </div>
 
@@ -1808,13 +1808,14 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <p><strong>NOTE:</strong> <code>runs=DIRLIST</code> wants the actual BUSCO run directories (<code>run_$PREFIX[.busco]/</code>), not the parent directory. These directories can optionally have a <code>.busco</code> suffix, which will be trimmed off. By default, BUSCOMP will look for <code>./run*</code>.</p>
 <p>From these, the run list will be extracted, consisting of a number of genome <code>$PREFIX</code> values. It is expected that the <code>$PREFIX</code> for each run will match the input genome file, found in a directory set by <code>fastadir=DIRLIST</code>. This file can also match the <code>Genome</code> alias for that genome (see below). If you have not used consistent naming across files, please check data has been loaded and mapped correctly during the Review phase (below).</p>
 <p>The presence of a <code>full_$PREFIX[.busco].tsv</code> table and <code>single_copy_busco_sequences/</code> directory within each run directory will also be checked. If <code>buscocompseq=F</code> then all of the <code>full_*.tsv</code> tables in the <code>runs</code> directories will be loaded for compilation, but no sequence searching will be performed. The presence of sequences available for compilation will be stored in the <code>Sequences</code> field of <code>*.genomes.tdt</code>.</p>
+<p><strong>BUSCO v4.x:</strong> From <code>v0.9.1</code>, BUSCOMP should recognise BUSCO v4 output. Due to the reorganisation and altered naming strategy of version 4, the naming of results files is more strict. The main results directory (set by <code>-o</code> when you run BUSCO) should match the genome assembly prefix with an optional <code>.busco</code> suffix. (A leading <code>run_</code> is also permitted and will be ignored. For example, if <code>assembly.fasta</code> was analysed with BUSCO v4, BUSCOMP should be able to parse results generated using <code>-o assembly</code>, <code>-o assembly.busco</code>, <code>-o run_assembly</code>, or <code>-o run_assembly.busco</code>. If none of these settings were used, the results directory can be manually renamed. For additional sorting, a XX_ numerical prefix <em>can</em> be used (see below), e.g. <code>run_01_assembly</code> will still look for <code>assembly.*</code> in the <code>fastadir</code> path.</p>
 <div id="buscompseq-analysis-only" class="section level3">
 <h3><span class="header-section-number">2.2.1</span> BUSCOMPSeq Analysis Only</h3>
 <p>Additional assemblies can rated using the BUSCOMPSeq analysis (see below) without having BUSCO data analysed. These are given with the <code>ratefas=LIST</code> command (wildcards allowed), and will be added to the main Genomes table after BUSCO compilation has been performed. The default prefix for these files will be their basename (filename, minus path and extension). This can be linked to an alias and/or have a prefix number stripped, as with the run directories. When combined with <code>buscofas=FASFILE</code>, this enables the BUSCOMPSeq analysis to be performed in the absence of <em>any</em> BUSCO results.</p>
 </div>
 <div id="genome-prefixes" class="section level3">
 <h3><span class="header-section-number">2.2.2</span> Genome Prefixes</h3>
-<p>Each genome analysed has a “Prefix” that can be used to help sorting (if <code>runsort=prefix</code>) and identify relevant BUSCO files where the genome (Fasta) name and BUSCO run name do not match. This Prefix is set once as the data is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the Genome (a.k.a. Alias) and Description fields.)</p>
+<p>Each genome analysed has a “Prefix” that can be used to help sorting (if <code>runsort=prefix</code>) and identify relevant BUSCO files where the genome (Fasta) name and BUSCO run name do not match. It is generally assumed that this Prefix will match the prefix of the original assembly file on which BUSCO was run. This Prefix is set once as the data is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the Genome (a.k.a. Alias) and Description fields.)</p>
 <p>The assembly Prefix will be set as:</p>
 <ol style="list-style-type: decimal">
 <li>If a <code>full_table_*.tsv</code> file is found, the core (indicated with <code>*</code>) will be used as the prefix.</li>
@@ -1831,7 +1832,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 </ol>
 <p>If <code>Genome</code> contains a trailing <code>.busco</code>, this will be stripped. If <code>Genome</code> starts with preceding numbers (<code>XX_</code>), these will be kept for sorting but stripped for outputs and fasta matching (unless <code>stripnum=F</code>).</p>
 <p><strong>NOTE:</strong> If the assembly fasta file does not match the name used for the BUSCO run file, then the <code>Genome</code> alias <em>must</em> be set to the <code>basefile</code> of the fasta file by appropriate naming of the <code>run_</code> directory, <em>i.e.</em> the <code>run_*</code> directory should contain a single BUSCO run and the directory name should match a <code>*.fasta</code> file (or other accepted <code>fastaext=LIST</code> extension) in one of the directories given by <code>fastadir=DIRLIST</code>.</p>
-<p>An optional alias table can be provided (<code>genomes=FILE</code>) that contains <code>Prefix</code> and <code>Genome</code> fields (others allowed) and can give alternative names for each genome to be used in other outputs. If running interactively, there will also be an option to check/update these aliases manually. Genome aliases are output as part of the main <code>*.genomes.tdt</code> output, which can also be used as subsequent <code>genomes=FILE</code> input (the default, if found). This table can also have a <code>Description</code> field, which will be used to update descriptions for output if found. (Empty descriptions will not be mapped.)</p>
+<p>An optional alias table can be provided (<code>genomes=FILE</code>) that contains <code>Prefix</code> and <code>Genome</code> fields (others allowed) and can give alternative names for each genome to be used in other outputs. If running interactively, there will also be an option to check/update these aliases manually. Genome aliases are output as part of the main <code>*.genomes.tdt</code> output, which can also be used as subsequent <code>genomes=FILE</code> input (the default, if found).</p>
+<p>This table can also have a <code>Description</code> field, which will be used to update descriptions for output if found. (Empty descriptions will not be mapped.) Otherwise, descriptions can be parsed from a <code>description_$PREFIX.txt</code> file (exactly matching the <code>$PREFIX</code> parsed from a <code>full_table_*.tsv</code> file) if found. Alternatively, if the run directory has a <code>run_</code> prefix AND there is only one <code>full_table</code>, or it is a BUSCO v4 output directory, a description will be parsed from <code>description.txt</code>. In each case, only the first line will be used. If neither condition is met, the name of the genome fasta file will be used. Failing that, <code>Genome</code> will be used. (Note that for BUSCO v4, <code>description.txt</code> must be in the same directory as <code>full_table.tsv</code>.</p>
 <p><strong>NOTE:</strong> The optional Alias table <em>can</em> be used to change a <code>Genome</code> name to something other than its Fasta file - this mapping is performed <em>after</em> fasta files have been identified.</p>
 <p><strong>NOTE:</strong> <code>Prefix</code> and <code>Genome</code> fields must be unique. A common <code>Prefix</code> and <code>Genome</code> value is permitted but these will be assumed to refer to the <em>same</em> assembly. (In other words, do not run BUSCO on two assemblies and give each BUSCO run the name of the other assembly!)</p>
 <p><strong>NOTE:</strong> Some <code>Genome</code> names may cause conflicts with running minimap2 and/or the Rmarkdown output. <strong>Whitespace is not permitted</strong> in <code>Genome</code> names (though can be in R labels) and will be stripped. It is recommended to keep <code>Genome</code> names simple and only containing standard characters (letters, numbers, dots and underscores).</p>

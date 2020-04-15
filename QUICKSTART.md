@@ -9,7 +9,9 @@
     cd buscomp/example 
     tar -xzf example_busco3.tgz
 
-**NOTE:** Instead of unpacking pre-generated results, you could run BUSCO v3 on the genomes in `example/fasta/`.
+**NOTE:** Instead of unpacking pre-generated results, you could run BUSCO on the genomes in `example/fasta/`. The recommended way to run BUSCO is to match the `-o` setting 
+to the input assembly file names with a numerical prefix to set the BUSCOMP ordering, e.g. for `example/fasta/SGDR64.2.1.fsa` run BUSCO with `-o 01_SGDR64.2.1`. For BUSCO v3,
+you can optionally use this for a more reader-friendly alias. For BUSCO v4, it *must* match the input assembly name. 
 
 # Run BUSCOMP on example data
 

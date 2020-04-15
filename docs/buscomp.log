@@ -1,11 +1,11 @@
 #~~#	#~+~~+~#	#~~#
-#LOG	00:00:00	Activity Log for BUSCOMP V0.8.7: Thu Apr  2 08:53:06 2020
-#DIR	00:00:00	Run from directory: /Users/redwards/code/buscomp/docs
-#ARG	00:00:00	Commandline arguments: dochtml newlog
-#INI	00:00:00	INI file: ../code/buscomp.ini; Commands loaded: -minimap2 /Users/redwards/Data/BiowareOSX/minimap2/minimap2
-#CMD	00:00:00	Full Command List: log=buscomp.log minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2 dochtml newlog
-#VIO	00:00:00	Verbosity: 1; Interactivity: 0.
-#RMD	00:00:00	RMarkdown BUSCOMP documentation output to buscomp.docs.Rmd
-#RCMD	00:00:00	Rscript -e 'library(rmarkdown); rmarkdown::render("buscomp.docs.Rmd", "html_document")'
-#RCMD	00:00:06	buscomp.docs.html generated from buscomp.docs.Rmd
-#LOG	00:00:06	BUSCOMP V0.8.7 End: Thu Apr  2 08:53:13 2020
+#LOG	00:00:01	Activity Log for BUSCOMP V0.9.1: Wed Apr 15 21:38:09 2020
+#DIR	00:00:01	Run from directory: /Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/docs
+#ARG	00:00:01	Commandline arguments: dochtml newlog
+#INI	00:00:01	INI file: ../code/buscomp.ini; Commands loaded: -minimap2 /Users/redwards/Data/BiowareOSX/minimap2/minimap2
+#CMD	00:00:01	Full Command List: log=buscomp.log minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2 dochtml newlog
+#VIO	00:00:01	Verbosity: 1; Interactivity: 0.
+#RMD	00:00:02	RMarkdown BUSCOMP documentation output to buscomp.docs.Rmd
+#RCMD	00:00:02	Rscript -e 'library(rmarkdown); rmarkdown::render("buscomp.docs.Rmd", "html_document")'
+#RCMD	00:00:07	buscomp.docs.html generated from buscomp.docs.Rmd
+#LOG	00:00:07	BUSCOMP V0.9.1 End: Wed Apr 15 21:38:16 2020

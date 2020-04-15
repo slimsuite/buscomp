@@ -2727,7 +2727,7 @@ def errorMsg(): ### Prints error message to screen and asks for death
     error_line = str(error_traceback[-1][1])    # Line             : 15
     error_error = str(error_traceback[-1][3])   # Error            : for lines in fileIn.readlines():
     ### Print Error ###
-    print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+    #print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
     print('{}: {}'.format(error_type, error_value))
     print('File: {}'.format(error_file))
     print('Method: {} (line {})'.format(error_method, error_line))
