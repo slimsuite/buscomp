@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.9.1
-Last Edit:    15/04/20
+Version:      0.9.2
+Last Edit:    19/04/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -156,6 +156,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.8.7 - Fixing issues with prefix parsing from BUSCO directories and files.
     # 0.9.0 - Updated parsing of single_copy_busco_sequences/ to enable multiple directories with "$PREFIX" suffixes.
     # 0.9.1 - Updated parsing to enable BUSCO v4 results recognition. (run with -o $GENOME.busco)
+    # 0.9.2 - Fixed some bugs when files missing.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -200,7 +201,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.1', 'April 2020', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.2', 'April 2020', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -1597,7 +1598,8 @@ class BUSCOMP(rje_obj.RJE_Object):
             ### ~ [2] Map and Set aliases ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             for gentry in gdb.entries(sorted=True):
                 # Generate full list of aliases to check
-                prefcheck = [gentry['Prefix'],gentry['Genome'],rje.stripPath(gentry['Fasta'])]
+                prefcheck = [gentry['Prefix'],gentry['Genome']]
+                if gentry['Fasta']: prefcheck.append(rje.stripPath(gentry['Fasta']))
                 for fcore in [gentry['Prefix'],gentry['Genome']]:
                     if self.getBool('StripNum') and rje.matchExp('^(\d+)_(\S+)',fcore):
                         prefcheck.append(rje.matchExp('^(\d+)_(\S+)',fcore)[1])
@@ -3532,13 +3534,16 @@ class BUSCOMP(rje_obj.RJE_Object):
             ## ~ [1a] Update data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             for gentry in self.db('genomes').entries():
                 genome = gentry['Genome']
-                if genome not in rdb.dataKeys(): continue
+                if genome not in rdb.dataKeys():
+                    rentry = rje.combineDict({},gentry)
+                    for field in string.split('N Identical	Complete	Single	Duplicated	Fragmented	Partial	Ghost	Missing'): rentry[field] = 0
+                    rdb.addEntry(rentry)
                 rentry = rdb.data(genome)
                 for field in statfields: rentry[field] = gentry[field]
                 if gentry['N']:
                     rentry['BUSCO'] = 100.0 * (gentry['Complete'] + gentry['Duplicated'])  / gentry['N']
                     rentry['NoBUSCO'] = 100.0 * gentry['Missing'] / gentry['N']
-                else: rentry['BUSCO'] = rentry['NoBUSCO'] = 0.0
+                else: rentry['BUSCO'] = rentry['NoBUSCO'] = ''
                 if rentry['N']:
                     for field in string.split('Identical	Complete	Single	Duplicated	Fragmented	Partial	Ghost	Missing'):
                         rentry[field] = 100.0 * rentry[field] / rentry['N']
@@ -3894,7 +3899,9 @@ library(ggrepel)
                     #!# Make this dashed!
                     rcode += 'abline(v=%s, col="grey")\n' % genGB
                     rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
-                rtxt += '```{r nobuscoVsize, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                if self.db('busco'):
+                    rtxt += '```{r nobuscoVsize, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                else: rtxt += '\n**NOTE:** No BUSCO results loaded.\n\n'
 
                 # PLOT 2b. Completeness = Missing vs Assembly Size
                 yfield = 'Missing'; ylab = 'BUSCOMP Missing (%)'
@@ -3924,7 +3931,9 @@ library(ggrepel)
                 else:
                     rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
                     rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
-                rtxt += '```{r nobuscompVnobusco, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                if self.db('busco'):
+                    rtxt += '```{r nobuscompVnobusco, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                else: rtxt += '\n**NOTE:** No BUSCO results loaded.\n\n'
 
                 rtxt += '\n## Genome contiguity assessment plots\n\n'
 
@@ -3963,7 +3972,9 @@ library(ggrepel)
                 else:
                     rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
                     rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
-                rtxt += '```{r buscoVng50, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                if self.db('busco'):
+                    rtxt += '```{r buscoVng50, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                else: rtxt += '\n**NOTE:** No BUSCO results loaded.\n\n'
 
                 # PLOT 3. BUSCO versus BUSCOMP 2 = Complete vs BUSCO
                 yfield = 'Complete'; ylab = 'BUSCOMP Complete (%)'
@@ -3975,7 +3986,9 @@ library(ggrepel)
                 else:
                     rcode = 'plot(pdata$%s,pdata$%s,xlab="%s",ylab="%s",col=pdata$col,pch=pdata$pch,main="%s",xlog=TRUE,ylog=TRUE,%s)\n' % (xfield,yfield,xlab,ylab,title,plims)
                     rcode += 'text(pdata$%s,pdata$%s,pdata$label,pos=3,col=pdata$col)\n\n' % (xfield,yfield)
-                rtxt += '```{r buscompVbusco, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                if self.db('busco'):
+                    rtxt += '```{r buscompVbusco, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (rcode)
+                else: rtxt += '\n**NOTE:** No BUSCO results loaded.\n\n'
 
 
             rtxt += '**NOTE:** To modify these plots and tables, edit the `*.genomes.tdt` and `*.NxLxxIDxx.rdata.tdt` files and re-knit the `*.NxLxxIDxx.Rmd` file.\n\n'
@@ -4064,29 +4077,43 @@ library(ggrepel)
                         rcode += 'buscoPercPlot(sumdata,"%s BUSCO Rating Summary",maketext=%s)\n' % (group,str(fullreport).upper())
                         rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(gnum/2),rcode)
 
+            else:
+                rtxt += 'No BUSCO results loaded.\n\n'
 
-                # BUSCOSeq details and ratings for each genome
-                rtxt += '<a name="BUSCOSeq" />\n\n# BUSCOMP Ratings\n\n'
-                dbfile = '%s.buscoseq.tdt' % self.baseFile()
+            # BUSCOSeq details and ratings for each genome
+            rtxt += '<a name="BUSCOSeq" />\n\n# BUSCOMP Ratings\n\n'
+            dbfile = '%s.buscoseq.tdt' % self.baseFile()
+            if os.path.exists(dbfile):
                 rtxt += 'The best complete BUSCO hit results (based on `Score` and `Length`) have been compiled in `%s`.\n' % dbfile
                 rtxt += 'The `Genome` field indicates the assembly with the best hit, which is followed by details of that hit '
                 rtxt += '(`Contig`, `Start`, `End`, `Score`, `Length`).\n'
                 rtxt += '''BUSCOMP ratings for each assembly are then given in subsequent fields:
     
-* `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
-* `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
-* `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
-* `Fragmented`: 95%+ combined coverage but not in any single contig/scaffold.
-* `Partial`: 40-95% combined coverage.
-* `Ghost`: Hits meeting local cutoff but <40% combined coverage.
-* `Missing`: No hits meeting local cutoff.
-
-'''
+    * `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
+    * `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
+    * `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
+    * `Fragmented`: 95%+ combined coverage but not in any single contig/scaffold.
+    * `Partial`: 40-95% combined coverage.
+    * `Ghost`: Hits meeting local cutoff but <40% combined coverage.
+    * `Missing`: No hits meeting local cutoff.
+    
+    '''
                 if fullreport:
                     rcode = rmd.rmdTable(dbfile,name='buscoseq',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
                     rtxt += rcode
-            else:
-                rtxt += 'No BUSCO results loaded.\n\n'
+            elif buscompseq:
+                rtxt += 'BUSCOMP ratings for sequences in `%s` are calculated for each assembly:' % self.getStr('BUSCOFas')
+                rtxt += '''
+    * `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
+    * `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
+    * `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
+    * `Fragmented`: 95%+ combined coverage but not in any single contig/scaffold.
+    * `Partial`: 40-95% combined coverage.
+    * `Ghost`: Hits meeting local cutoff but <40% combined coverage.
+    * `Missing`: No hits meeting local cutoff.
+    
+    '''
+
 
             # BUSCOSeq re-rating summaries and charts
             rtxt += '<a name="BUSCOMP" />\n\n## BUSCOSeq Rating Summary\n\n'
