@@ -19,8 +19,8 @@
 """
 Module:       rje
 Description:  Contains SLiMSuite and Sequite General Objects
-Version:      4.22.3
-Last Edit:    13/01/20
+Version:      4.22.4
+Last Edit:    28/04/20
 Copyright (C) 2005  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -171,6 +171,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 4.22.0 - Added flist command type that reads file lines as a list, ignoring commas.
     # 4.22.1 - Reformatting for Python3 compatibility.
     # 4.23.3 - Added highest tied ranking.
+    # 4.23.4 - Added some Python 2.6 back-compatbility for the server.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -300,17 +301,17 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def dev(self): return self.opt['Dev']
     def debugging(self): return self.opt['DeBug']
     def parent(self): return self.obj['Parent']
-    def me(self): return '{}'.format(self).split()[0][1:]
+    def me(self): return '{0}'.format(self).split()[0][1:]
 #########################################################################################################################
     def yesNo(self,text='',default='Y',confirm=False,i=0):
         if self.i() < i:
-            self.printLog('#AUTO','{}: {}'.format(text,default.upper()))
+            self.printLog('#AUTO','{0}: {1}'.format(text,default.upper()))
             return {'Y':True,'N':False}[default.upper()]
         else: return yesNo(text,default,confirm=confirm)
 #########################################################################################################################
     def choice(self,text='',default='Y',confirm=False,i=0):
         if self.i() < i:
-            self.printLog('#AUTO','{}: {}'.format(text,default))
+            self.printLog('#AUTO','{0}: {1}'.format(text,default))
             return default
         else: return choice(text,default,confirm=confirm)
 #########################################################################################################################
@@ -324,7 +325,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def data(self,table,strict=False):
         try: return self.obj['DB'].getTable(table).data()
         except:
-            if strict: self.errorLog('No DB table "{}"?'.format(table)); raise
+            if strict: self.errorLog('No DB table "{0}"?'.format(table)); raise
             else: return {}
 #########################################################################################################################
     def warnChecks(self):   ### Checks certain input paths etc. and warns of anomalies
@@ -353,8 +354,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
                                          'SoapLab','Backups','Webserver','ProgLog','Dev','Warn','OSX','Silent','Quiet'])
         except:
             self.deBug(self.cmd_list)
-            if self.log: self.log.errorLog('Problem with {}.cmd:{}'.format(self.me(),cmd))
-            else: print('ERROR! Problem with {}.cmd:{}'.format(self.me(),cmd))
+            if self.log: self.log.errorLog('Problem with {0}.cmd:{1}'.format(self.me(),cmd))
+            else: printf('ERROR! Problem with {0}.cmd:{1}'.format(self.me(),cmd))
 #########################################################################################################################
     def _cmdReadList(self,cmd=None,type='info',attlist=[]):     ### Sets self.type[att] from commandline command cmd
         '''
@@ -376,8 +377,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         ### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if arg == None: arg = att.lower()
         cmdarg = cmd.split('=')[0].lower()
-        if cmdarg not in [arg,'-{}'.format(arg)]: return
-        value = cmd[len('{}='.format(arg)):]
+        if cmdarg not in [arg,'-{0}'.format(arg)]: return
+        value = cmd[len('{0}='.format(arg)):]
         value = value.replace('#DATE',dateTime(dateonly=True))
         ### ~ [1] Basic commandline types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if type in ['opt','bool']:
@@ -392,7 +393,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
             except:
                 if matchExp('^(\d+)',value): self.stat[att] = int(matchExp('^(\d+)',value)[0])
                 else: self.stat[att] = int(float(value))
-                self.log.warnLog('{}={} needs integer -> {}={}'.format(arg,value,arg,self.stat[att]))
+                self.log.warnLog('{0}={1} needs integer -> {0}={1}'.format(arg,value,arg,self.stat[att]))
         elif type in ['float','stat','num']: self.stat[att] = float(value)
         elif type == 'fmax' and matchExp('^[\d\.]+,([\d\.]+)',value): self.stat[att] = float(matchExp('^[\d\.]+,([\d\.]+)',value)[0])
         elif type in ['fmin','fmax'] and matchExp('^([\d\.]+)',value): self.stat[att] = float(matchExp('^([\d\.]+)',value)[0])
@@ -441,7 +442,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         '''
         for cmd in self.cmd_list:
             try: self._generalCmd(cmd)
-            except: self.log.errorLog('Problem with {}.cmd:{}'.format(self.me(),cmd))
+            except: self.log.errorLog('Problem with {0}.cmd:{1}'.format(self.me(),cmd))
 #########################################################################################################################
     ### <3> ### Input/Output                                                                                            #
 #########################################################################################################################
@@ -457,8 +458,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         '''
         if i == None: i = self.stat['Interactive'] + 1
         if not self.opt['Silent'] and (self.stat['Verbose'] >= v or self.stat['Interactive'] >= i):
-            if stderr: sys.stderr.write('{}'.format(text))
-            else: sys.stdout.write('{}'.format(text))
+            if stderr: sys.stderr.write('{0}'.format(text))
+            else: sys.stdout.write('{0}'.format(text))
             if self.stat['Interactive'] >= i:
                 if py3: input(" <ENTER> to continue.")
                 else: raw_input(" <ENTER> to continue.")
@@ -599,7 +600,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
     ### => Now mostly handled in inherited RJE_Object_Shell Class                                                       #
 #########################################################################################################################
     def prog(self): return self.log.info['Name']
-    def name(self): return self.getStr('Name',default='{}'.format(self))
+    def name(self): return self.getStr('Name',default='{0}'.format(self))
 #########################################################################################################################
     def baseFile(self,newbase=None,runpath=False): return self.basefile(newbase,runpath)
     def basefile(self,newbase=None,runpath=False):
@@ -609,7 +610,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             else: return ''
         fullpath = os.path.abspath(self.getStr('Basefile')) == self.getStr('Basefile')
         if runpath and not fullpath and not self.getStr('Basefile').startswith(self.getStr('RunPath')):
-            return '{}{}'.format(self.getStr('RunPath'),self.getStr('Basefile'))    #!# Check that this does not break stuff!
+            return '{0}{1}'.format(self.getStr('RunPath'),self.getStr('Basefile'))    #!# Check that this does not break stuff!
         else: return self.getStr('Basefile')
     def setBasefile(self,basefile=None,cascade=True): ### Sets basefile and cascades to daughter objects
         '''Sets basefile and cascades to daughter objects.'''
@@ -639,21 +640,21 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         if setdict:
             for d in self.dictlist: self.dict[d] = {}
 #########################################################################################################################
-    def bugProg(self, id='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
-        return self.progLog(id, text,screen and self.debugging(),rand,clear)
-    def progLog(self, id='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
+    def bugProg(self, logid='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
+        return self.progLog(logid, text,screen and self.debugging(),rand,clear)
+    def progLog(self, logid='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
         if self.v() < 1: return
         if rand > 0 and random.random() > rand: return
         if 'ProgLog' in self.opt and not self.opt['ProgLog']: return False
-        return self.printLog('\r{}'.format(id),text,screen=screen,log=False,newline=False,clear=clear)
-    def printLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True,clear=0):
-        return self.log.printLog(id,text,timeout,screen and not self.opt['Silent'],log and not self.opt['Silent'],newline,clear=clear)
+        return self.printLog('\r{0}'.format(logid),text,screen=screen,log=False,newline=False,clear=clear)
+    def printLog(self, logid='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True,clear=0):
+        return self.log.printLog(logid,text,timeout,screen and not self.opt['Silent'],log and not self.opt['Silent'],newline,clear=clear)
     def errorLog(self, text='Missing text for errorLog() call!',quitchoice=False,printerror=True,nextline=True,log=True,errorlog=True,warnlist=True):
         #try:
         return self.log.errorLog(text,quitchoice,printerror,nextline,log,errorlog,warnlist)
         #except: return self.log.errorLog(text,quitchoice,False,nextline,log,errorlog)
-    def bugLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0):
-        return self.log.printLog(id,text,timeout,screen and not self.getBool('Silent') and self.debugging(),log and not self.getBool('Silent') and self.debugging(),newline,clear=clear)
+    def bugLog(self, logid='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0):
+        return self.log.printLog(logid,text,timeout,screen and not self.getBool('Silent') and self.debugging(),log and not self.getBool('Silent') and self.debugging(),newline,clear=clear)
     def warnLog(self,message,warntype=None,quitchoice=False,suppress=False,dev=False,screen=True):
         return self.log.warnLog(message,warntype,quitchoice,suppress,dev,screen)
     def infoLog(self,message):
@@ -676,7 +677,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             self._cmdReadList(cmd,'int',['Forks','KillForks'])
             self._cmdRead(cmd,type='opt',att='NoForks')
             self._cmdRead(cmd,type='opt',att='NoForks',arg='nofork')
-        except: self.log.errorLog('Problem with cmd:{}'.format(cmd))
+        except: self.log.errorLog('Problem with cmd:{0}'.format(cmd))
 #########################################################################################################################
     ### <3> ### Object Attributes                                                                                       #
 #########################################################################################################################
@@ -781,7 +782,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         #!# Lists and Dictionaries not included. #!#
         '''
         try:
-            print('\nEdit {} Attributes.\nEnter new values or leave Blank to retain.\n'.format(self.info['Name']))
+            printf('\nEdit {0} Attributes.\nEnter new values or leave Blank to retain.\n'.format(self.info['Name']))
             for info in self.infolist: self.info[info] = self._editChoice(info,self.info[info])
             for stat in self.statlist: self.stat[stat] = self._editChoice(stat,self.stat[stat],numeric=True)
             for opt in self.optlist: self.opt[opt] = self._editChoice(opt,self.opt[opt],boolean=True)
@@ -1293,7 +1294,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
     def restOutputError(self,errormsg): ### Returns full error message.
         '''Returns full error message..'''
         try:
-            print(errormsg)
+            printf(errormsg)
             ### Setup error variables
             error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
             if py3:
@@ -1469,7 +1470,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
                     self.errorLog('WARNING!: PID %d returned with exit code %d.' % (pid,exitcode),printerror=False)
             return oldpids
         except:
-            self.log.errorLog('Error in _activeForks({})'.format(pidlist))
+            self.log.errorLog('Error in _activeForks({0})'.format(pidlist))
             raise   
 #########################################################################################################################
 ### End of RJE_Object Class                                                                                             #
@@ -1498,7 +1499,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         self.dict = {}
 #########################################################################################################################
     def prog(self): return self.log.info['Name']
-    def name(self): return self.getStr('Name',default='{}'.format(self))
+    def name(self): return self.getStr('Name',default='{0}'.format(self))
 #########################################################################################################################
     def _setDefaults(self,info='None',opt=False,stat=0.0,obj=None,setlist=False,setdict=False):     ### Default defaults!
         '''
@@ -1519,13 +1520,13 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         if setdict:
             for d in self.dictlist: self.dict[d] = {}
 #########################################################################################################################
-    def progLog(self, id='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
+    def progLog(self, logid='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
         if self.v() < 1: return
         if rand > 0 and random.random() > rand: return
         if 'ProgLog' in self.opt and not self.opt['ProgLog']: return False
-        return self.printLog('\r{}'.format(id),text,screen=screen,log=False,newline=False,clear=clear)
-    def printLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True,clear=0):
-        return self.log.printLog(id,text,timeout,screen and not self.getAttribute('opt','Silent',False),log and not self.getAttribute('opt','Silent',False),newline,clear=clear)
+        return self.printLog('\r{0}'.format(logid),text,screen=screen,log=False,newline=False,clear=clear)
+    def printLog(self, logid='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True,clear=0):
+        return self.log.printLog(logid,text,timeout,screen and not self.getAttribute('opt','Silent',False),log and not self.getAttribute('opt','Silent',False),newline,clear=clear)
     def errorLog(self, text='Missing text for errorLog() call!',quitchoice=False,printerror=True,nextline=True,log=True,errorlog=True,warnlist=True):
         #try:
         return self.log.errorLog(text,quitchoice,printerror,nextline,log,errorlog,warnlist)
@@ -1598,7 +1599,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         #!# Lists and Dictionaries not included. #!#
         '''
         try:
-            print('\nEdit {} Attributes.\nEnter new values or leave Blank to retain.\n'.format(self.info['Name']))
+            printf('\nEdit {0} Attributes.\nEnter new values or leave Blank to retain.\n'.format(self.info['Name']))
             for info in self.infolist: self.info[info] = self._editChoice(info,self.info[info])
             for stat in self.statlist: self.stat[stat] = self._editChoice(stat,self.stat[stat],numeric=True)
             for opt in self.optlist: self.opt[opt] = self._editChoice(opt,self.opt[opt],boolean=True)
@@ -1859,7 +1860,7 @@ class Log(RJE_Object_Shell):
             ### ~ [2] Log File details ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.info['LogFile']:
                 logfile = self.info['LogFile'].encode('ascii', 'ignore').decode('ascii')
-                if logfile != self.info['LogFile']: self.warnLog('Log filename altered due to non-ASCII characters: {}'.format(logfile))
+                if logfile != self.info['LogFile']: self.warnLog('Log filename altered due to non-ASCII characters: {0}'.format(logfile))
                 self.info['LogFile'] = logfile
                 if self.info['LogFile'][-4:] != '.log': self.info['LogFile'] += '.log'
                 if self.info['LogFile'][:1] == '/': self.info['LogFile'] = makePath(self.info['LogFile'],wholepath=True)
@@ -1869,29 +1870,29 @@ class Log(RJE_Object_Shell):
                 else:
                     try:
                         mkDir(self,self.info['RunPath'])
-                        self.info['LogFile'] = makePath('{}/{}'.format(os.path.abspath(self.info['RunPath']),self.info['LogFile']),wholepath=True)
-                    except: self.info['LogFile'] = makePath('{}/{}'.format(os.path.abspath(os.curdir),self.info['LogFile']),wholepath=True)
+                        self.info['LogFile'] = makePath('{0}/{1}'.format(os.path.abspath(self.info['RunPath']),self.info['LogFile']),wholepath=True)
+                    except: self.info['LogFile'] = makePath('{0}/{1}'.format(os.path.abspath(os.curdir),self.info['LogFile']),wholepath=True)
 
                 if '#DATE' in self.info['LogFile']: self.info['LogFile'] = string.replace(self.info['LogFile'],'#DATE',dateTime(dateonly=True))
                 if self.opt['NewLog']:
-                    self.verbose(0,2,'Make new file: {}'.format(self.info['LogFile']),2)
+                    self.verbose(0,2,'Make new file: {0}'.format(self.info['LogFile']),2)
                     if checkForFile(self.info['LogFile']): os.unlink(self.info['LogFile'])
-                else: self.verbose(0,2,'Append file: {}'.format(self.info['LogFile']),2)
+                else: self.verbose(0,2,'Append file: {0}'.format(self.info['LogFile']),2)
                 self.info['LogFile'] = os.path.abspath(self.info['LogFile'])
             ### ~ [3] ErrorLog File details ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.info['ErrorLog'].lower() not in ['','none']:
                 logfile = self.info['ErrorLog'].encode('ascii', 'ignore').decode('ascii')
-                if logfile != self.info['ErrorLog']: self.warnLog('ErrorLog filename altered due to non-ASCII characters: {}'.format(logfile))
+                if logfile != self.info['ErrorLog']: self.warnLog('ErrorLog filename altered due to non-ASCII characters: {0}'.format(logfile))
                 self.info['ErrorLog'] = logfile
                 if self.opt['NewLog']:
-                    self.verbose(0,2,'Make new error file: {}'.format(self.info['ErrorLog']),2)
+                    self.verbose(0,2,'Make new error file: {0}'.format(self.info['ErrorLog']),2)
                     if checkForFile(self.info['ErrorLog']): os.unlink(self.info['ErrorLog'])
-                else: self.verbose(0,2,'Append error file: {}'.format(self.info['ErrorLog']),2)
+                else: self.verbose(0,2,'Append error file: {0}'.format(self.info['ErrorLog']),2)
                 self.info['ErrorLog'] = os.path.abspath(self.info['ErrorLog'])
             ### ~ [4] Update files to full paths ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             self.info['Name'] = self.info['LogFile']
         except:
-            self.errorLog('Problem with rje.Log ({}) initiation!'.format(self.info['LogFile']))
+            self.errorLog('Problem with rje.Log ({0}) initiation!'.format(self.info['LogFile']))
             raise
 #########################################################################################################################
     def _cmdList(self):     ### Sets Attributes from commandline
@@ -1907,7 +1908,7 @@ class Log(RJE_Object_Shell):
                 self._cmdRead(cmd,type='info',att='LogFile',arg='logfile')
                 self._cmdRead(cmd,type='info',att='LogFile',arg='basefile')
                 self._cmdReadList(cmd,'opt',['NewLog','Silent','Quiet','WarnAsErr'])
-            except: self.errorLog('Problem with cmd: {}'.format(cmd))
+            except: self.errorLog('Problem with cmd: {0}'.format(cmd))
         if self.opt['Silent'] or self.opt['Quiet']:
             self._generalCmd('v=-1')
             self._generalCmd('i=-1')
@@ -1926,7 +1927,7 @@ class Log(RJE_Object_Shell):
         self.opt['Quiet'] = not self.opt['Talking']
         return self.opt['Quiet']
 #########################################################################################################################
-    def printLog(self,id='#ERR',text='',timeout=True,screen=True,log=True,newline=True,error=False,clear=0,warnlist=True):
+    def printLog(self,logid='#ERR',text='',timeout=True,screen=True,log=True,newline=True,error=False,clear=0,warnlist=True):
         '''
         Prints text to log with or without run time.
         >> id:str = identifier for type of information
@@ -1941,48 +1942,48 @@ class Log(RJE_Object_Shell):
         '''
         try:### ~ [1] ~ Setup text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.dev() and type(text) != str:
-                try: self.warnLog('DEV warning: {} given to printLog() when should be text: "{}"'.format(type(text),text))
+                try: self.warnLog('DEV warning: {0} given to printLog() when should be text: "{1}"'.format(type(text),text))
                 except:
                     ttype = type(text)
                     text = text.encode('ascii', 'replace').decode('ascii')
-                    self.warnLog('DEV warning: {} given to printLog() when should be text: "{}" (decoded)'.format(ttype,text))
-            text = '{}'.format(text)
-            if clear > 0: self.printLog('\r'+id,' ' * clear,timeout,screen,False,False)
+                    self.warnLog('DEV warning: {0} given to printLog() when should be text: "{1}" (decoded)'.format(ttype,text))
+            text = '{0}'.format(text)
+            if clear > 0: self.printLog('\r'+logid,' ' * clear,timeout,screen,False,False)
             t = '#~+~~+~#'
             if timeout: t = self.myRunTime(time.time() - self.stat['StartTime'])
-            text = '\t'.join(['\r'+id,t,text.strip('\r\n')])
+            text = '\t'.join(['\r'+logid,t,text.strip('\r\n')])
             if text[-1:] != '\n' and newline: text += '\n'
             text = text.replace(u'\xa0',' ')
             ### ~ [2] ~ Storage ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.opt['Webserver']: self.list['Log'].append(text.strip('\r\n'))
             if warnlist and newline:
                 warntext = text.strip('\r\n')
-                if id.endswith('#WARN') and (self.opt['Webserver'] or not self.opt['MemSaver']):
+                if logid.endswith('#WARN') and (self.opt['Webserver'] or not self.opt['MemSaver']):
                     if warntext not in self.list['WarnLog'][-1:]: self.list['WarnLog'].append(warntext); self.warnx += 1
-                if id.endswith('#ERR') and warntext not in self.list['ErrorLog'][-1:]: self.list['ErrorLog'].append(warntext)
+                if logid.endswith('#ERR') and warntext not in self.list['ErrorLog'][-1:]: self.list['ErrorLog'].append(warntext)
             ### ~ [3] ~ Output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if not self.opt['Logging'] and not id.endswith('#ERR'): return text      # Do not write to log or screen
-            elif self.opt['Silent'] and not id.endswith('#ERR') and not id.endswith('#WARN'): return text      # Do not write to log or screen
+            if not self.opt['Logging'] and not logid.endswith('#ERR'): return text      # Do not write to log or screen
+            elif self.opt['Silent'] and not logid.endswith('#ERR') and not logid.endswith('#WARN'): return text      # Do not write to log or screen
             if error and self.info['ErrorLog'].lower() not in ['','none']: logfile = self.info['ErrorLog']
             else: logfile = self.info['LogFile']
             if self.opt['Quiet']:
                 screen = False
-                if error: sys.stderr.write('{}\n'.format(text))
-                elif self.opt['WarnAsErr'] and id == '#WARN': sys.stderr.write('{}\n'.format(text))
+                if error: sys.stderr.write('{0}\n'.format(text))
+                elif self.opt['WarnAsErr'] and logid == '#WARN': sys.stderr.write('{0}\n'.format(text))
             #!# This line should be performed when log file is set and then warn! #!#
             logfile = logfile.encode('ascii', 'ignore').decode('ascii')
             text = text.encode('ascii', 'replace').decode('ascii')
             if logfile and log:
                 LOGOUT = open(str(logfile),'a')
-                LOGOUT.write('{}\n'.format(text.strip('\r\n')))
+                LOGOUT.write('{0}\n'.format(text.strip('\r\n')))
                 LOGOUT.close()
-            if screen and error: sys.stderr.write('{}\n'.format(text))
-            elif screen and self.opt['WarnAsErr'] and id == '#WARN': sys.stderr.write('{}\n'.format(text))
+            if screen and error: sys.stderr.write('{0}\n'.format(text))
+            elif screen and self.opt['WarnAsErr'] and logid == '#WARN': sys.stderr.write('{0}\n'.format(text))
             elif screen and (log or self.opt['ProgLog']): self.verbose(0,4,text,0)
             return text
         except:
-            if id.endswith('#ERR'):
-                print('Error causing printLog() issues: {}'.format(text))
+            if logid.endswith('#ERR'):
+                printf('Error causing printLog() issues: {0}'.format(text))
                 os._exit(1)     # Need to catch \n and \r line starts too.
             return self.errorLog('printLog() problem')
 #########################################################################################################################
@@ -1998,7 +1999,7 @@ class Log(RJE_Object_Shell):
         new = '\r'
         try:
             new = {True:'\n',False:'\r'}[nextline]
-            if not printerror or not sys.exc_info()[0]: return self.printLog('{}#ERR'.format(new),text,log=log,warnlist=warnlist)
+            if not printerror or not sys.exc_info()[0]: return self.printLog('{0}#ERR'.format(new),text,log=log,warnlist=warnlist)
             try: raise
             except SystemExit: os._exit(1)
             except KeyboardInterrupt: quitchoice = True
@@ -2009,10 +2010,10 @@ class Log(RJE_Object_Shell):
                 if str(sys.exc_info()[0]).split('.')[1] == 'SystemExit': os._exit(1)
         except:
             if py3:
-                print(sys.exc_info())
-                print(traceback.extract_tb(sys.exc_info()[2]))
+                printf(sys.exc_info())
+                printf(traceback.extract_tb(sys.exc_info()[2]))
                 errorReport(text)
-            return self.printLog('{}#ERR'.format(new),text,log=log,warnlist=warnlist)
+            return self.printLog('{0}#ERR'.format(new),text,log=log,warnlist=warnlist)
 
         try:
             ### Setup error variables
@@ -2031,35 +2032,35 @@ class Log(RJE_Object_Shell):
             ### Log Error
             if text[-1:] != '\n':
                 if printerror:
-                    if text[-1:] != ':' and text[-2:-1] != ':': text = '{}: '.format(text)
-                    text = '{}{} ({} line {}) {}'.format(text,error_type,error_method,error_line,error_value)
+                    if text[-1:] != ':' and text[-2:-1] != ':': text = '{0}: '.format(text)
+                    text = '{0}{1} ({2} line {3}) {4}'.format(text,error_type,error_method,error_line,error_value)
                     #text = '%s%s' % (text,error_type)
-                text = '{}  \n'.format(text)
-            myreturn = self.printLog('{}#ERR'.format(new),text,log=log,warnlist=warnlist)
+                text = '{0}  \n'.format(text)
+            myreturn = self.printLog('{0}#ERR'.format(new),text,log=log,warnlist=warnlist)
             if errorlog: self.printLog('\r#ERR',text,screen=not log,log=False,error=True,warnlist=warnlist)
 
             ### Quit Option and Additional Error Info
             logprog = self.info['Name']
             if logprog == 'None': logprog = 'Program'
-            if (self.opt['DeBug'] or quitchoice) and (self.i() >= 0 and yesNo('Quit {}?'.format(logprog))):
+            if (self.opt['DeBug'] or quitchoice) and (self.i() >= 0 and yesNo('Quit {0}?'.format(logprog))):
                 if error_type not in ['KeyboardInterrupt']:
-                    self.verbose(-1,4,'{}: {}\nFile: {}\nMethod: {} (line {})\nError: {}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
+                    self.verbose(-1,4,'{0}: {1}\nFile: {2}\nMethod: {3} (line {4})\nError: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
                 os._exit(1)
             elif printerror and error_type not in ['KeyboardInterrupt']:
-                self.verbose(1,1,'{}: {}\nFile: {}\nMethod: {} (line {})\nError: {}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
-                if self.dev(): self.printLog('#DEV','{}: {};| File: {};| Method: {} (line {});| Error: {}'.format(error_type, error_value, error_file, error_method, error_line, error_error),log=log)
+                self.verbose(1,1,'{0}: {1}\nFile: {2}\nMethod: {3} (line {4})\nError: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
+                if self.dev(): self.printLog('#DEV','{0}: {1};| File: {2};| Method: {3} (line {4});| Error: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),log=log)
         except SystemExit: os._exit(1)      #!# Why is this no longer working? #!#
         except KeyboardInterrupt: os._exit(0)
         except MemoryError: raise
         except:
-            print('That\'s not right: Error in errorLog()!!:'),
+            printf('That\'s not right: Error in errorLog()!!:'),
             try:
-                print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
-                print('{}: {}'.format(error_type, error_value))
-                print('File: {}'.format(error_file))
-                print('Method: {} (line {})'.format(error_method, error_line))
-                print('Error: {}'.format(error_error))
-            except: print('This is really not right!! (Check Excel etc. isn\'t preventing writing to log)')
+                printf('{0} {1}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+                printf('{0}: {1}'.format(error_type, error_value))
+                printf('File: {0}'.format(error_file))
+                printf('Method: {0} (line {1})'.format(error_method, error_line))
+                printf('Error: {0}'.format(error_error))
+            except: printf('This is really not right!! (Check Excel etc. isn\'t preventing writing to log)')
             os._exit(1)
         if quitchoice and self.i() < 0: raise
         return myreturn
@@ -2079,19 +2080,19 @@ class Log(RJE_Object_Shell):
             if dev: self.deBug('>> Dev Warning! <<')
             logprog = self.info['Name']
             if logprog == 'None': logprog = 'Program'
-            if quitchoice and self.i() >= 0 and warntype not in self.warnings + self.no_suppression and yesNo('Quit {} following warning?'.format(logprog)):
-                self.printLog('\r#EXIT','{} terminated by user following warning.'.format(logprog))
+            if quitchoice and self.i() >= 0 and warntype not in self.warnings + self.no_suppression and yesNo('Quit {0} following warning?'.format(logprog)):
+                self.printLog('\r#EXIT','{0} terminated by user following warning.'.format(logprog))
                 os._exit(1)
             elif quitchoice and self.i() < 0 and warntype == 'fatal':
-                self.printLog('\r#EXIT','{} terminated after warning.'.format(logprog))
+                self.printLog('\r#EXIT','{0} terminated after warning.'.format(logprog))
                 os._exit(1)
             if not warntype or warntype in self.no_suppression: return
             if suppress:
-                if self.i() < 0 or not yesNo('Suppress future "{}" warnings?'.format(warntype)): self.no_suppression.append(warntype)
+                if self.i() < 0 or not yesNo('Suppress future "{0}" warnings?'.format(warntype)): self.no_suppression.append(warntype)
                 else:
                     self.warnings.append(warntype)
-                    self.printLog('\r#WARN','Note: future "{}" warnings have been supressed'.format(warntype),warnlist=False)
-        except: self.errorLog('Log.warnLog({}) error'.format(warntype),quitchoice=quitchoice)
+                    self.printLog('\r#WARN','Note: future "{0}" warnings have been supressed'.format(warntype),warnlist=False)
+        except: self.errorLog('Log.warnLog({0}) error'.format(warntype),quitchoice=quitchoice)
 #########################################################################################################################
     def myRunTime(self, secs):  ### Converts time in seconds into time for easy comprehension
         '''
@@ -2102,13 +2103,13 @@ class Log(RJE_Object_Shell):
         (day,hour,mins,sec) = (0,0,0,int(secs))
         while sec > 59: mins += 1; sec -= 60
         while mins > 59: hour += 1; mins -= 60
-        return '{}:{}:{}'.format(preZero(hour,24),preZero(mins,60),preZero(sec,60))
+        return '{0}:{1}:{2}'.format(preZero(hour,24),preZero(mins,60),preZero(sec,60))
 #########################################################################################################################
     def name(self): return self.info['Name']
 #########################################################################################################################
     def runDetails(self):
         info = self.obj['Info']
-        return '{} V{}: run {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time)))
+        return '{0} V{1}: run {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time)))
 #########################################################################################################################
     ### <3> ### Summarise/Display Warnings/ErrorLog?                                                                    #
 #########################################################################################################################
@@ -2120,13 +2121,13 @@ class Log(RJE_Object_Shell):
         ### Summarise warnings and errors in log
         warnings = self.list['WarnLog'][0:]    # List of log warning messages. Stored when silent=True or memsaver=False.
         errors = self.list['ErrorLog'][0:]     # List of log error messages.
-        if self.warnx: self.warnLog('{} warning messages: check log for details.'.format(iStr(self.warnx),warnlist=False))
-        if errors: self.warnLog('{} error messages! Check log for details.'.format(iLen(errors)),warnlist=False)
+        if self.warnx: self.warnLog('{0} warning messages: check log for details.'.format(iStr(self.warnx),warnlist=False))
+        if errors: self.warnLog('{0} error messages! Check log for details.'.format(iLen(errors)),warnlist=False)
         ### End of Program Log entry
-        if proginfo: self.printLog('#LOG', '{} V{} End: {}\n'.format(proginfo.program,proginfo.version,time.asctime(time.localtime(time.time()))))
+        if proginfo: self.printLog('#LOG', '{0} V{1} End: {2}\n'.format(proginfo.program,proginfo.version,time.asctime(time.localtime(time.time()))))
         ### Optional repeat of warnings and error messages
-        if warnings and self.i() >= 0 and yesNo('Repeat {} warnings?'.format(iLen(warnings)),default='N'): print('\n'.join(warnings+['']))
-        if errors and self.i() >= 0 and yesNo('Repeat {} error messages?'.format(iLen(errors))): print('\n'.join(errors))
+        if warnings and self.i() >= 0 and yesNo('Repeat {0} warnings?'.format(iLen(warnings)),default='N'): printf('\n'.join(warnings+['']))
+        if errors and self.i() >= 0 and yesNo('Repeat {0} error messages?'.format(iLen(errors))): printf('\n'.join(errors))
 #########################################################################################################################
 ### End of Log                                                                                                          #
 #########################################################################################################################
@@ -2201,15 +2202,15 @@ class Out(RJE_Object_Shell):
         >> info:Info Object
         '''
         ## Setup lines ##
-        self.verbose(0,3,'\n{} V{} run: {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),2)
+        self.verbose(0,3,'\n{0} V{1} run: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),2)
         line = ['  #############################################']
-        line.append('  #|#> {} version {} : {}'.format(info.program,info.version,info.description))
-        line.append('  #|#> Copyright (c) {} {} <#~#> Last Modified: {}'.format(info.copyright,info.author,info.last_edit))
-        line.append('  #|#> Disclaimer: {} comes with ABSOLUTELY NO WARRANTY;'.format(info.program))
+        line.append('  #|#> {0} version {1} : {2}'.format(info.program,info.version,info.description))
+        line.append('  #|#> Copyright (c) {0} {1} <#~#> Last Modified: {2}'.format(info.copyright,info.author,info.last_edit))
+        line.append('  #|#> Disclaimer: {0} comes with ABSOLUTELY NO WARRANTY;'.format(info.program))
         line.append('  #|#>   This is free software, and you are welcome to redistribute it;')
         line.append('  #|#>   For details see attached license file (gnu_general_public_license.txt)')
         line.append('  #|#>   or http://www.gnu.org/copyleft/gpl.html.')
-        for comment in info.comments: line.append('  #|#> {}'.format(comment))
+        for comment in info.comments: line.append('  #|#> {0}'.format(comment))
         ## Find longest line ##
         maxlen = 0
         for li in line: maxlen = max(len(li),maxlen)
@@ -2247,7 +2248,7 @@ class Out(RJE_Object_Shell):
         self.verbose(0,4,"\n"+line[0]+line[1]+" <# #",1)
         self.verbose(0,2,line[0]+line[2]+" <# #\n"+line[0],1)
 
-        gnu_license = '{} comes with ABSOLUTELY NO WARRANTY; This is free software, and you are welcome to redistribute it;\n'.format(info.program)
+        gnu_license = '{0} comes with ABSOLUTELY NO WARRANTY; This is free software, and you are welcome to redistribute it;\n'.format(info.program)
         gnu_license += 'For details see attached license file (gnu_general_public_license.txt) or http://www.gnu.org/copyleft/gpl.html.'
         self.verbose(0,1,gnu_license,2)
         self.verbose(0,4,line[0],2)
@@ -2279,11 +2280,11 @@ class UserExit(Exception):
 ##  General Module Functions                                                                                           ##
 #########################################################################################################################
 if __name__ == "__main__":
-    print("This module is not for standalone running!")
+    printf("This module is not for standalone running!")
     os._exit(0)
 #########################################################################################################################
 def objtype(obj): ### Returns the type of obj as string
-    typestr = '{}'.format(type(obj))
+    typestr = '{0}'.format(type(obj))
     return typestr.split("'")[1]
 #########################################################################################################################
 def dateTime(t=(),yymmdd=False,dateonly=False): ### Returns date time string given time tuple t (makes if empty)
@@ -2359,8 +2360,8 @@ def perCounter(countlist):  ### Counter for functions
     ### <b> ### Print if appropriate
     if verbosity >= 0 and (ploop == 0 or total == max):
         perc = float(total) / float(max)
-        print('{}%.'.format(perc*100)),
-    elif verbosity >= 0 and sloop == 0: print('.'),
+        printf('{0}%.'.format(perc*100)),
+    elif verbosity >= 0 and sloop == 0: printf('.'),
     return [sloop, ploop, total, max, steps, prints, verbosity]
 #########################################################################################################################
 def setPerc(max,steps,prints,verbosity): ### Set up countlist for perCounter
@@ -2508,7 +2509,7 @@ def strReplace(strtext,deltext,newtext='',case_sens=True,allocc=False,max=1): ##
         count = 0
         if deltext == newtext or newtext.find(deltext) >= 0:
             if deltext.find('#') >= 0:
-                print('Error with strReplace Setup. deltext in newtext - cannot replace like with like.')
+                printf('Error with strReplace Setup. deltext in newtext - cannot replace like with like.')
                 raise ValueError
             strtext = strReplace(strtext,deltext,'#',case_sens,allocc,max)[0]
             deltext = '#'
@@ -2521,7 +2522,7 @@ def strReplace(strtext,deltext,newtext='',case_sens=True,allocc=False,max=1): ##
                 strtext = strtext[:findtext] + newtext + strtext[(findtext+len(deltext)):]
                 count += 1
             else: break
-    except: print('Error with strReplace({}): {}.'.format(_stage,sys.exc_info()[0]))
+    except: printf('Error with strReplace({0}): {1}.'.format(_stage,sys.exc_info()[0]))
     return (strtext,count)        
 #########################################################################################################################
 def strEscape(text,charlist):   ### Adds escape \ characters in front of charlist
@@ -2579,7 +2580,7 @@ def integerString(number):  ### Returns a string with commas for long integer, e
         intlist = [intstring[-3:]] + intlist
         intstring = intstring[:-3]
     intlist = [intstring] + intlist
-    if intlist[0] == '-': return '-{}'.format(','.join(intlist[1:]))
+    if intlist[0] == '-': return '-{0}'.format(','.join(intlist[1:]))
     return ','.join(intlist)
 #########################################################################################################################
 def randomString(length,choices=''):   ### Returns a random string of given length
@@ -2631,7 +2632,7 @@ def getInt(text='Integer Value?:',blank0=False,default='0',confirm=False):     #
         return integer
     except KeyboardInterrupt: raise
     except:
-        print('Must be a number! (Integer) [Or blank for {}]'.format(default))
+        printf('Must be a number! (Integer) [Or blank for {0}]'.format(default))
         return getInt(text,blank0,default,confirm)
 #########################################################################################################################
 def getFloat(text='Numerical Value?:',default='0.0',confirm=False):     ### Asks for a choice and returns integer
@@ -2643,7 +2644,7 @@ def getFloat(text='Numerical Value?:',default='0.0',confirm=False):     ### Asks
     try: return float(choice(text,default,confirm))
     except KeyboardInterrupt: raise
     except:
-        print('Must be a number! (Float) [Or blank for {}]'.format(default))
+        printf('Must be a number! (Float) [Or blank for {0}]'.format(default))
         return getFloat(text,default,confirm)
 #########################################################################################################################
 def getBool(text='Numerical Value?:',default=False,confirm=False):     ### Asks for a choice and returns boolean
@@ -2656,7 +2657,7 @@ def getBool(text='Numerical Value?:',default=False,confirm=False):     ### Asks 
     if bool.lower().find('t') == 0: return True
     elif bool.lower().find('f') == 0: return False
     else:
-        print('Must be True or False! [Or blank for %s]'.format(default))
+        printf('Must be True or False! [Or blank for %s]'.format(default))
         return getBool(text,default,confirm)
 #########################################################################################################################
 def getFileName(text='File Name?',default='',mustexist=True,confirm=False): ### Asks for a filename
@@ -2670,7 +2671,7 @@ def getFileName(text='File Name?',default='',mustexist=True,confirm=False): ### 
     '''
     while 1:
         filename = choice(text,default,confirm)
-        if mustexist and not os.path.exists(filename): print('File "{}" not found!'.format(filename))
+        if mustexist and not os.path.exists(filename): printf('File "{0}" not found!'.format(filename))
         else: return filename
 #########################################################################################################################
 def choice(text='?: ',default='',confirm=False,whitespace=True): ### Asks for a choice and returns input
@@ -2686,26 +2687,26 @@ def choice(text='?: ',default='',confirm=False,whitespace=True): ### Asks for a 
     if default: text = '%s [default=%s]' % (text,default)
     if py3:
         if 'pwin' in sys.argv: mychoice = input('%s: ' % text)
-        else: mychoice = input('{}: '.format(text))
+        else: mychoice = input('{0}: '.format(text))
     else:
-        print('{}: '.format(text)),
+        printf('{0}: '.format(text),newline=False)
         if 'pwin' in sys.argv: mychoice = raw_input('%s: ' % text)
         else: mychoice = raw_input()
-    #print('\n---\n{}\n---\n'.format(mychoice))
+    #printf('\n---\n{0}\n---\n'.format(mychoice))
     if mychoice == '': mychoice = '%s' % default
     if not whitespace:
         nospace = ''.join(mychoice.split())
         if nospace != mychoice and not yesNo('Whitespace not permitted: "%s" -> %s - OK?' % (mychoice,nospace)): return choice(text,default,confirm,whitespace)
         mychoice = nospace
     if confirm and mychoice and yesNo('=> New value = "%s"?' % mychoice) == False: return choice(text,default,confirm,whitespace)
-    if 'pwin' in sys.argv: print(mychoice)   ### Restate if running in PythonWin
+    if 'pwin' in sys.argv: printf(mychoice)   ### Restate if running in PythonWin
     if mychoice == '\\t': mychoice = '\t'
     return mychoice
 #########################################################################################################################
 def yesNo(text='',default='Y',confirm=False):    ### Asks for yes or no and returns True or False
     '''Asks for yes or no and returns True or False.'''
     try:
-        answer = choice('{} (y/n)'.format(text),default,confirm).upper()[:1]
+        answer = choice('{0} (y/n)'.format(text),default,confirm).upper()[:1]
         if answer == 'Y': return True
         elif answer == 'N': return False
         else: return yesNo(text,default,confirm)
@@ -2727,12 +2728,29 @@ def errorMsg(): ### Prints error message to screen and asks for death
     error_line = str(error_traceback[-1][1])    # Line             : 15
     error_error = str(error_traceback[-1][3])   # Error            : for lines in fileIn.readlines():
     ### Print Error ###
-    #print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
-    print('{}: {}'.format(error_type, error_value))
-    print('File: {}'.format(error_file))
-    print('Method: {} (line {})'.format(error_method, error_line))
-    print('Error: {}'.format(error_error))
+    #printf('{0} {1}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+    printf('{0}: {1}'.format(error_type, error_value))
+    printf('File: {0}'.format(error_file))
+    printf('Method: {0} (line {1})'.format(error_method, error_line))
+    printf('Error: {0}'.format(error_error))
     if yesNo('Kill me now?'): os._exit(1)
+#########################################################################################################################
+def printf(text,newline=True):    ### Python backwards-compatible print function
+    '''Python backwards-compatible print function.'''
+    if py3:
+        if newline:
+            try: print(text) #,flush=True)  -> Had to be commented for Py2 syntax.
+            except: print text
+        else:
+            try: print(text) #, end=' ', flush=True)
+            except: print text,
+    else:
+        if newline:
+            try: print text
+            except: print(text)
+        else:
+            try: print text,
+            except: print(text),
 #########################################################################################################################
 ### End of User Input Functions                                                                                         #
 #########################################################################################################################
@@ -2869,11 +2887,11 @@ def formula(callobj=None,formula='',data={},varlist=[],operators=[],check=False,
         for left in ['[','{']: formula = string.replace(formula,left,'(')
         for right in [']','}']: formula = string.replace(formula,right,')')
         for op in oplist: formula = string.replace(formula,op,',%s,' % op).lower()
-        formula = '(,{},)'.format(formula).split(',')
+        formula = '(,{0},)'.format(formula).split(',')
         while formula.count('') > 0: formula.remove('')
         if formula.count('(') != formula.count(')'):
             if callobj: callobj.log.errorLog('Formula brackets do not balance!',printerror=False)
-            else: print('Formula brackets do not balance!')
+            else: printf('Formula brackets do not balance!')
             if not calculate: return False
             else: return '!ERR!'
         for part in formula:
@@ -2912,7 +2930,7 @@ def formula(callobj=None,formula='',data={},varlist=[],operators=[],check=False,
                     if callobj: callobj.deBug('%s - %s' % (formula,vardict))
             if x == 0: return value
             else: formula = formula[:x] + [value] + formula[(y+1):]
-        print('!ERR!')
+        printf('!ERR!')
         return value                    
     except:
         if callobj: callobj.log.errorLog('Major problem with rje.formula()')
@@ -3143,7 +3161,7 @@ def expectString(_expect,strict=True):  ### Returns formatted string for _expect
         else: return '%.2e' % _expect
     except:
         if not strict: return '%s' % _expect
-        print(_expect)
+        printf(_expect)
         raise
 #########################################################################################################################
 def ratio(num,denom,dividezero=0.0):   ### Returns num/denom unless denom=0.0 - returns dividezero unless dividezero=None
@@ -3972,7 +3990,7 @@ def deleteDir(callobj,deldir,contentsonly=True,confirm=True,report=True):   ### 
     ### Confirm ###
     if confirm and callobj and (callobj.i() >= 0 or callobj.getBool('DeBug') or callobj.dev()):
         if callobj.i() >= 1 or callobj.getBool('DeBug') or callobj.dev():
-            print('\n{} files in {}:\n - {}\n'.format(len(files),deldir,'\n - '.join(files)))
+            printf('\n{0} files in {1}:\n - {2}\n'.format(len(files),deldir,'\n - '.join(files)))
         if not yesNo('Delete %s?' % dtxt): raise KeyboardInterrupt
     ### Delete files ###
     for f in files:
@@ -4239,7 +4257,7 @@ def delimitedFileOutput(callobj,filename,headers,delimit=None,datadict={},rje_ba
         if callobj.getOpt('MySQL'): outlist = ','.join(headers,',').lower().split(',')
         else: outlist = headers[0:]
     ### Write to file ###
-    if '{}'.format(filename).split()[0] == '<open': writeDelimit(filename,outlist=outlist,delimit=delimit)
+    if '{0}'.format(filename).split()[0] == '<open': writeDelimit(filename,outlist=outlist,delimit=delimit)
     else: writeDelimit(outlist=outlist,delimit=delimit,outfile=filename)
 #########################################################################################################################
 def delimitedObjDataOutput(callobj,filename,headers,delimit=None,dpdict={}):    ### Outputs object data as single delimited line
@@ -4359,8 +4377,8 @@ def dataDict(callobj,filename,mainkeys=[],datakeys=[],delimit=None,headers=[],ge
         FILE.close()
         if warnx: 
             callobj.warnLog('Warning: %s %s entries overwritten due to common key (lists=False)' % (integerString(warnx),callobj.name()))
-            if warnx > 10: callobj.warnLog('Dups: {} ...'.format(' | '.join(warn10)))
-            else: callobj.warnLog('Dups: {}.'.format(' | '.join(warn10)))
+            if warnx > 10: callobj.warnLog('Dups: {0} ...'.format(' | '.join(warn10)))
+            else: callobj.warnLog('Dups: {0}.'.format(' | '.join(warn10)))
         if getheaders: datadict['Headers'] = headers[0:]
         return datadict            
     except:
@@ -4408,10 +4426,10 @@ def longCmd(cmd_list,info=None):  ### Extracts long command from command list an
         if len(longcmd) > 0:
             try:
                 if ord(longcmd[-1][:1]) == 226:
-                    warnings.append(('#WARN', 'Leading emdash replaced with "-": "{}"'.format(longcmd[-1])))
+                    warnings.append(('#WARN', 'Leading emdash replaced with "-": "{0}"'.format(longcmd[-1])))
                     longcmd[-1] = '-' + longcmd[-1][3:]
             except:
-                warnings.append(('#WARN','Non-ASCII leading character replaced with "-": "{}"'.format(longcmd[-1])))
+                warnings.append(('#WARN','Non-ASCII leading character replaced with "-": "{0}"'.format(longcmd[-1])))
                 longcmd[-1] = '-' + longcmd[-1][1:]
         # Deal with -X -Y commands
         if len(longcmd) > 1 and longcmd[-2][:1] == '-':
@@ -4422,12 +4440,12 @@ def longCmd(cmd_list,info=None):  ### Extracts long command from command list an
                 longcmd[-2] = longcmd[-2][1:]
                 if longcmd[-2][:1] == '-':
                     longcmd[-2] = longcmd[-2][1:]  # Check and remove --
-                    warnings.append(('#WARN','Leading double-dash command corrected: {}'.format(longcmd[-2])))
+                    warnings.append(('#WARN','Leading double-dash command corrected: {0}'.format(longcmd[-2])))
             else:
-                longcmd[-2] = '{}={}'.format(longcmd[-2][1:],longcmd[-1])
+                longcmd[-2] = '{0}={1}'.format(longcmd[-2][1:],longcmd[-1])
                 if longcmd[-2][:1] == '-':
                     longcmd[-2] = longcmd[-2][1:]  # Check and remove --
-                    warnings.append(('#WARN', 'Leading double-dash command corrected: {}'.format(longcmd[-2])))
+                    warnings.append(('#WARN', 'Leading double-dash command corrected: {0}'.format(longcmd[-2])))
                 longcmd.pop(-1)
         i += 1
     if longcmd:
@@ -4459,9 +4477,9 @@ def iniCmds(ini_path,ini_file,iowarning=True,altpaths=True,info=None):  ### Read
     elif altpaths and checkForFile(alt_ini): openfile = alt_ini
     elif iowarning:
         # Expect this INI file to exist
-        print('#ERR\tINI file {} not found! (Also checked {} and {})'.format(ini_file,ini_path,ini_dir))
-        if info: info.warnings.append(('#ERR','INI file {} not found! (Also checked {} and {})'.format(ini_file,ini_path,ini_dir)))
-        if not yesNo('Continue without {} arguments?'.format(ini_file)): os._exit(0)
+        printf('#ERR\tINI file {0} not found! (Also checked {1} and {2})'.format(ini_file,ini_path,ini_dir))
+        if info: info.warnings.append(('#ERR','INI file {0} not found! (Also checked {1} and {2})'.format(ini_file,ini_path,ini_dir)))
+        if not yesNo('Continue without {0} arguments?'.format(ini_file)): os._exit(0)
         return []
     else:
         # Do not expect this file to exist (optional default)
@@ -4479,7 +4497,7 @@ def iniCmds(ini_path,ini_file,iowarning=True,altpaths=True,info=None):  ### Read
             iniline = iniline[:comment]
         else: iniline = chomp(iniline)
         inicmds += iniline.split()
-    if info: info.warnings.append(('#INI', 'INI file: {}; Commands loaded: {}'.format(openfile, ' '.join(inicmds))))
+    if info: info.warnings.append(('#INI', 'INI file: {0}; Commands loaded: {1}'.format(openfile, ' '.join(inicmds))))
     return inicmds
 #########################################################################################################################
 def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands, reading from ini file as appropriate.
@@ -4499,9 +4517,9 @@ def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands
             rjepath = makePath(os.path.split(os.path.expanduser(sys.argv[0]))[0]); path = rjepath
             if server: argcmd = longCmd(iniCmds(rjepath,'defaults.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,defaults,iowarning=False,info=info),info) + argcmd
             else: argcmd = longCmd(iniCmds(rjepath,'defaults.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,'rje.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,defaults,iowarning=False,info=info),info) + argcmd
-            if py3: print('<<<')
+            if py3: printf('<<<')
     except:
-        print('#ERR\tMajor error in getCmdList() looking for defaults:', sys.exc_info()[0])
+        printf('#ERR\tMajor error in getCmdList() looking for defaults:', sys.exc_info()[0])
         errorMsg()
         if yesNo('Proceed?') == False: os._exit(0)
     ### <b> ### System Arguments
@@ -4516,7 +4534,7 @@ def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands
             if argcmd and nextcmd[:4].lower() in ['-ini']: argcmd = longCmd(iniCmds(path,argcmd.pop(0),info=info),info) + argcmd
         return longCmd(cmd_list,info)
     except:
-        print('#ERR\tMajor error in getCmdList() processing system arguments:', sys.exc_info()[0])
+        printf('#ERR\tMajor error in getCmdList() processing system arguments:', sys.exc_info()[0])
         errorMsg()
         if yesNo('Proceed?') == False: os._exit(0)
         return longCmd(cmd_list,info)
@@ -4544,8 +4562,8 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
     << log:Log object
     '''
     ### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    out.verbose(2,3,'Commands: {}'.format(cmd_list),2)
-    log_file = 'log={}.log'.format(info.program.lower())
+    out.verbose(2,3,'Commands: {0}'.format(cmd_list),2)
+    log_file = 'log={0}.log'.format(info.program.lower())
     argcmd = longCmd(sys.argv[1:])
     cmd_list = [log_file] + cmd_list[0:]
     ### ~ [2] ~ Make and return Log ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -4555,9 +4573,9 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
         log.info['Name'] = info.program
         if printlog:
             log.printLog('#~~#','#~~#',timeout=False,screen=False)
-            log.printLog('#LOG','Activity Log for {} V{}: {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
-            log.printLog('#DIR','Run from directory: {}'.format(os.path.abspath(os.curdir)),screen=False)
-            log.printLog('#ARG','Commandline arguments: {}'.format(jstring.join(argcmd)),screen=False)
+            log.printLog('#LOG','Activity Log for {0} V{1}: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
+            log.printLog('#DIR','Run from directory: {0}'.format(os.path.abspath(os.curdir)),screen=False)
+            log.printLog('#ARG','Commandline arguments: {0}'.format(jstring.join(argcmd)),screen=False)
             #log.printLog('#CMD','Program arguments: %s' % jstring.join(cmd_list),screen=False)
             for infowarn in info.warnings:
                 if infowarn[0] == '#WARN':
@@ -4568,23 +4586,23 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
                     if fullcmd: log.printLog(infowarn[0], infowarn[1], screen=False, error=True)
                 else:
                     log.printLog(infowarn[0], infowarn[1], screen=False, error=True)
-            if fullcmd: log.printLog('#CMD','Full Command List: {}'.format(argString(tidyArgs(cmd_list))),screen=False)
-            log.printLog('#VIO','Verbosity: {}; Interactivity: {}.'.format(log.v(),log.i()))
-            if log.dev() or log.test(): log.printLog('#DEV','Development mode: {}; Testing mode: {}.'.format(log.dev(),log.test()))
+            if fullcmd: log.printLog('#CMD','Full Command List: {0}'.format(argString(tidyArgs(cmd_list))),screen=False)
+            log.printLog('#VIO','Verbosity: {0}; Interactivity: {1}.'.format(log.v(),log.i()))
+            if log.dev() or log.test(): log.printLog('#DEV','Development mode: {0}; Testing mode: {1}.'.format(log.dev(),log.test()))
             if log.info['ErrorLog'].lower() not in ['','none']:
                 log.printLog('#~~#','#~~#',timeout=False,screen=False,error=True)
-                log.printLog('#LOG','Error Log for {} {}: {}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False,error=True)
-                log.printLog('#DIR','Run from directory: {}'.format(os.path.abspath(os.curdir)),screen=False,error=True)
-                log.printLog('#ARG','Commandline arguments: {}'.format(str(argcmd)),screen=False,error=True)
+                log.printLog('#LOG','Error Log for {0} {1}: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False,error=True)
+                log.printLog('#DIR','Run from directory: {0}'.format(os.path.abspath(os.curdir)),screen=False,error=True)
+                log.printLog('#ARG','Commandline arguments: {0}'.format(str(argcmd)),screen=False,error=True)
                 for infowarn in info.warnings:
                     if infowarn[0] == '#WARN': log.warnLog(infowarn[1])
                     elif infowarn[0] == '#ERR': log.errorLog(infowarn[1],printerror=False)
-                if fullcmd: log.printLog('#CMD','Full Command List: {}'.format(argString(tidyArgs(cmd_list))),screen=False,error=True)
-                if log.dev() or log.test(): log.printLog('#DEV','Development mode: {}; Testing mode: {}.'.format(log.dev(),log.test()))
+                if fullcmd: log.printLog('#CMD','Full Command List: {0}'.format(argString(tidyArgs(cmd_list))),screen=False,error=True)
+                if log.dev() or log.test(): log.printLog('#DEV','Development mode: {0}; Testing mode: {1}.'.format(log.dev(),log.test()))
                 elif not log.warn(): log.warnLog('Runtime warnings switched off (warn=F).')
         return log
     except:
-        print('Log problem')
+        printf('Log problem')
         raise
 #########################################################################################################################
 def listFromCommand(command,checkfile=True,purelines=False):   ### Returns a list object from a given command string
@@ -4611,7 +4629,7 @@ def listFromCommand(command,checkfile=True,purelines=False):   ### Returns a lis
         while '' in comlist: comlist.remove('')
         return comlist
     except:
-        print('listFromCommand problem!')
+        printf('listFromCommand problem!')
         raise
 #########################################################################################################################
 def tidyArgs(argcmd,skiplist=['ini'],nopath=False,purgelist=[]):  ### Tidies commandline arguments to remove redundancy
@@ -4640,9 +4658,9 @@ def tidyArgs(argcmd,skiplist=['ini'],nopath=False,purgelist=[]):  ### Tidies com
         elif opt in purgelist: continue
         if opt in skiplist or opt not in jobopts:
             if nopath and '=/' in cmd:
-                (arg,val) = cmf.split('=',1)
+                (arg,val) = cmd.split('=',1)
                 val = os.path.basename(val)
-                argnr.append('{}={}'.format(arg,val))
+                argnr.append('{0}={1}'.format(arg,val))
             else: argnr.append(cmd)
     return argnr
 #########################################################################################################################
@@ -4652,7 +4670,7 @@ def argString(arglist):    ### Returns correctly formatted string of commandline
     for cmd in arglist:
         if len(cmd.split()) > 1 and len(cmd.split('=',1)) == 2:
             (opt,val) = cmd.split('=',1)
-            argstr.append('{}="{}"'.format(opt,val))
+            argstr.append('{0}="{1}"'.format(opt,val))
         else: argstr.append(cmd)
     return jstring.join(argstr)
 #########################################################################################################################
@@ -4689,23 +4707,23 @@ def errorReport(text='',quitchoice=False,killme=True):
         error_line = str(error_traceback[-1][1])    # Line             : 15
         error_error = str(error_traceback[-1][3])   # Error            : for lines in fileIn.readlines():
         ### Output
-        print('### ----- ERROR! ----- ###')
-        if text: print(text)
-        print('{} {}'.format(sys.exc_info()[0],sys.exc_info()[1]))
-        print('{}: {}'.format(error_type, error_value))
-        print('File: {}'.format(error_file))
-        print('Method: {} (line {})'.format(error_method, error_line))
-        print('Error: {}'.format(error_error))
-        print('### ------------------ ###')
+        printf('### ----- ERROR! ----- ###')
+        if text: printf(text)
+        printf('{0} {1}'.format(sys.exc_info()[0],sys.exc_info()[1]))
+        printf('{0}: {1}'.format(error_type, error_value))
+        printf('File: {0}'.format(error_file))
+        printf('Method: {0} (line {1})'.format(error_method, error_line))
+        printf('Error: {0}'.format(error_error))
+        printf('### ------------------ ###')
         ### Kill program
         if quitchoice:
-            print('Quit program (y/n)?'),
+            printf('Quit program (y/n)?'),
             if py3:
                 if input().upper().startswith('Y'): os._exit(1)
             elif raw_input().upper().startswith('Y'): os._exit(1)
         elif killme: os._exit(1)
     except:
-        print('That\'s not right: Error in errorReport()!!:')
+        printf('That\'s not right: Error in errorReport()!!:')
 #########################################################################################################################
 ###  End of Generic Error Handling Functions                                                                            #
 #########################################################################################################################

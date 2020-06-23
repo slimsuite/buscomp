@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Full Report"
 author: "yeast BUSCOMP Analysis"
-date: "2019-08-19"
+date: "2020-06-23"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -30,11 +30,11 @@ library(ggrepel)
 
 # BUSCOMP Run Summary
 
-    BUSCOMP V0.8.0: run Mon Aug 19 19:59:44 2019
+    BUSCOMP V0.9.3: run Tue Jun 23 09:57:38 2020
 
 
 
-See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
+See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
 
 **NOTE:** To edit this document, open `yeast.N3L20ID0U.full.Rmd` in RStudio, edit and re-knit to HTML.
 
@@ -437,15 +437,15 @@ The best complete BUSCO hit results (based on `Score` and `Length`) have been co
 The `Genome` field indicates the assembly with the best hit, which is followed by details of that hit (`Contig`, `Start`, `End`, `Score`, `Length`).
 BUSCOMP ratings for each assembly are then given in subsequent fields:
     
-* `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
-* `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
-* `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
-* `Fragmented`: 95%+ combined coverage but not in any single contig/scaffold.
-* `Partial`: 40-95% combined coverage.
-* `Ghost`: Hits meeting local cutoff but <40% combined coverage.
-* `Missing`: No hits meeting local cutoff.
-
-```{r buscoseq, echo=FALSE}
+    * `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
+    * `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
+    * `Duplicated`: 95%+ Coverage in 2+ contigs/scaffolds.
+    * `Fragmented`: 95%+ combined coverage but not in any single contig/scaffold.
+    * `Partial`: 40-95% combined coverage.
+    * `Ghost`: Hits meeting local cutoff but <40% combined coverage.
+    * `Missing`: No hits meeting local cutoff.
+    
+    ```{r buscoseq, echo=FALSE}
 # Load and display yeast.buscoseq.tdt
 buscoseq <- read.delim("yeast.buscoseq.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
 if(nrow(buscoseq) > 10 | ncol(buscoseq) > 10){
@@ -477,6 +477,7 @@ sumdata = ratings[,c(1,5:10)+1]
 # BUSCO Plot of summary data table as % (Genome, Single, Duplicated, Fragmented, Partial, Ghost, Missing)
 buscompSeqPercPlot = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
+  sumdata = sumdata[! is.na(sumdata$Genome),]
   rownames(sumdata) = sumdata$Genome
   if(maketext){
     sumdata$text = ""
@@ -498,7 +499,7 @@ buscompSeqPercPlotNA = function(sumdata,title="",maketext=TRUE){
   if(maketext){
     sumdata$text = ""
     for(i in 1:nrow(sumdata)){
-      sumdata$text[i] = paste0("C:",sumdata$Single[i]+sumdata$Duplicated[i]," [S:",sumdata$Single[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
+      sumdata$text[i] = paste0("C:",sumdata$Complete[i]+sumdata$Duplicated[i]," [S:",sumdata$Complete[i],", D:",sumdata$Duplicated[i],"], F+P:",sumdata$Fragmented[i]+sumdata$Partial[i],", G+M:",sumdata$Ghost[i]+sumdata$Missing[i],", n:",sum(sumdata[i,2:7]))
     }
   }
   N = sum(sumdata[1,2:8])
@@ -571,7 +572,79 @@ buscompSeqPercPlot(sumdata,"BUSCOMP BUSCOSeq Rating Summary",maketext=TRUE)
 
 # BUSCO and BUSCOMP Comparisons
 
-No comparison without both BUSCO and BUSCOMP rating.
+<a name="BUSCOMPChanges" />
+
+## BUSCO to BUSCOMP Rating Changes
+
+Ratings changes from BUSCO to BUSCOMP (where `NULL` ratings indicate no BUSCOMP sequence):
+
+```{r changes, echo=FALSE}
+# Load and display yeast.N3L20ID0U.changes.tdt
+changes <- read.delim("yeast.N3L20ID0U.changes.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+knitr::kable(changes, row.names = FALSE)
+
+```
+
+
+
+Full table of Ratings changes from by gene:
+
+```{r fullchanges, echo=FALSE}
+# Load and display yeast.N3L20ID0U.changes.full.tdt
+fullchanges <- read.delim("yeast.N3L20ID0U.changes.full.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(fullchanges) > 10 | ncol(fullchanges) > 10){
+    rmarkdown::paged_table(fullchanges)
+}else{
+    knitr::kable(fullchanges, row.names = FALSE)
+}
+
+```
+
+
+
+<small>**C**omplete, **D**uplicated, **F**ragmented, **P**artial, **G**host, **M**issing, **N**ULL (no BUSCOMP sequence)</small>
+
+### BUSCOMP Gain test
+
+There is a risk that performing a low stringency search will identify homologues or pseudogenes of the desired BUSCO gene in error.
+If there is a second copy of a gene in the genome that is detectable by the search then we would expect the same
+genes that go from `Missing` to `Complete` in some genomes to go from `Single` to `Duplicated` in others.
+
+To test this, data is reduced for each pair of genomes to BUSCO-BUSCOMP rating pairs of:
+
+* `Single`-`Single`
+* `Single`-`Duplicated`
+* `Missing`-`Missing`
+* `Missing`-`Single`
+
+This is then converted in to `G`ain ratings (`Single`-`Duplicated` & `Missing`-`Single`) or `N`o Gain ratings
+(`Single`-`Single` & `Missing`-`Missing`). The `Single`-`Duplicated` shift in one genome is then used to set the expected `Missing`-`Single`
+shift in the other, and assess the probability of observing the `Missing`-`Single` shift using a cumulative binomial
+distribution, where:
+
+* `k` is the number of observed `GG` pairs (`Single`-`Duplicated` _and_ `Missing`-`Single`)
+* `n` is the number of `Missing`-`Single` `G`ains in the focal genome (`NG`+`GG`)
+* `p` is the proportion of `Single`-`Duplicated` `G`ains in the background genome (`GN`+`GG` / (`GN`+`GG`+`NN`+`NG`))
+* `pB` is the probability of observing `k+` `Missing`-`Single` gains, given `p` and `n`
+
+This is output to `*.gain.tdt`, where each row is a Genome and each field gives the probability of the row
+genome's `Missing`-`Single` gains, given the column genome's `Single`-`Duplicated` gains:
+
+```{r gain, echo=FALSE}
+# Load and display yeast.N3L20ID0U.gain.tdt
+gain <- read.delim("yeast.N3L20ID0U.gain.tdt", header = TRUE, stringsAsFactors = FALSE, comment.char = "", fill = TRUE)
+if(nrow(gain) > 15 | ncol(gain) > 15){
+    rmarkdown::paged_table(gain)
+}else{
+    knitr::kable(gain, row.names = FALSE)
+}
+
+```
+
+
+
+Low probabilities indicate that BUSCOMP might be rating paralogues or pseudogenes and not functional orthologues of the BUSCO gene.
+Note that there is *no* correction for multiple testing, nor any adjustment for lack of independence between samples.
 
 <a name="BUSCOMPUnique" />
 
@@ -584,7 +657,7 @@ SGD unique Complete genes: 0 BUSCO; 0 BUSCOMP
 PacBioHQ unique Complete genes: 1 BUSCO; 0 BUSCOMP
 chrIIIdup unique Complete genes: 0 BUSCO; 0 BUSCOMP
 PacBioWTDBG2 unique Complete genes: 5 BUSCO; 0 BUSCOMP
-HighQuality unique Complete genes: 304 BUSCO; 0 BUSCOMP
+HighQuality unique Complete genes: 0 BUSCO; 0 BUSCOMP
 ```
 
 ```{r uniqueplots, echo=FALSE, fig.width=12, fig.height=5}
@@ -776,15 +849,15 @@ missingSeqPlot(buscomp,buscomp,"BUSCOMP")
 
 # Appendix: BUSCOMP run details
 
-    BUSCOMP V0.8.0: run Mon Aug 19 19:59:44 2019
+    BUSCOMP V0.9.3: run Tue Jun 23 09:57:38 2020
 
 This analysis was run in:
 
-    /Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run
+    /Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run
 
-* Log file: <a href="/Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run/yeast.log">`/Users/redwards/Documents/Projects/BUSCOMP-Jan19/code/buscomp/example/run/yeast.log`</a>
+* Log file: <a href="/Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run/yeast.log">`/Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run/yeast.log`</a>
 * Commandline arguments: `ini=../run/example.ini` `i=-1` `forks=4`
-* Full Command List: `minimap2=/Users/redwards/Bioware/minimap2/minimap2` `ini=../run/example.ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
+* Full Command List: `minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2` `ini=../run/example.ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
 
 <a name="Errors" />
 
@@ -797,18 +870,10 @@ BUSCOMP returned no runtime errors.
 See run log for further details:
 
 ```
-#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
-#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
-#WARN	00:00:04	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
-#WARN	00:00:04	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
-#WARN	00:00:04	alnseq=F mode is developmental - please report odd behaviour.
-#WARN	00:00:08	31 end extensions (endextend=10): may be some minor identity underestimates.
-#WARN	00:00:39	alnseq=F mode is developmental - please report odd behaviour.
-#WARN	00:00:44	31 end extensions (endextend=10): may be some minor identity underestimates.
-#WARN	00:01:14	alnseq=F mode is developmental - please report odd behaviour.
-#WARN	00:01:15	4 end extensions (endextend=10): may be some minor identity underestimates.
-#WARN	00:01:17	alnseq=F mode is developmental - please report odd behaviour.
-#WARN	00:01:21	40 end extensions (endextend=10): may be some minor identity underestimates.
+#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
+#WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
 ```
 
 ---
@@ -830,4 +895,4 @@ See run log for further details:
 ---
 
 
-<small>Output generated by BUSCOMP v0.8.0 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>
+<small>Output generated by BUSCOMP v0.9.3 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>

@@ -19,8 +19,8 @@
 """
 Module:       rje_forker
 Description:  Generic RJE Forking Module
-Version:      0.0.1
-Last Edit:    08/01/20
+Version:      0.0.2
+Last Edit:    28/04/20
 Copyright (C) 2013  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -58,6 +58,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     '''
     # 0.0.0 - Initial Compilation.
     # 0.0.1 - Tweaked the logfork=F log forking output.
+    # 0.0.2 - Fixed formatting for Python 2.6 back compatibility for servers.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -70,7 +71,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('rje_forker', '0.0.1', 'January 2020', '2013')
+    (program, version, last_edit, copy_right) = ('rje_forker', '0.0.2', 'April 2020', '2013')
     description = 'Generic RJE Forking Module'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -238,7 +239,7 @@ class Forker(rje_obj.RJE_Object):
         ### ~ [2] ~ Monitor jobs and set next one running as they finish ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         while self.list['Forked']:
             if not self.getBool('LogFork'):
-                self.progLog('\r#FORK','Forking jobs: {} running; {} remain.'.format(len(self.list['Forked']),rje.iLen(self.list['ToFork'])))
+                self.progLog('\r#FORK','Forking jobs: {0} running; {1} remain.'.format(len(self.list['Forked']),rje.iLen(self.list['ToFork'])))
             if pidcheck: PIDCHECK = open(pidcheck,'w')
             for fdict in self.list['Forked'][0:]:
                 try:

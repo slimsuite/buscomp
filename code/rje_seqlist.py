@@ -19,8 +19,8 @@
 """
 Module:       rje_seqlist
 Description:  RJE Nucleotide and Protein Sequence List Object (Revised)
-Version:      1.37.0
-Last Edit:    26/02/20
+Version:      1.38.0
+Last Edit:    27/05/20
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -133,6 +133,9 @@ Commandline:
     sampler=N(,X)   : Generate (X) file(s) sampling a random N sequences from input into seqout.N.X.fas [0]
     summarise=T/F   : Generate some summary statistics in log file for sequence data after loading [False]
     genomesize=X    : Genome size for NG50 and LG50 summary output (if >0) [0]
+    gapstats=T/F    : Output a summary of assembly gap sizes and positions [False]
+    mingap=INT      : Minimum length of a stretch of N bases to count as a gap [10]
+    gapfix=X:Y(,X:Y): List of gap lengths X to convert to different lengths Y []
     maker=T/F       : Whether to extract MAKER2 statistics (AED, eAED, QI) from sequence names [False]
     splitseq=X      : Split output sequence file according to X (gene/species) [None]
     tmpdir=PATH     : Directory used for temporary files ['./tmp/']
@@ -216,6 +219,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.36.0 - Added bpFromStr(seqlen)
     # 1.36.1 - Changed default duplicate suffix to X2.
     # 1.37.0 - Added masking and extraction from loaded table of positions.
+    # 1.38.0 - Added assembly gap summary and manipulation fundtions.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -238,7 +242,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('SeqList', '1.37.0', 'February 2020', '2011')
+    (program, version, last_edit, copy_right) = ('SeqList', '1.38.0', 'May 2020', '2011')
     description = 'RJE Nucleotide and Protein Sequence List Object (Revised)'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_zen.Zen().wisdom()]
@@ -330,6 +334,7 @@ class SeqList(rje_obj.RJE_Object):
     - DNA = Alternative option to indicate dealing with nucleotide sequences [False]
     - DupErr = Whether identification of duplicate sequence names should raise an error [True]
     - Edit = Enter sequence edit mode upon loading (will switch seqmode=list) [False]
+    - GapStats=T/F    : Output a summary of assembly gap sizes and positions [False]
     - GeneCounter=T/F : Whether new gene have a numbered suffix (will match newacc numbering) [False]
     - GrepNR = Whether to use grep based forking NR mode (needs sized-sorted one-line-per-sequence fasta) [True]
     - Maker = Whether to extract MAKER2 statistics (AED, eAED, QI) from sequence names [False]
@@ -347,6 +352,7 @@ class SeqList(rje_obj.RJE_Object):
 
     Int:integer
     - AddFlanks=INT   : Length of flanking sequence to also extract/mask [0]
+    - MinGap=INT      : Minimum length of a stretch of N bases to count as a gap [10]
     - MinLen = Minimum sequence length [0]
     - MaxLen = Maximum length of sequences (<=0 = No maximum) [0]
     - MinORF = Min. ORF length for translated sequences output. -1 for single translation inc stop codons [-1]
@@ -363,6 +369,7 @@ class SeqList(rje_obj.RJE_Object):
     - Seq = List of sequences - nature depends on SeqMode []
 
     Dict:dictionary
+    - GapFix=X:Y(,X:Y): List of gap lengths X to convert to different lengths Y []
     - SeqDict = Dictionary of {key:seq object}
 
     Obj:RJE_Objects
@@ -381,19 +388,19 @@ class SeqList(rje_obj.RJE_Object):
         self.strlist = ['Edit','Name','NameFormat','NewAcc','NewDesc','Region','GrabSeq','MaskSeq',
                         'SeqDB','SeqDictType','SeqFormat','SeqIn','SeqMode','SeqType','SeqOut',
                         'Reformat','SpCode','SeqNR','NewGene','Split','SortSeq','SplitSeq','TmpDir']
-        self.boollist = ['AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GeneCounter','GrepNR','Maker',
+        self.boollist = ['AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GapStats','GeneCounter','GrepNR','Maker',
                          'Mixed','ORFMet','ReName','RevCompNR','SizeSort','TwoPass',
                          'SeqIndex','SeqShuffle','Summarise','UseCase']
-        self.intlist = ['AddFlanks','MinLen','MaxLen','MinORF','RFTran','TerMinORF']
+        self.intlist = ['AddFlanks','MinGap','MinLen','MaxLen','MinORF','RFTran','TerMinORF']
         self.numlist = ['GenomeSize']
         self.listlist = ['Edit','PosFields','Sampler','Seq']
-        self.dictlist = ['Filter','SeqDict']
+        self.dictlist = ['Filter','GapFix','SeqDict']
         self.objlist = ['Current','CurrSeq','DB','SEQFILE','INDEX']
         ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True)
         self.setStr({'SeqMode':'file','ReFormat':'None','Region':'1,-1','TmpDir':rje.makePath('./tmp/')})
-        self.setBool({'AutoFilter':True,'AutoLoad':True,'DupErr':True,'ORFMet':True,'SeqIndex':True,'GrepNR':True,'RevCompNR':True,'TwoPass':True})
-        self.setInt({'MinORF':-1,'RFTran':1,'TerMinORF':-1})
+        self.setBool({'AutoFilter':True,'AutoLoad':True,'DupErr':True,'GapStats':False,'ORFMet':True,'SeqIndex':True,'GrepNR':True,'RevCompNR':True,'TwoPass':True})
+        self.setInt({'MinGap':10,'MinORF':-1,'RFTran':1,'TerMinORF':-1})
         self.list['PosFields'] = ['Locus','Start','End']
         self.list['Sampler'] = [0,1]
         #self.setInt({})
@@ -416,11 +423,12 @@ class SeqList(rje_obj.RJE_Object):
                 self._cmdReadList(cmd,'str',['NewAcc','NewGene','Region','SeqFormat','SeqMode','ReFormat','SpCode','SeqType','Split','SortSeq','SplitSeq'])
                 self._cmdReadList(cmd,'file',['Edit','NewDesc','SeqDB','SeqIn','SeqOut','GrabSeq','MaskSeq'])
                 self._cmdReadList(cmd,'path',['TmpDir'])
-                self._cmdReadList(cmd,'int',['AddFlanks','MinLen','MaxLen','MinORF','RFTran','TerMinORF'])
+                self._cmdReadList(cmd,'int',['AddFlanks','MinGap','MinLen','MaxLen','MinORF','RFTran','TerMinORF'])
                 self._cmdReadList(cmd,'num',['GenomeSize'])
                 self._cmdReadList(cmd,'list',['PosFields'])
                 self._cmdReadList(cmd,'nlist',['Sampler'])
-                self._cmdReadList(cmd,'bool',['Align','AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GeneCounter','GrepNR','Maker','Mixed','ORFMet','ReName','RevCompNR','SizeSort','SeqIndex','SeqNR','SeqShuffle','Summarise','TwoPass','UseCase'])
+                self._cmdReadList(cmd,'cdict',['GapFix'])
+                self._cmdReadList(cmd,'bool',['Align','AutoFilter','AutoLoad','Concatenate','DNA','DupErr','Edit','GapStats','GeneCounter','GrepNR','Maker','Mixed','ORFMet','ReName','RevCompNR','SizeSort','SeqIndex','SeqNR','SeqShuffle','Summarise','TwoPass','UseCase'])
             except: self.errorLog('Problem with cmd:%s' % cmd)
         ## ~ [1a] ~ Tidy Commands ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
         if self.getStrLC('SeqMode') == 'tuple': self.setStr({'SeqMode':'list'})
@@ -478,6 +486,7 @@ class SeqList(rje_obj.RJE_Object):
             if self.getStrLC('GrabSeq'): self.grabSeq(mask=False)
             if self.getBool('Edit'):
                 if not self.edit(): return False
+            if self.dict['GapFix']: self.gapFix()
             if self.getBool('Summarise'): self.summarise()
             if self.list['Sampler'][0] > 0: self.sampler()
             elif self.getStrLC('SplitSeq'): self.splitSeq()
@@ -929,16 +938,30 @@ class SeqList(rje_obj.RJE_Object):
     def summarise(self,seqs=None,basename=None,sumdb=False,save=True):    ### Generates summary statistics for sequences
         '''Generates summary statistics for sequences.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            gapstats = self.dna() and self.getBool('GapStats')     # Might need to move this to function argument?
+            mingap = max(1,self.getInt('MinGap'))
+            gapre = re.compile('N{%d,}' % mingap)
             seqbase = rje.baseFile(self.getStr('SeqIn'),strip_path=True)
+            if self.getStrLC('SeqOut'):
+                seqbase = rje.baseFile(self.getStr('SeqOut'),strip_path=True)
             if not self.getStrLC('SeqIn'): seqbase = self.getStr('Basefile')
             if not basename: basename = seqbase
-            seqdata = {'File':self.getStr('SeqIn'),'GC':0,'GapLength':0}    # SeqNum, TotLength, MinLength, MaxLength, MeanLength, MedLength, N50Length, L50Count, GapLength, GC
-            if sumdb or self.mode().endswith('db'): # {'Name':name,'Sequence':sequence,'FPos':fpos}
+            if sumdb or gapstats or self.mode().endswith('db'): # {'Name':name,'Sequence':sequence,'FPos':fpos}
                 if not self.obj['DB']: self.obj['DB'] = rje_db.Database(self.log,self.cmd_list+['tuplekeys=T'])
                 db = self.db()
+            seqdata = {'File':self.getStr('SeqIn'),'GC':0,'GapLength':0,'NCount':0,'GapCount':0}    # SeqNum, TotLength, MinLength, MaxLength, MeanLength, MedLength, N50Length, L50Count, NCount, GapLength, GapCount, GC
+            if sumdb or self.mode().endswith('db'): # {'Name':name,'Sequence':sequence,'FPos':fpos}
                 sdb = db.addEmptyTable('sequences',['name','desc','gene','spec','accnum','length'],['name'])
-                if self.dna(): sdb.addField('gc'); sdb.addField('gapn')
+                if self.dna():
+                    sdb.addField('gc')      # GC content
+                    sdb.addField('basen')    # Number of Ns (ignoring mingap)
+                    sdb.addField('gapn')    # Number of Ns (applying mingap)
+                    sdb.addField('gapnum')  # Number of gaps (applying mingap)
                 if self.getBool('Maker'): sdb.addFields(['AED','eAED','QIUTR5','QISpliceEST','QIExonEST','QIExonAlign','QISpliceSNAP','QIExonSNAP','QIExonmRNA','QIUTR3','QIProtLen'])
+            gapdb = None
+            if gapstats: gapdb = db.addEmptyTable('gaps',['seqname','start','end','seqlen','gaplen'],['seqname','start','end'])
+            if self.dna(): self.printLog('#GAPS','Identifying all runs of %d+ Ns as gaps' % mingap)
+            #?# Should we add an option to trim/ignore terminal gaps? #?#
             #self.printLog('#~~#','# ~~~~~~~~~~~~~~~~~~~~~~~ SEQUENCE SUMMARY FOR %s ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #' % basename)
             self.headLog('Sequence Summary for %s' % basename)
             seqlen = []
@@ -947,10 +970,22 @@ class SeqList(rje_obj.RJE_Object):
             for seq in seqs:
                 self.progLog('\r#SUM','Total number of sequences: %s' % rje.iLen(seqlen),rand=0.01)
                 seqlen.append(self.seqLen(seq))
+                gapn = 0
+                gapnum = 0
                 if self.dna():
                     sequence = self.seqSequence(seq).upper()
                     seqdata['GC'] += sequence.count('G') + sequence.count('C')
-                    seqdata['GapLength'] += sequence.count('N')
+                    seqdata['NCount'] += sequence.count('N')
+                    gaps = re.findall('N{%d,}' % mingap,sequence)
+                    gapn = len(''.join(gaps))
+                    seqdata['GapLength'] += gapn
+                    seqdata['GapCount'] += len(gaps)
+                    if gapstats:
+                        for m in gapre.finditer(sequence):
+                            gapx = m.start() + 1
+                            gapy = m.end()
+                            gapl = len(m.group())
+                            gapdb.addEntry({'seqname':self.shortName(seq),'start':gapx,'end':gapy,'seqlen':len(sequence),'gaplen':gapl})
                 if self.mode().endswith('db'):
                     entry = {'name':self.shortName(seq),'desc':self.seqDesc(seq),'gene':self.seqGene(seq),
                              'spec':self.seqSpec(seq),'accnum':self.seqAcc(seq),'length':self.seqLen(seq)}
@@ -964,7 +999,9 @@ class SeqList(rje_obj.RJE_Object):
                                 self.warnLog('%s is 100%% Ns!' % self.shortName(seq),warntype="alln")
                             else:
                                 self.warnLog('%s is zero length!' % self.shortName(seq),warntype="zerolen")
-                        entry['gapn'] = float(sequence.count('N')) / len(sequence)
+                        entry['basen'] = float(sequence.count('N')) / len(sequence)
+                        entry['gapn'] = gapn
+                        entry['gapnum'] = len(gaps)
                     if self.getBool('Maker'):
                         name = self.seqName(seq)
                         if rje.matchExp('\sAED:(\S+)',name): entry['AED'] = rje.matchExp('\sAED:(\S+)',name)[0]
@@ -977,6 +1014,16 @@ class SeqList(rje_obj.RJE_Object):
             self.printLog('#SUM','Total number of sequences: %s' % rje.iLen(seqlen))
             if not seqs: return {}
             if self.mode().endswith('db') and save: sdb.saveToFile('%s.sequences.tdt' % seqbase)
+            if gapstats:
+                gapdb.saveToFile('%s.gaps.tdt' % seqbase)
+                gapdb.addField('N',evalue=1)
+                gapdb.addField('term',evalue=0)
+                for gapentry in gapdb.entries():
+                    if gapentry['start'] == 1 or gapentry['end'] == gapentry['seqlen']: gapentry['term'] = 1
+                gapdb.compress(['gaplen'],{'N':'sum','term':'sum'})
+                gapdb.keepFields(['gaplen','N','term'])
+                gapdb.saveToFile('%s.gaplen.tdt' % seqbase)
+
             # Total sequence length
             sumlen = sum(seqlen)
             self.printLog('#SUM','Total length of sequences: %s' % rje.iStr(sumlen))
@@ -1035,7 +1082,9 @@ class SeqList(rje_obj.RJE_Object):
                     seqdata['GCPC'] = 100.0 * seqdata['GC'] / (float(sumlen) - seqdata['GapLength'])
                 else: seqdata['GCPC'] = -1
                 self.printLog('#SUM','GC content: %.2f%%' % seqdata['GCPC'])
-                self.printLog('#SUM','Gap (N) length: %s (%.2f%%)' % (rje.iStr(seqdata['GapLength']),100.0 * seqdata['GapLength'] / float(sumlen)))
+                self.printLog('#SUM','N bases: %s (%.2f%%)' % (rje.iStr(seqdata['NCount']),100.0 * seqdata['NCount'] / float(sumlen)))
+                self.printLog('#SUM','Gap (%d+ N) length: %s (%.2f%%)' % (mingap,rje.iStr(seqdata['GapLength']),100.0 * seqdata['GapLength'] / float(sumlen)))
+                self.printLog('#SUM','Gap (%d+ N) count: %s' % (mingap,rje.iStr(seqdata['GapCount'])))
             return seqdata
         except: self.errorLog('Problem during %s summarise.' % self.prog()); return {}   # Summarise failed
 #########################################################################################################################
@@ -2235,7 +2284,7 @@ class SeqList(rje_obj.RJE_Object):
                 for seq in self.seqs(): newseq.append(self.getSeq(seq))
                 self.list['Seq'] = newseq
                 self.setStr({'SeqMode':'list'})
-                self.printLog(ltype.upper,'%s mode detected: seqmode=list' % ltype[1:])
+                self.printLog(ltype.upper(),'%s mode detected: seqmode=list' % ltype[1:])
             seqdict = self.seqNameDic()     # Will map Locus onto shortname onto sequence using seqdict
 
             ### ~ [2] Grab/Mask ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -2277,7 +2326,7 @@ class SeqList(rje_obj.RJE_Object):
                 self.list['Seq'] = newseq
                 if self.getStr('SeqMode') != 'list':
                     self.setStr({'SeqMode':'list'})
-                self.printLog(ltype.upper,'%s regions extracted: seqmode=list' % (rje.iLen(newseq)))
+                self.printLog(ltype.upper(),'%s regions extracted: seqmode=list' % (rje.iLen(newseq)))
             return True
 
         except: self.errorLog('Major error during grabSeq()')
@@ -3163,6 +3212,50 @@ class SeqList(rje_obj.RJE_Object):
                 self.saveSeq(seqfile=self.getStr('EditFile'))
                 self.setStr({'SeqIn':self.getStr('EditFile')})
             else: self.warnLog('Edits not saved!')
+            return True
+        except: self.errorLog(rje_zen.Zen().wisdom()); return False
+#########################################################################################################################
+    def gapFix(self): ### Resizes gaps where appropriate.
+        '''Resizes gaps where appropriate.'''
+        try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            seqlist = []
+            gapfix = self.dict['GapFix']
+            if not gapfix: return True
+            if not self.dna(): self.printLog('#GAPFIX','Gap fixing only available for dna=T'); return True
+            # Convert to integers
+            for gaplen in rje.sortKeys(gapfix):
+                try: gapfix[int(gaplen)] = int(gapfix.pop(gaplen))
+                except: raise ValueError('gapfix=X:Y dictionary must contain integers')
+            for gaplen in rje.sortKeys(gapfix):
+                self.printLog('#GAPFIX','Converting gaps: {0}bp -> {1}bp'.format(gaplen,gapfix[gaplen]))
+            mingap = min(gapfix.keys())
+            gapre = re.compile('N{%d,}' % mingap)
+            ### ~ [1] ~ Convert gaps ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            fixed = 0; seqx = 0.0; seqtot = self.seqNum()
+            for seq in self.seqs():
+                self.progLog('\r#GAPFIX','Fixing gap lengths: %.1f%% (%s fixed)' % (seqx/seqtot,rje.iStr(fixed))); seqx += 100.0
+                (sname,sequence) = self.getSeq(seq,'tuple')
+                sequence = sequence.upper()
+                tofix = []
+                for m in gapre.finditer(sequence):
+                    if len(m.group()) in gapfix: tofix.append((m.start(),m.end(),len(m.group())))
+                if tofix:
+                    tofix.reverse()
+                    for (gstart,gend,glen) in tofix:
+                        fixed += 1
+                        sequence = sequence[:gstart] + 'N' * gapfix[glen] + sequence[gend:]
+                    if len(tofix) > 1:
+                        sname = sname + ' (%d gaps resized)' % len(tofix)
+                    else:
+                        sname = sname + ' (%d gap resized)' % len(tofix)
+                seqlist.append((sname,sequence))
+                if self.mode() == 'db':
+                    seq['Name'] = sname
+                    seq['Sequence'] = sequence
+            if self.mode() != 'db':
+                self.setStr({'SeqMode':'list'})
+                self.list['Seq'] = seqlist
+            self.printLog('\r#GAPFIX','Fixed %s gap lengths (%d alt gap size)' % (rje.iStr(fixed),len(gapfix)))
             return True
         except: self.errorLog(rje_zen.Zen().wisdom()); return False
 #########################################################################################################################

@@ -19,8 +19,8 @@
 """
 Module:       rje_zen
 Description:  Random Zen Wisdom Generator
-Version:      1.4.1
-Last Edit:    27/12/17
+Version:      1.4.2
+Last Edit:    28/04/20
 Copyright (C) 2007  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -55,6 +55,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.3.2 - Added some more words.
     # 1.4.0 - Added some more words and "They fight crime!" structure.
     # 1.4.1 - Added some more words and started reformatting for Python3 compatibility.
+    # 1.4.2 - Fixed formatting for Python 2.6 back compatibility for servers.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -66,7 +67,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo():     ### Makes Info object
     '''Makes rje.Info object for program.'''
-    (program, version, last_edit, cyear) = ('RJE_ZEN', '1.4.1', 'December 2017', '2007')
+    (program, version, last_edit, cyear) = ('RJE_ZEN', '1.4.2', 'April 2020', '2007')
     description = 'Random Zen Wisdom Generator'
     author = 'Dr Richard J. Edwards.'
     comments = ['WARNING: These wisdoms are computer-generated garbage.', 'Heed them at your own peril.']
@@ -76,12 +77,12 @@ def cmdHelp(info=None,out=None,cmd_list=[]):   ### Prints *.__doc__ and asks for
     '''Prints *.__doc__ and asks for more sys.argv commands.'''
     try:
         if not info: info = makeInfo()
-        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: print(info.version); sys.exit(0)
-        if len(sys.argv) == 2 and sys.argv[1] in ['details','-details','--details']: print('{} v{}'.format(info.program,info.version)); sys.exit(0)
+        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: rje.printf(info.version); sys.exit(0)
+        if len(sys.argv) == 2 and sys.argv[1] in ['details','-details','--details']: rje.printf('{0} v{1}'.format(info.program,info.version)); sys.exit(0)
         if not out: out = rje.Out()
         help = cmd_list.count('help') + cmd_list.count('-help') + cmd_list.count('-h')
         if help > 0:
-            print('\n\nHelp for {} {}: {}\n'.format(info.program, info.version, time.asctime(time.localtime(info.start_time))))
+            rje.printf('\n\nHelp for {0} {1}: {2}\n'.format(info.program, info.version, time.asctime(time.localtime(info.start_time))))
             out.verbose(-1,4,text=__doc__)
             if rje.yesNo('Show general commandline options?'): out.verbose(-1,4,text=rje.__doc__)
             if rje.yesNo('Quit?'): sys.exit()
@@ -90,7 +91,7 @@ def cmdHelp(info=None,out=None,cmd_list=[]):   ### Prints *.__doc__ and asks for
         return cmd_list
     except SystemExit: sys.exit()
     except KeyboardInterrupt: sys.exit()
-    except: print('Major Problem with cmdHelp()')
+    except: rje.printf('Major Problem with cmdHelp()')
 #########################################################################################################################
 def setupProgram(): ### Basic Setup of Program
     '''
@@ -103,14 +104,14 @@ def setupProgram(): ### Basic Setup of Program
         ### Initial Command Setup & Info ###
         info = makeInfo()
         cmd_list = rje.getCmdList(sys.argv[1:],info=info)      ### Load defaults from program.ini
-        if rje.py3: print(cmd_list)
+        if rje.py3: rje.printf(cmd_list)
         ### Out object ###
-        if rje.py3: print('>>>')
+        if rje.py3: rje.printf('>>>')
         out = rje.Out(cmd_list=cmd_list)
-        if rje.py3: print(out)
+        if rje.py3: rje.printf(out)
         out.verbose(2,2,cmd_list,1)
         out.printIntro(info)
-        if rje.py3: print('<<<')
+        if rje.py3: rje.printf('<<<')
         ### Additional commands ###
         cmd_list = cmdHelp(info,out,cmd_list)
         ### Log ###
@@ -119,7 +120,7 @@ def setupProgram(): ### Basic Setup of Program
     except SystemExit: sys.exit()
     except KeyboardInterrupt: sys.exit()
     except:
-        print('Problem during initial setup.')
+        rje.printf('Problem during initial setup.')
         raise
 #########################################################################################################################
 ### END OF SECTION I                                                                                                    #
@@ -204,7 +205,7 @@ class Zen(rje.RJE_Object):
             wisdoms = []
             for w in range(self.stat['Wisdoms']):
                 zenwisdom = self.wisdom()
-                wisdoms.append('{}.'.format(zenwisdom))
+                wisdoms.append('{0}.'.format(zenwisdom))
                 if self.getStrLC('Rest') or not self.server(): self.log.printLog('#ZEN',zenwisdom)
                 time.sleep(self.getInt('ZenSleep'))
             self.dict['Output']['wisdoms'] = '\n'.join(wisdoms)
@@ -427,7 +428,7 @@ def runMain():
     try: [info,out,mainlog,cmd_list] = setupProgram()
     except SystemExit: return  
     except:
-        print('Unexpected error during program setup:', sys.exc_info()[0])
+        rje.printf('Unexpected error during program setup:', sys.exc_info()[0])
         return 
         
     ### Rest of Functionality... ###
@@ -441,7 +442,7 @@ def runMain():
 #########################################################################################################################
 if __name__ == "__main__":      ### Call runMain 
     try: runMain()
-    except: print('Cataclysmic run error: {}'.format(sys.exc_info()[0]))
+    except: rje.printf('Cataclysmic run error: {0}'.format(sys.exc_info()[0]))
     sys.exit()
 #########################################################################################################################
 ### END OF SECTION IV                                                                                                   #

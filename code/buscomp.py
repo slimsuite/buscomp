@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.9.2
-Last Edit:    19/04/20
+Version:      0.9.3
+Last Edit:    23/06/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -116,8 +116,7 @@ sys.path.append(os.path.join(slimsuitepath,'tools/'))
 gitcodepath = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)))) + os.path.sep
 sys.path.append(os.path.join(slimsuitepath,'../code/'))
 ### User modules - remember to add *.__doc__ to cmdHelp() below ###
-import rje, rje_obj, rje_db, rje_menu, rje_paf, rje_rmd\
-, rje_seqlist
+import rje, rje_obj, rje_db, rje_menu, rje_paf, rje_rmd, rje_seqlist
 #########################################################################################################################
 def history():  ### Program History - only a method for PythonWin collapsing! ###
     '''
@@ -157,6 +156,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.9.0 - Updated parsing of single_copy_busco_sequences/ to enable multiple directories with "$PREFIX" suffixes.
     # 0.9.1 - Updated parsing to enable BUSCO v4 results recognition. (run with -o $GENOME.busco)
     # 0.9.2 - Fixed some bugs when files missing.
+    # 0.9.3 - Minor fixes to output and clearer error messages. Fixed formatting for Python 2.6 back compatibility for servers.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -201,7 +201,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.2', 'April 2020', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.3', 'April 2020', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -237,8 +237,8 @@ def setupProgram(): ### Basic Setup of Program when called from commandline.
     '''
     try:### ~ [1] ~ Initial Command Setup & Info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         info = makeInfo()                                   # Sets up Info object with program details
-        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: print(info.version); sys.exit(0)
-        if len(sys.argv) == 2 and sys.argv[1] in ['details','-details','--details']: print('%s v%s' % (info.program,info.version)); sys.exit(0)
+        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: rje.printf(info.version); sys.exit(0)
+        if len(sys.argv) == 2 and sys.argv[1] in ['details','-details','--details']: rje.printf('%s v%s' % (info.program,info.version)); sys.exit(0)
         cmd_list = rje.getCmdList(sys.argv[1:],info=info)   # Reads arguments and load defaults from program.ini
         out = rje.Out(cmd_list=cmd_list)                    # Sets up Out object for controlling output to screen
         out.verbose(2,2,cmd_list,1)                         # Prints full commandlist if verbosity >= 2 
@@ -1422,7 +1422,10 @@ class BUSCOMP(rje_obj.RJE_Object):
             for runpath in self.list['Runs']:
                 # Identify and check directory
                 runtype = self.runType(runpath)
-                if not runtype: continue
+                self.printLog('#RUNDIR','%s run type: %s' % (runpath,runtype))
+                if not runtype:
+                    self.warnLog('No BUSCO runs found for run path "%s"' % runpath)
+                    continue
                 #if not os.path.isdir(runpath): continue
                 runsplit = os.path.split(runpath)
                 if not runsplit[-1]: runsplit = os.path.split(runsplit[0])
@@ -1472,6 +1475,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                     if runtype == 'V4': seqdir = rje.makePath(runpath) + 'busco_sequences/single_copy_busco_sequences'
                     #?# Replace Sequences T/F with number of *.fna files
                     rentry = {'#':gdb.entryNum()+1,'Table':runfile,'Sequences':runtype in ['Single','V4'] and rje.exists(seqdir)}
+                    if rentry['Sequences']: self.printLog('#SEQDIR','Found SC BUSCO sequence directory: %s' % seqdir)
                     (rentry['Directory'],tsv) = os.path.split(runfile)
                     if runtype == 'V4':
                         prefix = rundir
@@ -1479,7 +1483,9 @@ class BUSCOMP(rje_obj.RJE_Object):
                     else:
                         prefix = tsv[len('full_table_'):-4]
                         prefseqdir = rje.makePath(runpath) + 'single_copy_busco_sequences_' + prefix
-                        if rje.exists(prefseqdir): rentry['Sequences'] = True
+                        if rje.exists(prefseqdir):
+                            rentry['Sequences'] = True
+                            self.printLog('#SEQDIR','Found SC BUSCO sequence directory: %s' % prefseqdir)
                     #self.debug(rentry)
                     rentry['Prefix'] = prefix
                     # Set genome value: chop off .busco at end!
@@ -1501,10 +1507,17 @@ class BUSCOMP(rje_obj.RJE_Object):
                     else:
                         self.warnLog('No Fasta file found for %s' % self.genomeString(rentry))
                         rentry['Description'] = rentry['Genome'] + ' (no Fasta)'
+                    if not rentry['Sequences'] and runtype in ['Single','V4']:
+                        self.warnLog('No SC BUSCO sequence directory identified for %s' % genome)
                     self.debug('%s' % rentry)
                     gdb.addEntry(rentry)
                 # Summarise entry
                 self.printLog('#RUNDIR','Processed %s: %d runs (%d total)' % (rundir,len(runlist),gdb.entryNum()))
+
+            if not self.list['Runs']:
+                self.printLog('#RUNDIR','No run directories provided: no BUSCO results loaded.')
+            elif not gdb.entryNum():
+                self.warnLog('Processed %d run directories but no BUSCO runs loaded. Check input setting.' % (len(self.list['Runs'])))
 
             return True     # Setup successful
         except: self.errorLog('Problem during %s setup.' % self.prog()); return False  # Setup failed
@@ -1565,6 +1578,9 @@ class BUSCOMP(rje_obj.RJE_Object):
                 gaddx += 1
             if gaddx:
                 self.printLog('#RATE','Added %s additional genomes for BUSCOMPSeq rating' % rje.iStr(gaddx))
+            if not gdb.entryNum():
+                self.errorLog('No genomes loaded for BUSCO complitation or rating. Check input, including ini=INFILE settings.',printerror=False)
+                return False
             return True     # Setup successful
         except: self.errorLog('Problem during %s addRateFas.' % self.prog()); return False  # Setup failed
 #########################################################################################################################
@@ -2702,7 +2718,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                     if string.split(fnalines[0],':',maxsplit=1)[0][1:] == eog:  # BUSCO v3
                         fnalines[0] = string.join(string.split(fnalines[0],':',maxsplit=1))
                     else:
-                        fnalines[0] = '>{} {}'.format(eog,fnalines[0]) # BUSCO v4
+                        fnalines[0] = '>{0} {1}'.format(eog,fnalines[0]) # BUSCO v4
                     for i in range(1,len(fnalines)):
                         if fnalines[i].startswith('>'):
                             self.warnLog('"Single copy" BUSCO %s has 2+ sequences in %s! (Keeping first.)' % (eog,fna))
@@ -2719,7 +2735,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                     if string.split(faalines[0],':',maxsplit=1)[0][1:] == eog:  # BUSCO v3
                         faalines[0] = string.join(string.split(faalines[0],':',maxsplit=1))
                     else:
-                        faalines[0] = '>{} {}'.format(eog,faalines[0]) # BUSCO v4
+                        faalines[0] = '>{0} {1}'.format(eog,faalines[0]) # BUSCO v4
                     for i in range(1,len(faalines)):
                         if faalines[i].startswith('>'):
                             self.warnLog('"Single copy" BUSCO %s has 2+ sequences in %s! (Keeping first.)' % (eog,faa))
@@ -3395,7 +3411,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                     try:
                         gentry['pB'] = rje.logBinomial(gentry['k'],gentry['n'],gentry['p'],exact=False,callobj=self)
                     except:
-                        self.errorLog('Problem calculating probability of {}+ GG from {} x p(*G)={}'.format(gentry['k'],gentry['n'],gentry['p']))
+                        self.errorLog('Problem calculating probability of {0}+ GG from {1} x p(*G)={2}'.format(gentry['k'],gentry['n'],gentry['p']))
                         gentry['p'] = 0.0
                         gentry['pB'] = 1.0
                 else:
@@ -4165,7 +4181,7 @@ library(ggrepel)
 
             rtxt += '<a name="BUSCOMParisons" />\n\n# BUSCO and BUSCOMP Comparisons\n\n'
 
-            if self.db('raw') and self.db('buscomp') and buscompseq:
+            if self.db('busco') and self.db('buscomp') and buscompseq:
 
                 # Changes of Ratings
                 rtxt += '<a name="BUSCOMPChanges" />\n\n## BUSCO to BUSCOMP Rating Changes\n\n'
@@ -4393,6 +4409,7 @@ buscoPercPlot = function(sumdata,title="",maketext=TRUE){
 buscompSeqPercPlot = '''# BUSCO Plot of summary data table as % (Genome, Single, Duplicated, Fragmented, Partial, Ghost, Missing)
 buscompSeqPercPlot = function(sumdata,title="",maketext=TRUE){
   sumdata = sumdata[nrow(sumdata):1,]
+  sumdata = sumdata[! is.na(sumdata$Genome),]
   rownames(sumdata) = sumdata$Genome
   if(maketext){
     sumdata$text = ""

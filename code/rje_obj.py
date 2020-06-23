@@ -19,8 +19,8 @@
 """
 Module:       rje_obj
 Description:  Contains revised General Object templates for Rich Edwards scripts and bioinformatics programs
-Version:      2.7.0
-Last Edit:    02/02/20
+Version:      2.7.1
+Last Edit:    28/04/20
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -119,6 +119,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 2.5.1 - Started updated formatting for Python3 compatibility.
     # 2.6.0 - Added threads() method to basic object.
     # 2.7.0 - Added loggedSystemCall()
+    # 2.7.1 - Fixed formatting for Python 2.6 back compatibility for servers.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -252,7 +253,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
     ### <2> ### General Attribute Get/Set methods                                                                       #
 #########################################################################################################################
     def prog(self): return self.log.name()
-    def type(self): return '{}'.format(self).split()[0][1:]
+    def type(self): return '{0}'.format(self).split()[0][1:]
     def name(self): return self.getStr('Name',default='%s' % self)
 #########################################################################################################################
     def parent(self): return self.obj['Parent']
@@ -651,24 +652,24 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
 #########################################################################################################################
      ### <4> ### Input/Output                                                                                            #
 #########################################################################################################################
-    def bugProg(self, id='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
-        return self.progLog(id, text,screen and self.debugging(),rand,clear)
-    def progLog(self, id='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
+    def bugProg(self, logid='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
+        return self.progLog(logid, text,screen and self.debugging(),rand,clear)
+    def progLog(self, logid='#ERR', text='Log Text Missing!',screen=True,rand=0.0,clear=0):
         if self.v() < 1: return
         if rand > 0 and random.random() > rand: return
-        if self.getBool('ProgLog',default=True): return self.printLog('\r%s' % id,text,screen=screen,log=False,newline=False,clear=clear)
+        if self.getBool('ProgLog',default=True): return self.printLog('\r%s' % logid,text,screen=screen,log=False,newline=False,clear=clear)
         else: return False
-    def printLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0):
-        return self.log.printLog(id,text,timeout,screen and not self.getBool('Silent'),log and not self.getBool('Silent'),newline,clear=clear)
-    def bugLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0):
-        return self.log.printLog(id,text,timeout,screen and not self.getBool('Silent') and self.debugging(),log and not self.getBool('Silent') and self.debugging(),newline,clear=clear)
-    def vLog(self, id='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0,v=1):
-        return self.log.printLog(id,text,timeout,screen and not self.getBool('Silent') and self.v() >= v,log and not self.getBool('Silent') and self.v() >= v,newline,clear=clear)
+    def printLog(self, logid='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0):
+        return self.log.printLog(logid,text,timeout,screen and not self.getBool('Silent'),log and not self.getBool('Silent'),newline,clear=clear)
+    def bugLog(self, logid='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0):
+        return self.log.printLog(logid,text,timeout,screen and not self.getBool('Silent') and self.debugging(),log and not self.getBool('Silent') and self.debugging(),newline,clear=clear)
+    def vLog(self, logid='#ERR', text='Log Text Missing!', timeout=True, screen=True, log=True, newline=True, clear=0,v=1):
+        return self.log.printLog(logid,text,timeout,screen and not self.getBool('Silent') and self.v() >= v,log and not self.getBool('Silent') and self.v() >= v,newline,clear=clear)
     def errorLog(self, text='Missing text for errorLog() call!',quitchoice=False,printerror=True,nextline=True,log=True,errorlog=True,warnlist=True):
         return self.log.errorLog(text,quitchoice,printerror,nextline,log,errorlog,warnlist)
-    def devLog(self, lid='#DEV', text='Log Text Missing!', debug=True):
+    def devLog(self, logid='#DEV', text='Log Text Missing!', debug=True):
         if not self.dev(): return
-        self.printLog(lid,text)
+        self.printLog(logid,text)
         if debug: self.debug('')
 #########################################################################################################################
     def headLog(self,text,line='~',hash='#',width=0,minside=4):  # Generates a header-style printLog command
@@ -700,7 +701,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if i == None: i = self.getInt('Interactive') + 1
         if not self.getBool('Silent') and (self.getInt('Verbose') >= v or self.getInt('Interactive') >= i):
-            print(text),
+            rje.printf(text),
             if self.getInt('Interactive') >= i:
                 if rje.py3: input(" <ENTER> to continue.")
                 else: raw_input(" <ENTER> to continue.")
@@ -1003,7 +1004,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if download and str in ['HINT.DROME','HINT.CAEEL']:
                 self.warnLog('Trying to correct for dodgy HINT.DROME/HINT.CAEEL download w/o headers')
                 ## Special fudge
-                open(nowfile,'w').write('{}\n'.format('\t'.join('Id_A Id_B Gene_A Gene_B Pubmedid,EvidenceCode,HT'.split())))
+                open(nowfile,'w').write('{0}\n'.format('\t'.join('Id_A Id_B Gene_A Gene_B Pubmedid,EvidenceCode,HT'.split())))
                 sourcefile = nowfile
                 rje.urlToFile(sourceurl,nowfile,self,backupfile=False)
                 sentry['Status'] = 'Downloaded'
@@ -1069,9 +1070,9 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         try:### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             #i# System log filename
-            if not syslog: syslog = '{}.sys.log'.format(self.baseFile())
+            if not syslog: syslog = '{0}.sys.log'.format(self.baseFile())
             #i# Setup log with command and identify position to capture extra content
-            headline = '[{}] {}\n'.format(rje.dateTime(),cmd)
+            headline = '[{0}] {1}\n'.format(rje.dateTime(),cmd)
             if append: open(syslog,'a').write(headline)
             else:
                 rje.backup(self,syslog,appendable=False)
@@ -1080,14 +1081,14 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             fend = rje.endPos(filename=syslog)
             #i# Generate system command
             if stderr:
-                if ' > ' in cmd: self.warnLog('Cannot capture stderr or stdout for command: {}'.format(cmd))
-                else: cmd = '{} 2>&1'.format(cmd)
+                if ' > ' in cmd: self.warnLog('Cannot capture stderr or stdout for command: {0}'.format(cmd))
+                else: cmd = '{0} 2>&1'.format(cmd)
             if append:
-                if self.v() >= verbosity: cmd = '{} | tee -a {}'.format(cmd,syslog)
-                else: cmd = '{} >> {}'.format(cmd,syslog)
+                if self.v() >= verbosity: cmd = '{0} | tee -a {1}'.format(cmd,syslog)
+                else: cmd = '{0} >> {1}'.format(cmd,syslog)
             else:
-                if self.v() >= verbosity: cmd = '{} | tee {}'.format(cmd,syslog)
-                else: cmd = '{} > {}'.format(cmd,syslog)
+                if self.v() >= verbosity: cmd = '{0} | tee {1}'.format(cmd,syslog)
+                else: cmd = '{0} > {1}'.format(cmd,syslog)
             ### ~ [2] ~ Process System Call ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.dev() and self.getBool('UseQSub'):
                 if not rje.exists('tmp_qsub'): rje.mkDir(self,'tmp_qsub/',log=True)
@@ -1095,21 +1096,21 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                 ppn = self.threads()
                 vmem = self.getInt('QSubVMem')
                 if not threaded: ppn = 1; vmem = 16
-                farmcmd = ['farm={}'.format(cmd),'jobwait=T','qsub=T','basefile={}'.format(qbase),'slimsuite=F',
-                           'qpath={}'.format(mydir),'monitor=F',
-                           'ppn={}'.format(ppn),'vmem={}'.format(vmem),'walltime={}'.format(self.getInt('QSubWall'))]
+                farmcmd = ['farm={0}'.format(cmd),'jobwait=T','qsub=T','basefile={0}'.format(qbase),'slimsuite=F',
+                           'qpath={0}'.format(mydir),'monitor=F',
+                           'ppn={0}'.format(ppn),'vmem={0}'.format(vmem),'walltime={0}'.format(self.getInt('QSubWall'))]
                 self.printLog('#DEV','Using SLiMFarmer to farm system call in tmp_qsub/')
                 farmer = slimfarmer.SLiMFarmer(self.log,self.cmd_list+farmcmd)
-                self.printLog('#DEV','SLiMFarmer commands: {}'.format(' '.join(farmer.cmd_list)))
+                self.printLog('#DEV','SLiMFarmer commands: {0}'.format(' '.join(farmer.cmd_list)))
                 if not farmer.list['Modules']:
                     for mod in os.popen('module list 2>&1').read().split():
                         if '/' in mod: farmer.list['Modules'].append(mod)
                     if farmer.list['Modules']:
                         modlist = ','.join(farmer.list['Modules'])
-                        self.printLog('#MOD','Read modules for qsub from environment: {}'.format(modlist))
-                        self.cmd_list.append('modules={}'.format(modlist))
+                        self.printLog('#MOD','Read modules for qsub from environment: {0}'.format(modlist))
+                        self.cmd_list.append('modules={0}'.format(modlist))
                         farmer = slimfarmer.SLiMFarmer(self.log,self.cmd_list+farmcmd)
-                        self.printLog('#DEV','SLiMFarmer commands: {}'.format(' '.join(farmer.cmd_list)))
+                        self.printLog('#DEV','SLiMFarmer commands: {0}'.format(' '.join(farmer.cmd_list)))
                     else:
                         raise ValueError('Trying to run with useqsub=T but modules=LIST not set!')
                 os.chdir('tmp_qsub/')
@@ -1118,7 +1119,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             else:
                 self.printLog('#SYS',cmd)
                 excode = os.system(cmd)
-            if excode > 0: raise ValueError('Non-zero exit status for: {}'.format(cmd))
+            if excode > 0: raise ValueError('Non-zero exit status for: {0}'.format(cmd))
             logline = nologline
             if not logline:
                 logline = 'WARNING: No run log output!'
@@ -1138,7 +1139,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
     def restOutputError(self,errormsg): ### Returns full error message.
         '''Returns full error message..'''
         try:
-            print(errormsg)
+            rje.printf(errormsg)
             ### Setup error variables
             error_type = str(sys.exc_info()[0])         # Error Type       : exceptions.IOError
             error_type = error_type.replace('exceptions.','')

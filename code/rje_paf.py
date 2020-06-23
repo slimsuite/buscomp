@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.10.0
-Last Edit:    21/02/20
+Version:      0.10.2
+Last Edit:    28/04/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -120,6 +120,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.9.0 - Added long-read mapping to BAM option.
     # 0.10.0 - Added longreadMinimapPAF() and checkpos=TDTFILE options.
     # 0.10.1 - Added spanid=X: Generate sets of read IDs that span checkpos regions, based on values of field X []
+    # 0.10.2 - Fixed formatting for Python 2.6 back compatibility for servers.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -152,7 +153,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.10.1', 'February 2020', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.10.2', 'April 2020', '2019')
     description = 'Minimap2 PAF parser and converter'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -2463,7 +2464,7 @@ class PAF(rje_obj.RJE_Object):
                 elif len(self.list['ReadType']) != len(self.list['Reads']):
                     self.warnLog('reads=FILELIST vs readtype=LIST length mismatch: check readtype=LIST. Will cycle if needed.')
                 for readfile in self.list['Reads']:
-                    if not rje.exists(readfile): raise IOError('Read file "{}" not found!'.format(readfile))
+                    if not rje.exists(readfile): raise IOError('Read file "{0}" not found!'.format(readfile))
                     if self.list['ReadType']:
                         try: rtype = self.list['ReadType'][rx]; rx +=1
                         except: rtype = self.list['ReadType'][0]; rx = 1
@@ -2472,18 +2473,18 @@ class PAF(rje_obj.RJE_Object):
                             self.warnLog('Read Type "%s" not recognised (pb/ont): check readtype=LIST. Will use "ont".' % rtype)
                             rtype = 'ont'
                     else: rtype = 'ont'
-                    prefix = '{}.{}'.format(rje.baseFile(self.getStr('SeqIn'),strip_path=True),rje.baseFile(readfile,strip_path=True))
-                    maplog = '{}.log'.format(prefix)
+                    prefix = '{0}.{1}'.format(rje.baseFile(self.getStr('SeqIn'),strip_path=True),rje.baseFile(readfile,strip_path=True))
+                    maplog = '{0}.log'.format(prefix)
                     ## ~ [2a] Make SAM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-                    maprun = '{} -t {} --secondary=no -o {}.paf -L -x map-{} {} {}'.format(paf.getStr('Minimap2'),self.threads(),prefix,rtype,self.getStr('SeqIn'),readfile)
+                    maprun = '{0} -t {1} --secondary=no -o {2}.paf -L -x map-{3} {4} {5}'.format(paf.getStr('Minimap2'),self.threads(),prefix,rtype,self.getStr('SeqIn'),readfile)
                     logline = self.loggedSysCall(maprun,maplog,append=False)
                     #!# Add check that run has finished #!#
-                    paflist.append('{}.paf'.format(prefix))
+                    paflist.append('{0}.paf'.format(prefix))
 
             ### ~ [3] ~ Merge individual BAM files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
                 if len(paflist) > 1:
                     # samtools merge - merges multiple sorted input files into a single output.
-                    bammerge = 'cat {} > {}'.format(' '.join(paflist),paffile)
+                    bammerge = 'cat {0} > {1}'.format(' '.join(paflist),paffile)
                     logline = self.loggedSysCall(bammerge,append=True)
                     if not rje.exists(paffile): raise IOError('Merged PAF file "%s" not generated' % paffile)
                     for sortbam in paflist: os.unlink(sortbam)
@@ -2518,7 +2519,7 @@ class PAF(rje_obj.RJE_Object):
                 elif len(self.list['ReadType']) != len(self.list['Reads']):
                     self.warnLog('reads=FILELIST vs readtype=LIST length mismatch: check readtype=LIST. Will cycle if needed.')
                 for readfile in self.list['Reads']:
-                    if not rje.exists(readfile): raise IOError('Read file "{}" not found!'.format(readfile))
+                    if not rje.exists(readfile): raise IOError('Read file "{0}" not found!'.format(readfile))
                     if self.list['ReadType']:
                         try: rtype = self.list['ReadType'][rx]; rx +=1
                         except: rtype = self.list['ReadType'][0]; rx = 1
@@ -2527,45 +2528,45 @@ class PAF(rje_obj.RJE_Object):
                             self.warnLog('Read Type "%s" not recognised (pb/ont): check readtype=LIST. Will use "ont".' % rtype)
                             rtype = 'ont'
                     else: rtype = 'ont'
-                    prefix = '{}.{}'.format(rje.baseFile(self.getStr('SeqIn'),strip_path=True),rje.baseFile(readfile,strip_path=True))
-                    maplog = '{}.log'.format(prefix)
+                    prefix = '{0}.{1}'.format(rje.baseFile(self.getStr('SeqIn'),strip_path=True),rje.baseFile(readfile,strip_path=True))
+                    maplog = '{0}.log'.format(prefix)
                     ## ~ [2a] Make SAM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-                    maprun = '{} -t {} --secondary=no -o {}.sam -L -ax map-{} {} {}'.format(paf.getStr('Minimap2'),self.threads(),prefix,rtype,self.getStr('SeqIn'),readfile)
+                    maprun = '{0} -t {1} --secondary=no -o {2}.sam -L -ax map-{3} {4} {5}'.format(paf.getStr('Minimap2'),self.threads(),prefix,rtype,self.getStr('SeqIn'),readfile)
                     logline = self.loggedSysCall(maprun,maplog,append=False)
                     #!# Add check that run has finished #!#
                     ## ~ [2b] Converting SAM to BAM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-                    #sam2bam = 'samtools view -bo {}.tmp.bam -@ {} -S {}.sam'.format(prefix,self.threads()-1,prefix)
+                    #sam2bam = 'samtools view -bo {0}.tmp.bam -@ {1} -S {2}.sam'.format(prefix,self.threads()-1,prefix)
                     self.printLog('#BAM','Converting SAM to BAM. Using a single thread due to past issues of missing data.')
-                    sam2bam = 'samtools view -bo {}.tmp.bam -S {}.sam'.format(prefix,prefix)
+                    sam2bam = 'samtools view -bo {0}.tmp.bam -S {1}.sam'.format(prefix,prefix)
                     logline = self.loggedSysCall(sam2bam,maplog,append=True,nologline='No stdout from sam2bam')
                     #!# Add check that run has finished #!#
                     ## ~ [2c] Sorting BAM ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
                     self.printLog('#BAM','Sorting BAM file.')
-                    sortbam = '{}.bam'.format(prefix)
-                    bamsort = 'samtools sort -@ {} -o {}.bam -m 6G {}.tmp.bam'.format(self.threads()-1,prefix,prefix)
+                    sortbam = '{0}.bam'.format(prefix)
+                    bamsort = 'samtools sort -@ {0} -o {1}.bam -m 6G {2}.tmp.bam'.format(self.threads()-1,prefix,prefix)
                     logline = self.loggedSysCall(bamsort,maplog,append=True)
                     #!# Add check that run has finished #!#
                     if not rje.exists(sortbam): raise IOError('Sorted BAM file "%s" not generated' % sortbam)
-                    os.unlink('{}.sam'.format(prefix))
-                    os.unlink('{}.tmp.bam'.format(prefix))
+                    os.unlink('{0}.sam'.format(prefix))
+                    os.unlink('{0}.tmp.bam'.format(prefix))
                     bamlist.append(sortbam)
 
             ### ~ [3] ~ Merge individual BAM files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
                 if len(bamlist) > 1:
                     # samtools merge - merges multiple sorted input files into a single output.
-                    bammerge = 'samtools merge -@ {} {} {}'.format(self.threads()-1,bamfile,' '.join(bamlist))
+                    bammerge = 'samtools merge -@ {0} {1} {2}'.format(self.threads()-1,bamfile,' '.join(bamlist))
                     logline = self.loggedSysCall(bammerge,append=True)
                     if not rje.exists(bamfile): raise IOError('Merged BAM file "%s" not generated' % bamfile)
                     for sortbam in bamlist: os.unlink(sortbam)
                 else: os.rename(bamlist[0],bamfile)
 
             ## ~ [3a] Index ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-            baifile = '{}.bai'.format(bamfile)
+            baifile = '{0}.bai'.format(bamfile)
             rje.checkForFiles(filelist=[bamfile,baifile],basename='',log=self.log,cutshort=False,ioerror=False)
             if self.needToRemake(baifile,bamfile):
-                makebai = 'samtools index -b {} {}.bai'.format(bamfile,bamfile)
+                makebai = 'samtools index -b {0} {1}.bai'.format(bamfile,bamfile)
                 logline = self.loggedSysCall(makebai,append=True)
-                #os.system('samtools index -b {} {}.bai'.format(bamfile,bamfile))
+                #os.system('samtools index -b {0} {1}.bai'.format(bamfile,bamfile))
 
             return bamfile
         except:
@@ -2614,7 +2615,7 @@ class PAF(rje_obj.RJE_Object):
 
             ### ~ [2] ~ Check/Generate PAF file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             paffile = self.longreadMinimapPAF()
-            if not paffile: raise IOError('PAF file "{}" not found'.format(paffile))
+            if not paffile: raise IOError('PAF file "{0}" not found'.format(paffile))
 
             ### ~ [3] ~ Fork out checking of positions using PAF file and awk ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             ## ~ [3a] Setup forking ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
@@ -2624,14 +2625,14 @@ class PAF(rje_obj.RJE_Object):
                 locus = centry[locusfield]
                 cstart = centry[startfield]
                 cend = centry[endfield]
-                tmpfile = '{}{}.{}.{}.{}.tmp'.format(tmpdir,basefile,locus,cstart,cend)
+                tmpfile = '{0}{1}.{2}.{3}.{4}.tmp'.format(tmpdir,basefile,locus,cstart,cend)
                 if rje.exists(tmpfile):
                     if not self.force() and len(open(tmpfile,'r').readline().split()) > 1: skipped += 1; continue
                     else: os.unlink(tmpfile); cleanup += 1
                 #i# NOTE: PAF positions are 0-based, so need to subtract 1
-                forker.list['ToFork'].append("awk -F '\\t' '$6==\"{}\" && $8<={} && $9>={}' {} > {} && echo 'awk complete' >> {}".format(locus,int(cstart)-1,int(cend)-1,paffile,tmpfile,tmpfile))
+                forker.list['ToFork'].append("awk -F '\\t' '$6==\"{0}\" && $8<={1} && $9>={2}' {3} > {4} && echo 'awk complete' >> {5}".format(locus,int(cstart)-1,int(cend)-1,paffile,tmpfile,tmpfile))
                 self.bugPrint(forker.list['ToFork'][-1])
-            self.printLog('#CHECK','{} Coverage check regions queued for forking ({} existing files deleted); {} existing results skipped'.format(rje.iLen(forker.list['ToFork']),rje.iStr(cleanup),rje.iStr(skipped)))
+            self.printLog('#CHECK','{0} Coverage check regions queued for forking ({1} existing files deleted); {2} existing results skipped'.format(rje.iLen(forker.list['ToFork']),rje.iStr(cleanup),rje.iStr(skipped)))
             ## ~ [3b] Fork out depth analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             if forker.list['ToFork']:
                 if self.getNum('Forks') < 1:
@@ -2659,10 +2660,10 @@ class PAF(rje_obj.RJE_Object):
                 cstart = centry[startfield]
                 cend = centry[endfield]
                 centry['MaxFlank5'] = cstart - 1
-                tmpfile = '{}{}.{}.{}.{}.tmp'.format(tmpdir,basefile,locus,cstart,cend)
+                tmpfile = '{0}{1}.{2}.{3}.{4}.tmp'.format(tmpdir,basefile,locus,cstart,cend)
                 try:
                     if not rje.exists(tmpfile):
-                        raise IOError('Cannot find {}'.format(tmpfile))
+                        raise IOError('Cannot find {0}'.format(tmpfile))
                     self.quiet()
                     pafdb = self.parsePAF(tmpfile,'tmp')
                     self.talk()
@@ -2691,7 +2692,7 @@ class PAF(rje_obj.RJE_Object):
                     locus = centry[locusfield]
                     cstart = centry[startfield]
                     cend = centry[endfield]
-                    tmpfile = '{}{}.{}.{}.{}.tmp'.format(tmpdir,basefile,locus,cstart,cend)
+                    tmpfile = '{0}{1}.{2}.{3}.{4}.tmp'.format(tmpdir,basefile,locus,cstart,cend)
                     os.unlink(tmpfile); tx += 1
                 self.printLog('#TMP','%s temp files deleted' % rje.iStr(tx))
             ## ~ [4c] Save spanning read IDs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##

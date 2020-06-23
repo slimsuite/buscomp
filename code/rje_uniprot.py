@@ -19,8 +19,8 @@
 """
 Module:       rje_uniprot
 Description:  RJE Module to Handle Uniprot Files
-Version:      3.25.2
-Last Edit:    23/05/19
+Version:      3.25.3
+Last Edit:    21/04/20
 Copyright (C) 2007 Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -172,6 +172,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 3.25.0 - Fixed new Uniprot batch query URL. Added onebyone=T/F    : Whether to download one entry at a time. Slower but should maintain order [False].
     # 3.25.1 - Fixed proteome download bug following Uniprot changes.
     # 3.25.2 - Fixed Uniprot protein extraction issues by using curl. (May not be a robust fix!)
+    # 3.25.3 - Fixed some problems with new Uniprot feature format.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -202,7 +203,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo():     ### Makes Info object
     '''Makes rje.Info object for program.'''
-    (program, version, last_edit, copyyear) = ('RJE_UNIPROT', '3.25.2', 'May 2019', '2007')
+    (program, version, last_edit, copyyear) = ('RJE_UNIPROT', '3.25.3', 'April 2020', '2007')
     description = 'RJE Uniprot Parsing/Extraction Module'
     author = 'Dr Richard J. Edwards.'
     comments = []
@@ -236,7 +237,7 @@ def setupProgram(): ### Basic Setup of Program
     try:
         ### Initial Command Setup & Info ###
         info = makeInfo()
-        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: print(info.version); sys.exit(0)
+        if len(sys.argv) == 2 and sys.argv[1] in ['version','-version','--version']: rje.printf(info.version); sys.exit(0)
         cmd_list = rje.getCmdList(sys.argv[1:],info=info)      ### Load defaults from program.ini
         ### Out object ###
         out = rje.Out(cmd_list=cmd_list)
@@ -2372,6 +2373,10 @@ class UniProtEntry(rje.RJE_Object):
                     parse = rje.matchExp(uniparse['FT'],ft)
                     parse_nodesc = rje.matchExp('(\S+)\s+<*(\d+)\s+>*(\d+)\.*',ft)
                     parse_onepos = rje.matchExp('(\S+)\s+(\d+)\.*\s+(\S+)',ft)
+                    parse_newpos = rje.matchExp('(\S+)\s+<*(\d+)\.\.>*(\d+) /note="(.+)"',ft)
+                    parse_newid = rje.matchExp('(\S+)\s+<*(\d+)\.\.>*(\d+) .*/id="(.+)"',ft)
+                    parse_newev = rje.matchExp('(\S+)\s+<*(\d+)\.\.>*(\d+) /evidence="(.+)"',ft)
+                    parse_newnull = rje.matchExp('(\S+)\s+<*(\d+)\.\.>*(\d+)',ft)
                     parse_cntd = rje.matchExp('\s+(\S.*)$',ft)
                     if parse:
                         ftdic = {
@@ -2409,6 +2414,42 @@ class UniProtEntry(rje.RJE_Object):
                                 'Desc' : parse[2]
                                 }
                             self.list['Feature'].append(ftdic)
+                    elif parse_newpos:
+                        parse = parse_newpos
+                        ftdic = {
+                            'Type' : parse[0],
+                            'Start' : string.atoi(parse[1]),
+                            'End' : string.atoi(parse[2]),
+                            'Desc' : parse[3]
+                            }
+                        self.list['Feature'].append(ftdic)
+                    elif parse_newid:
+                        parse = parse_newid
+                        ftdic = {
+                            'Type' : parse[0],
+                            'Start' : string.atoi(parse[1]),
+                            'End' : string.atoi(parse[2]),
+                            'Desc' : parse[3]
+                            }
+                        self.list['Feature'].append(ftdic)
+                    elif parse_newev:
+                        parse = parse_newev
+                        ftdic = {
+                            'Type' : parse[0],
+                            'Start' : string.atoi(parse[1]),
+                            'End' : string.atoi(parse[2]),
+                            'Desc' : 'evidence='+parse[3]
+                            }
+                        self.list['Feature'].append(ftdic)
+                    elif parse_newnull:
+                        parse = parse_newnull
+                        ftdic = {
+                            'Type' : parse[0],
+                            'Start' : string.atoi(parse[1]),
+                            'End' : string.atoi(parse[2]),
+                            'Desc' : ''
+                            }
+                        self.list['Feature'].append(ftdic)
                     elif parse_cntd:
                         try:
                             ftdic = self.list['Feature'][-1]
