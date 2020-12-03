@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # See below for name and description
-# Copyright (C) 2016 Richard J. Edwards <redwards@cabbagesofdoom.co.uk>
+# Copyright (C) 2019 Richard J. Edwards <redwards@cabbagesofdoom.co.uk>
 #  
 # This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
@@ -19,8 +19,8 @@
 """
 Module:       BUSCOMP
 Description:  BUSCO Compiler and Comparison tool
-Version:      0.9.3
-Last Edit:    23/06/20
+Version:      0.9.7
+Last Edit:    03/12/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -157,6 +157,10 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.9.1 - Updated parsing to enable BUSCO v4 results recognition. (run with -o $GENOME.busco)
     # 0.9.2 - Fixed some bugs when files missing.
     # 0.9.3 - Minor fixes to output and clearer error messages. Fixed formatting for Python 2.6 back compatibility for servers.
+    # 0.9.4 - Added contig statistics and fixed group description loading bug.
+    # 0.9.5 - Fixed Group BUSCOMP plot output bug.
+    # 0.9.6 - Added CtgNum: Number of contigs (`SeqNum`+`GapCount`).
+    # 0.9.7 - Fixed some Rmd bugs to fix output after summary table changes.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -197,11 +201,14 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [Y] : Check/fix bug with buscompseq=F.
     # [Y] : Update GABLAM statistics to work directly from CS strings.
     # [ ] : Don't plot BUSCO/BUSCOMP stats if relevant analysis not performed.
+    # [Y] : Fix issue of group descriptions not loading.
+    # [ ] : Add contig stats to output.
+    # [ ] : Add warning of recalculation if complete genome.tdt file found but alias file given. (Or fix re-use issue.)
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.3', 'April 2020', '2019')
+    (program, version, last_edit, copy_right) = ('BUSCOMP', '0.9.7', 'December 2020', '2019')
     description = 'BUSCO Compiler and Comparison tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -698,11 +705,15 @@ class BUSCOMP(rje_obj.RJE_Object):
         * **MedLength**: The median length of scaffolds/contigs in the assembly.
         * **N50Length**: At least half of the assembly is contained on scaffolds/contigs of this length or greater.
         * **L50Count**: The smallest number scaffolds/contigs needed to cover half the the assembly.
+        * **CtgNum**: Number of contigs (`SeqNum`+`GapCount`).
+        * **N50Ctg**: At least half of the assembly is contained on contigs of this length or greater.
+        * **L50Ctg**: The smallest number contigs needed to cover half the the assembly.
         * **NG50Length**: At least half of the genome is contained on scaffolds/contigs of this length or greater.
         This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
         * **LG50Count**: The smallest number scaffolds/contigs needed to cover half the the genome.
         This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
         * **GapLength**: The total number of undefined "gap" (`N`) nucleotides in the assembly.
+        * **GapCount**: The total number of undefined "gap" (`N`) regions above mingap=X (default 10bp).
         * **GC**: The %GC content of the assembly.
 
         **NOTE:** `NG50Length` and `LG50Count` statistics use `genomesize=X` or the biggest assembly loaded.
@@ -1586,7 +1597,7 @@ class BUSCOMP(rje_obj.RJE_Object):
 #########################################################################################################################
     def genomeTableFormat(self,table):
         iformats = {}
-        for ifield in string.split('SeqNum	TotLength	MinLength	MaxLength	N50Length	L50Count	NG50Length	LG50Count GapLength') + ['UniqBUSCO','UniqBUSCOMP']:
+        for ifield in string.split('SeqNum	TotLength	MinLength	MaxLength	N50Length	L50Count CtgNum N50Ctg	L50Ctg	NG50Length	LG50Count GapLength GapCount') + ['UniqBUSCO','UniqBUSCOMP']:
             iformats[ifield] = 'int'
         for nfield in string.split('MeanLength MedLength GC'):
             iformats[nfield] = 'num'
@@ -1935,7 +1946,7 @@ class BUSCOMP(rje_obj.RJE_Object):
 
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            statfields = string.split('SeqNum TotLength MinLength MaxLength MeanLength MedLength N50Length L50Count NG50Length LG50Count GapLength GC')
+            statfields = string.split('SeqNum TotLength MinLength MaxLength MeanLength MedLength N50Length L50Count CtgNum N50Ctg L50Ctg NG50Length LG50Count GapLength GapCount GC')
             gdb = self.db('genomes')
             seqobj = rje_seqlist.SeqList(self.log,self.cmd_list+['autoload=F','seqin=None'])
             if not 'SeqNum' in gdb.list['Fields']:
@@ -1954,7 +1965,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 if gentry['Fasta']:
                     if gentry['Fasta'] in adata and not self.force():    # Data should already exist
                         aentry = adb.indexEntries('Fasta',gentry['Fasta'])[0]
-                        for field in statfields: gentry[field] = aentry[field]
+                        for field in statfields:
+                            if field in aentry:
+                                gentry[field] = aentry[field]
+                            else: gentry[field] = ''
                         adata.remove(gentry['Fasta'])
                     else: fasgenomes.append(gentry['Fasta'])
 
@@ -2144,6 +2158,9 @@ class BUSCOMP(rje_obj.RJE_Object):
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             db = self.db()
             gdb = self.db('genomes')
+            adb = self.db('alias')
+            if adb and 'Genome' not in adb.fields(): adb = None
+            if adb and 'Description' not in adb.fields(): adb = None
             grpdb = self.db('groups')
             genomes = gdb.index('Genome',force=True)
             grpsave = False
@@ -2158,7 +2175,6 @@ class BUSCOMP(rje_obj.RJE_Object):
                 self.dict['Groups'] = {}
             ## ~ [2b] Check/update/expand groups ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             if grpdb:
-                adb = self.db('alias')
                 checking = True
                 grpx = grpdb.entryNum()
                 while checking:
@@ -2196,6 +2212,9 @@ class BUSCOMP(rje_obj.RJE_Object):
                 for group in rje.sortKeys(groups):
                     self.printLog('#GRP','%s: %s' % (group,string.join(grpdb.indexDataList('Group',group,'Genome'),'|')))
                     grprefix[group] = string.join(grpdb.indexDataList('Group',group,'Genome'),'|')
+                    if adb and group in adb.index('Genome'):
+                        desc = adb.indexDataList('Genome',group,'Description')[0]
+                        self.dict['Alias'][group] = gdb.addEntry({'Prefix': grprefix[group],'Genome':group,'Description': desc})
                 groups = grpdb.index('Group',force=True,log=False)
             ## ~ [2d] Create empty group table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             else:
@@ -2207,7 +2226,10 @@ class BUSCOMP(rje_obj.RJE_Object):
                 for genome in genomes:
                     grpdb.addEntry({'Genome':genome,'Group':'BUSCOMP'})
                 grprefix['BUSCOMP'] = 'AllGenomes'
+                desc = 'All assemblies'
+                group = 'BUSCOMP'
                 self.printLog('#GROUP','Group BUSCOMP added: %d -> %d Genome-Group pairs' % (gx,grpdb.entryNum()))
+                self.dict['Alias'][group] = gdb.addEntry({'Prefix': grprefix[group],'Genome':group,'Description': desc})
                 #grpsave = True
                 #x#gdb.addEntry({'Prefix':'AllGenomes','Genome':'BUSCOMP'})
             ## ~ [2f] Generate Groups dictionary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
@@ -3528,7 +3550,7 @@ class BUSCOMP(rje_obj.RJE_Object):
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             self.headLog('SETUP RMARKDOWN DATA',line='=')
-            statfields = string.split('SeqNum	TotLength	MinLength	MaxLength	MeanLength	MedLength	N50Length	L50Count	NG50Length	LG50Count GapLength	GC')
+            statfields = string.split('SeqNum TotLength MinLength MaxLength MeanLength MedLength N50Length L50Count CtgNum N50Ctg L50Ctg NG50Length LG50Count GapLength GapCount GC')
             statfields = rje.listIntersect(statfields,self.db('genomes').fields())
             if self.db('ratings'):
                 rdb = self.db().copyTable('ratings','rdata')
@@ -3539,7 +3561,7 @@ class BUSCOMP(rje_obj.RJE_Object):
                 for field in string.split('N Identical	Complete	Single	Duplicated	Fragmented	Partial	Ghost	Missing'):
                     rdb.addField(field,evalue=0)
             iformats = {}
-            for ifield in string.split('SeqNum	TotLength	MinLength	MaxLength	N50Length	L50Count	NG50Length	LG50Count GapLength') + ['UniqBUSCO','UniqBUSCOMP']:
+            for ifield in string.split('SeqNum	TotLength	MinLength	MaxLength	N50Length L50Count CtgNum N50Ctg L50Ctg NG50Length LG50Count GapLength GapCount') + ['UniqBUSCO','UniqBUSCOMP']:
                 iformats[ifield] = 'int'
             for nfield in string.split('MeanLength MedLength GC'):
                 iformats[nfield] = 'num'
@@ -3828,8 +3850,13 @@ library(ggrepel)
             rcode += 'rownames(gentable) = gentable[,1]\n'
             rcode += 'gensum = gentable[! is.na(gentable$N),2:6]\n'
             rcode += 'gensum = gensum[! (gensum$Directory == "" & gensum$Fasta == ""),]\n'
-            rcode += 'genstat = gentable[! is.na(gentable$SeqNum),c(4,9:20)]\n'
-            rcode += 'busco = gentable[,c(4,21:25)]\n'
+            #i# v0.9.4 changes
+            # old statfields = string.split('SeqNum TotLength MinLength MaxLength MeanLength MedLength N50Length L50Count NG50Length LG50Count GapLength GC')
+            # -> statfields = string.split('SeqNum TotLength MinLength MaxLength MeanLength MedLength N50Length L50Count CtgNum N50Ctg L50Ctg NG50Length LG50Count GapLength GapCount GC')
+            #i# Scan number of fields in gentable and pick appropriate field - update to use tidyverse at some point
+            rcode += 'nfield = which(colnames(gentable)=="N")\n'
+            rcode += 'genstat = gentable[! is.na(gentable$SeqNum),c(4,9:nfield-1)]\n'
+            rcode += 'busco = gentable[,c(4,nfield:ncol(gentable))]\n'
             rcode += 'busco$Single = busco$Complete\n'
             rcode += 'busco$Complete = busco$Single + busco$Duplicated\n'
             rcode += 'busco = busco[,c(1,2,4,7,3,5:6)]\n'
@@ -3870,6 +3897,8 @@ library(ggrepel)
                 #!# Make this responsive to max SeqNum: rcode += 'pdata$SeqNum = pdata$SeqNum / 1e3\n'
                 if 'NG50Length' in self.db('genomes').fields():
                     rcode += 'pdata$NG50Length = pdata$NG50Length / 1e6\n'
+                if 'NG50Ctg' in self.db('genomes').fields():
+                    rcode += 'pdata$NG50Ctg = pdata$NG50Ctg / 1e6\n'
                 # Output setup code - want to make individual plots
                 codename = 'plotsetup'
                 rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=8}\n%s\n```\n\n' % (codename,rcode)
@@ -4115,10 +4144,11 @@ library(ggrepel)
     
     '''
                 if fullreport:
+                    rtxt += '\n'
                     rcode = rmd.rmdTable(dbfile,name='buscoseq',codesection=True,loadtable=True,showtable=True,delim='tab',kable=None,rows=10,cols=10)
                     rtxt += rcode
             elif buscompseq:
-                rtxt += 'BUSCOMP ratings for sequences in `%s` are calculated for each assembly:' % self.getStr('BUSCOFas')
+                rtxt += 'BUSCOMP ratings for sequences in `%s` are calculated for each assembly:\n' % self.getStr('BUSCOFas')
                 rtxt += '''
     * `Identical`: 100% coverage and 100% identity in at least one contig/scaffold.
     * `Complete`: 95%+ Coverage in a single contig/scaffold. (Note: accuracy/identity is not considered.)
@@ -4132,7 +4162,7 @@ library(ggrepel)
 
 
             # BUSCOSeq re-rating summaries and charts
-            rtxt += '<a name="BUSCOMP" />\n\n## BUSCOSeq Rating Summary\n\n'
+            rtxt += '\n<a name="BUSCOMP" />\n\n## BUSCOSeq Rating Summary\n\n'
             if buscompseq:
                 dbfile = '%s.ratings.tdt' % idbase
                 rtxt += 'BUSCOMP ratings (see above) are compiled to summary statistics in `%s`. ' % dbfile
@@ -4169,13 +4199,14 @@ library(ggrepel)
                 if groups and fullreport and self.db('buscomp'):
                     rtxt += '<a name="GroupBUSCOMP" />\n\n## Genome Group BUSCOMP charts\n\n'
                     for group in groups:
+                        gnum = len(grpdb.indexDataList('Group',group,'Genome')) + 1
                         codename = '%sbuscompchart' % string.replace(group,' ','')
                         rmd.list['CodeChunks'].append(codename)
                         rcode = ''
                         rcode += '# %s %s\n' % (group,grouprows[group])
                         rcode += 'sumdata = ratings[%s,c(1,5:10)+1]\n' % grouprows[group]
                         rcode += 'buscompSeqPercPlot(sumdata,"%s BUSCOSeq Rating Summary",maketext=%s)\n' % (group,str(fullreport).upper())
-                        rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(len(grouprows[group])/2),rcode)
+                        rtxt += '```{r %s, echo=FALSE, fig.width=12, fig.height=%d}\n%s\n```\n\n' % (codename,2+int(gnum/2),rcode)
 
             else: rtxt += 'No BUSCOSeq Rating analysis (`buscompseq=F`).'
 
@@ -4462,7 +4493,8 @@ missingPlot = function(plotdf,genome){
 
 missingSeqPlot = '''# Function to plot status of missing BUSCOs
 missingSeqPlot = function(plotdf,ratedf,genome){
-    missdf = plotdf[ratedf[[genome]]=="Missing" | ratedf[[genome]]=="NULL" | is.na(ratedf[[genome]]),]
+    misseog = ratedf[ratedf[[genome]]=="Missing" | ratedf[[genome]]=="NULL" | is.na(ratedf[[genome]]),]$BuscoID
+    missdf = plotdf[plotdf$BuscoID %in% misseog,]
     df = data.frame(Genome=colnames(missdf)[-c(1:2)], Complete = 0, Duplicated = 0, Fragmented = 0, Partial = 0, Ghost = 0, Missing = 0, NULL = 0)
     rownames(df) = colnames(missdf)[-c(1:2)] 
     for(gen in colnames(missdf)[-c(1:2)]){
@@ -4495,11 +4527,15 @@ The following genome statistics were also calculated by `RJE_SeqList` for each g
 * **MedLength**: The median length of scaffolds/contigs in the assembly.
 * **N50Length**: At least half of the assembly is contained on scaffolds/contigs of this length or greater.
 * **L50Count**: The smallest number scaffolds/contigs needed to cover half the the assembly.
+* **CtgNum**: Number of contigs (`SeqNum`+`GapCount`).
+* **N50Ctg**: At least half of the assembly is contained on contigs of this length or greater.
+* **L50Ctg**: The smallest number contigs needed to cover half the the assembly.
 * **NG50Length**: At least half of the genome is contained on scaffolds/contigs of this length or greater.
 This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
 * **LG50Count**: The smallest number scaffolds/contigs needed to cover half the the genome.
 This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
 * **GapLength**: The total number of undefined "gap" (`N`) nucleotides in the assembly.
+* **GapCount**: The total number of undefined "gap" (`N`) regions in the assembly.
 * **GC**: The %GC content of the assembly.
 
 '''

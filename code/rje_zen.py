@@ -104,14 +104,10 @@ def setupProgram(): ### Basic Setup of Program
         ### Initial Command Setup & Info ###
         info = makeInfo()
         cmd_list = rje.getCmdList(sys.argv[1:],info=info)      ### Load defaults from program.ini
-        if rje.py3: rje.printf(cmd_list)
         ### Out object ###
-        if rje.py3: rje.printf('>>>')
         out = rje.Out(cmd_list=cmd_list)
-        if rje.py3: rje.printf(out)
         out.verbose(2,2,cmd_list,1)
         out.printIntro(info)
-        if rje.py3: rje.printf('<<<')
         ### Additional commands ###
         cmd_list = cmdHelp(info,out,cmd_list)
         ### Log ###
@@ -428,7 +424,7 @@ def runMain():
     try: [info,out,mainlog,cmd_list] = setupProgram()
     except SystemExit: return  
     except:
-        rje.printf('Unexpected error during program setup:', sys.exc_info()[0])
+        print('Unexpected error during program setup: .{0}'.format(sys.exc_info()[0]))
         return 
         
     ### Rest of Functionality... ###
@@ -442,7 +438,7 @@ def runMain():
 #########################################################################################################################
 if __name__ == "__main__":      ### Call runMain 
     try: runMain()
-    except: rje.printf('Cataclysmic run error: {0}'.format(sys.exc_info()[0]))
+    except: print('Cataclysmic run error: {0}'.format(sys.exc_info()[0]))
     sys.exit()
 #########################################################################################################################
 ### END OF SECTION IV                                                                                                   #

@@ -19,8 +19,8 @@
 """
 Module:       rje
 Description:  Contains SLiMSuite and Sequite General Objects
-Version:      4.22.4
-Last Edit:    28/04/20
+Version:      4.23.0
+Last Edit:    21/08/20
 Copyright (C) 2005  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -170,8 +170,10 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 4.21.1 - Fixed bug where silent=T wasn't running silent.
     # 4.22.0 - Added flist command type that reads file lines as a list, ignoring commas.
     # 4.22.1 - Reformatting for Python3 compatibility.
-    # 4.23.3 - Added highest tied ranking.
-    # 4.23.4 - Added some Python 2.6 back-compatbility for the server.
+    # 4.22.3 - Added highest tied ranking.
+    # 4.22.4 - Added some Python 2.6 back-compatbility for the server.
+    # 4.22.5 - Added checking of glist inputs.
+    # 4.23.0 - Added rje_py2 and rje_py3 code divergence for Python3 compatibility development.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -184,9 +186,12 @@ py3 = False
 jstring = ' '
 try:
     import urllib2 as urllib
+    import rje_py2 as rje_py
 except:
     import urllib.request as urllib
     py3 = True
+    import rje_py3 as rje_py
+    print('>>> Python 3.x detected but not fully supported. Please report odd behaviour <<<')
 try:
    set
 except NameError:
@@ -421,8 +426,14 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
                 globlist = listFromCommand(value)
             self.list[att] = []
             for g in globlist:
+                if not g: continue
                 newg = glob.glob(g); newg.sort()
+                if not newg:
+                    if not '*' in g: self.warnLog('No "{0}" {1} files found'.format(g,arg),warntype='noglob',suppress=True,quitchoice=True)
+                    else: self.warnLog('No "{0}" {1} files found'.format(g,arg),warntype='noglob')
                 self.list[att] += newg
+            if value and not self.list[att]:
+                self.warnLog('{0}=FILES given values but nothing found! Check paths etc.'.format(att),quitchoice=True)
         elif type in ['cdict','cdictlist']:   # Converts a CSV list into a dictionary
             #i# cdictlist also puts the keys (in order) into a list object
             self.dict[att] = {}
@@ -1873,12 +1884,13 @@ class Log(RJE_Object_Shell):
                         self.info['LogFile'] = makePath('{0}/{1}'.format(os.path.abspath(self.info['RunPath']),self.info['LogFile']),wholepath=True)
                     except: self.info['LogFile'] = makePath('{0}/{1}'.format(os.path.abspath(os.curdir),self.info['LogFile']),wholepath=True)
 
-                if '#DATE' in self.info['LogFile']: self.info['LogFile'] = string.replace(self.info['LogFile'],'#DATE',dateTime(dateonly=True))
+                if '#DATE' in self.info['LogFile']: self.info['LogFile'] = replace(self.info['LogFile'],'#DATE',dateTime(dateonly=True))
                 if self.opt['NewLog']:
                     self.verbose(0,2,'Make new file: {0}'.format(self.info['LogFile']),2)
                     if checkForFile(self.info['LogFile']): os.unlink(self.info['LogFile'])
                 else: self.verbose(0,2,'Append file: {0}'.format(self.info['LogFile']),2)
                 self.info['LogFile'] = os.path.abspath(self.info['LogFile'])
+            #if py3: self.warnLog('Python 3.x detected but not fully supported. Please report odd behaviour.')
             ### ~ [3] ErrorLog File details ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.info['ErrorLog'].lower() not in ['','none']:
                 logfile = self.info['ErrorLog'].encode('ascii', 'ignore').decode('ascii')
@@ -1971,7 +1983,8 @@ class Log(RJE_Object_Shell):
                 if error: sys.stderr.write('{0}\n'.format(text))
                 elif self.opt['WarnAsErr'] and logid == '#WARN': sys.stderr.write('{0}\n'.format(text))
             #!# This line should be performed when log file is set and then warn! #!#
-            logfile = logfile.encode('ascii', 'ignore').decode('ascii')
+            if logfile:
+                logfile = logfile.encode('ascii', 'ignore').decode('ascii')
             text = text.encode('ascii', 'replace').decode('ascii')
             if logfile and log:
                 LOGOUT = open(str(logfile),'a')
@@ -2047,7 +2060,7 @@ class Log(RJE_Object_Shell):
                     self.verbose(-1,4,'{0}: {1}\nFile: {2}\nMethod: {3} (line {4})\nError: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
                 os._exit(1)
             elif printerror and error_type not in ['KeyboardInterrupt']:
-                self.verbose(1,1,'{0}: {1}\nFile: {2}\nMethod: {3} (line {4})\nError: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
+                self.verbose(2,1,'{0}: {1}\nFile: {2}\nMethod: {3} (line {4})\nError: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),2,stderr=True)
                 if self.dev(): self.printLog('#DEV','{0}: {1};| File: {2};| Method: {3} (line {4});| Error: {5}'.format(error_type, error_value, error_file, error_method, error_line, error_error),log=log)
         except SystemExit: os._exit(1)      #!# Why is this no longer working? #!#
         except KeyboardInterrupt: os._exit(0)
@@ -2218,7 +2231,7 @@ class Out(RJE_Object_Shell):
         while len(line[0]) < maxlen: line[0] = line[0] + '#'
         line[0] = line[0] + '#####\n'
         ## Sort out end of lines
-        while len(line[2]) < len(line[1]): line[2] = string.replace(line[2],'<#~','<#~~')
+        while len(line[2]) < len(line[1]): line[2] = replace(line[2],'<#~','<#~~')
         for i in range(1,len(line)):
             while len(line[i]) < maxlen: line[i] = line[i] + ' '
             line[i] = line[i] + ' <#|#\n'
@@ -2280,7 +2293,7 @@ class UserExit(Exception):
 ##  General Module Functions                                                                                           ##
 #########################################################################################################################
 if __name__ == "__main__":
-    printf("This module is not for standalone running!")
+    rje_py.printf("This module is not for standalone running!")
     os._exit(0)
 #########################################################################################################################
 def objtype(obj): ### Returns the type of obj as string
@@ -2429,10 +2442,10 @@ def memoryUse(who=None): ### Returns memory usage in kb
 #########################################################################################################################
 ### String Functions                                                                                                    #
 #########################################################################################################################
-def strList(inlist):    ### Converts list to string list
-    outlist = []
-    for el in inlist: outlist.append(str(el))
-    return outlist
+# def strList(inlist):    ### Converts list to string list
+#     outlist = []
+#     for el in inlist: outlist.append(str(el))
+#     return outlist
 #########################################################################################################################
 def fixASCII(text,error='replace'): ### Converts non-ASCII string to ASCII
     return text.decode('ascii','replace').encode('ascii',error)
@@ -2527,7 +2540,7 @@ def strReplace(strtext,deltext,newtext='',case_sens=True,allocc=False,max=1): ##
 #########################################################################################################################
 def strEscape(text,charlist):   ### Adds escape \ characters in front of charlist
     '''Adds escape \ characters in front of charlist.'''
-    for x in charlist: text = string.replace(text,x,'\\%s' % x)
+    for x in charlist: text = replace(text,x,'\\%s' % x)
     return text
 #########################################################################################################################
 def strReverse(text):   ### Returns reversed string
@@ -2602,15 +2615,17 @@ def shuffleString(instr):   ### Returns a randomly shuffled version of input str
 #########################################################################################################################
 def stringStrip(instr,striplist):   ### Returns string with striplist strings removed
     '''Returns string with striplist strings removed.'''
-    for x in striplist: instr = string.replace(instr,x,'')
+    for x in striplist: instr = replace(instr,x,'')
     return instr
 #########################################################################################################################
 def fileSafeString(instr,replacestr=''):  ### Returns a string that is safe for file names
     '''Returns a string that is safe for file names.'''
-    for x in ['/','\\','?','%','*',':','|','"','>','<']: instr = string.replace(instr,x,replacestr)
+    for x in ['/','\\','?','%','*',':','|','"','>','<']: instr = replace(instr,x,replacestr)
     return instr
 #########################################################################################################################
 def md5hash(instr): return hashlib.md5(instr).hexdigest()
+#########################################################################################################################
+def replace(instr,oldstr,newstr): return instr.replace(oldstr,newstr)
 #########################################################################################################################
 ### End of String Functions                                                                                             #
 #########################################################################################################################
@@ -2736,21 +2751,7 @@ def errorMsg(): ### Prints error message to screen and asks for death
     if yesNo('Kill me now?'): os._exit(1)
 #########################################################################################################################
 def printf(text,newline=True):    ### Python backwards-compatible print function
-    '''Python backwards-compatible print function.'''
-    if py3:
-        if newline:
-            try: print(text) #,flush=True)  -> Had to be commented for Py2 syntax.
-            except: print text
-        else:
-            try: print(text) #, end=' ', flush=True)
-            except: print text,
-    else:
-        if newline:
-            try: print text
-            except: print(text)
-        else:
-            try: print text,
-            except: print(text),
+    return rje_py.printf(text,newline)
 #########################################################################################################################
 ### End of User Input Functions                                                                                         #
 #########################################################################################################################
@@ -2884,9 +2885,9 @@ def formula(callobj=None,formula='',data={},varlist=[],operators=[],check=False,
         else: varlist = list(vardict.keys())
                 
         ### Setup formula list ###
-        for left in ['[','{']: formula = string.replace(formula,left,'(')
-        for right in [']','}']: formula = string.replace(formula,right,')')
-        for op in oplist: formula = string.replace(formula,op,',%s,' % op).lower()
+        for left in ['[','{']: formula = replace(formula,left,'(')
+        for right in [']','}']: formula = replace(formula,right,')')
+        for op in oplist: formula = replace(formula,op,',%s,' % op).lower()
         formula = '(,{0},)'.format(formula).split(',')
         while formula.count('') > 0: formula.remove('')
         if formula.count('(') != formula.count(')'):
@@ -3468,9 +3469,9 @@ def sortUnique(inlist,xreplace=True,num=False): ### Returns sorted unique list: 
         if num: raise ValueError    # Trigger simple sorting
         repdict = {}
         for i in inlist:
-            j = string.replace(i,'_','')     # Underscores are invisible to UNIX sort
+            j = replace(i,'_','')     # Underscores are invisible to UNIX sort
             if xreplace:  # Special sort with . replaced by x
-                repdict[string.replace(j,'.','x').upper()] = i
+                repdict[replace(j,'.','x').upper()] = i
             else: repdict[j.upper()] = i
     except:
         repdict = {}
@@ -4142,7 +4143,7 @@ def getDelimit(cmd_list=[],default='\t'):   ### Returns delimit from command lis
     delimit = default
     for cmd in cmd_list:
         if cmd.find('delimit=') == 0:
-            delimit = string.replace(cmd[len('delimit='):],'\\t','\t')
+            delimit = replace(cmd[len('delimit='):],'\\t','\t')
     if delimit.lower() == 'tab': delimit = '\t'
     return delimit
 #########################################################################################################################
@@ -4359,7 +4360,7 @@ def dataDict(callobj,filename,mainkeys=[],datakeys=[],delimit=None,headers=[],ge
                 if mainkey not in datadict: datadict[mainkey] = {}
                 elif not lists:
                     warnx += 1
-                    if warnx <= 10: warn10.append(string.replace(mainkey,'\t',','))
+                    if warnx <= 10: warn10.append(replace(mainkey,'\t',','))
                     if debug: callobj.deBug('Dup: %s' % mainkey)
                 if debug: callobj.deBug('!!!%s' % datadict)
                 ## Other Data ##
@@ -4517,7 +4518,6 @@ def getCmdList(argcmd,info=None):   ### Converts arguments into list of commands
             rjepath = makePath(os.path.split(os.path.expanduser(sys.argv[0]))[0]); path = rjepath
             if server: argcmd = longCmd(iniCmds(rjepath,'defaults.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,defaults,iowarning=False,info=info),info) + argcmd
             else: argcmd = longCmd(iniCmds(rjepath,'defaults.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,'rje.ini',iowarning=False,info=info),info) + longCmd(iniCmds(rjepath,defaults,iowarning=False,info=info),info) + argcmd
-            if py3: printf('<<<')
     except:
         printf('#ERR\tMajor error in getCmdList() looking for defaults:', sys.exc_info()[0])
         errorMsg()
@@ -4574,6 +4574,7 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
         if printlog:
             log.printLog('#~~#','#~~#',timeout=False,screen=False)
             log.printLog('#LOG','Activity Log for {0} V{1}: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
+            if py3: log.warnLog('Python 3.x detected but not fully supported. Please report odd behaviour.')
             log.printLog('#DIR','Run from directory: {0}'.format(os.path.abspath(os.curdir)),screen=False)
             log.printLog('#ARG','Commandline arguments: {0}'.format(jstring.join(argcmd)),screen=False)
             #log.printLog('#CMD','Program arguments: %s' % jstring.join(cmd_list),screen=False)

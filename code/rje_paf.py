@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.10.2
-Last Edit:    28/04/20
+Version:      0.10.3
+Last Edit:    31/08/20
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -121,6 +121,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.10.0 - Added longreadMinimapPAF() and checkpos=TDTFILE options.
     # 0.10.1 - Added spanid=X: Generate sets of read IDs that span checkpos regions, based on values of field X []
     # 0.10.2 - Fixed formatting for Python 2.6 back compatibility for servers.
+    # 0.10.3 - Fixing issues of PAF files not being generated.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -153,7 +154,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.10.2', 'April 2020', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_PAF', '0.10.3', 'August 2020', '2019')
     description = 'Minimap2 PAF parser and converter'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -2479,7 +2480,9 @@ class PAF(rje_obj.RJE_Object):
                     maprun = '{0} -t {1} --secondary=no -o {2}.paf -L -x map-{3} {4} {5}'.format(paf.getStr('Minimap2'),self.threads(),prefix,rtype,self.getStr('SeqIn'),readfile)
                     logline = self.loggedSysCall(maprun,maplog,append=False)
                     #!# Add check that run has finished #!#
-                    paflist.append('{0}.paf'.format(prefix))
+                    rpfile = '{0}.paf'.format(prefix)
+                    if not rje.exists(rpfile): raise IOError('Minimap2 output not found: {0}'.format(rpfile))
+                    paflist.append(rpfile)
 
             ### ~ [3] ~ Merge individual BAM files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
                 if len(paflist) > 1:
@@ -2492,8 +2495,8 @@ class PAF(rje_obj.RJE_Object):
 
             return paffile
         except:
-            self.errorLog('PAF.longreadMinimapPAF() error')
-            return None
+            self.errorLog('PAF.longreadMinimapPAF() error'); raise
+            #return None
 #########################################################################################################################
     def longreadMPileup(self): return self.longreadMinimapBAM()
     def longreadMinimapBAM(self):  ### Performs long read versus assembly minimap2 and to converts BAM

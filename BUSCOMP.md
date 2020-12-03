@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compiler and Comparison tool
 
 ```
-BUSCOMP v0.9.3
+BUSCOMP v0.9.7
 ```
 
 For a better rendering and navigation of this document, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -324,11 +324,15 @@ following statistics are calculated for each genome:
 * **MedLength**: The median length of scaffolds/contigs in the assembly.
 * **N50Length**: At least half of the assembly is contained on scaffolds/contigs of this length or greater.
 * **L50Count**: The smallest number scaffolds/contigs needed to cover half the the assembly.
+* **CtgNum**: Number of contigs (`SeqNum`+`GapCount`).
+* **N50Ctg**: At least half of the assembly is contained on contigs of this length or greater.
+* **L50Ctg**: The smallest number contigs needed to cover half the the assembly.
 * **NG50Length**: At least half of the genome is contained on scaffolds/contigs of this length or greater.
 This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
 * **LG50Count**: The smallest number scaffolds/contigs needed to cover half the the genome.
 This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
 * **GapLength**: The total number of undefined "gap" (`N`) nucleotides in the assembly.
+* **GapCount**: The total number of undefined "gap" (`N`) regions above mingap=X (default 10bp).
 * **GC**: The %GC content of the assembly.
 
 **NOTE:** `NG50Length` and `LG50Count` statistics use `genomesize=X` or the biggest assembly loaded.

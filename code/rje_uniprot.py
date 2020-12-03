@@ -107,7 +107,11 @@ Uses RJE modules: rje, rje_db, rje_sequence
 #########################################################################################################################
 ### SECTION I: GENERAL SETUP & PROGRAM DETAILS                                                                          #
 #########################################################################################################################
-import glob, os, re, string, sys, time, urllib2
+import glob, os, re, string, sys, time
+try:
+    import urllib2 as urllib2
+except:
+    import urllib.request as urllib2
 #########################################################################################################################
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'../libraries/'))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'../tools/'))
@@ -216,7 +220,7 @@ def cmdHelp(info=None,out=None,cmd_list=[]):   ### Prints *.__doc__ and asks for
         if not out: out = rje.Out()
         helpx = cmd_list.count('help') + cmd_list.count('-help') + cmd_list.count('-h')
         if helpx > 0:
-            print '\n\nHelp for %s %s: %s\n' % (info.program, info.version, time.asctime(time.localtime(info.start_time)))
+            print('\n\nHelp for %s %s: %s\n' % (info.program, info.version, time.asctime(time.localtime(info.start_time))))
             out.verbose(-1,4,text=__doc__)
             if rje.yesNo('Show general commandline options?',default='N'): out.verbose(-1,4,text=rje.__doc__)
             if rje.yesNo('Quit?'): sys.exit()
@@ -225,7 +229,7 @@ def cmdHelp(info=None,out=None,cmd_list=[]):   ### Prints *.__doc__ and asks for
         return cmd_list
     except SystemExit: sys.exit(0)
     except KeyboardInterrupt: sys.exit()
-    except: print 'Major Problem with cmdHelp()'
+    except: print('Major Problem with cmdHelp()')
 #########################################################################################################################
 def setupProgram(): ### Basic Setup of Program
     '''
@@ -252,7 +256,7 @@ def setupProgram(): ### Basic Setup of Program
     except SystemExit: sys.exit(0)
     except KeyboardInterrupt: sys.exit()
     except:
-        print 'Problem during initial setup.'
+        print('Problem during initial setup.')
         raise
 #########################################################################################################################
 ### END OF SECTION I                                                                                                    #
@@ -265,7 +269,7 @@ def setupProgram(): ### Basic Setup of Program
 #########################################################################################################################
 ### UniProt Parsing dictionary: Add crucial information to parse out here. Used by UniProtEntry.process()   ###
 uniparse = {
-    'ID' : string.join(['^(\S+)','(\S.+);','(\d+)\s+(AA|BP)'], '\s+'),    # ID, Type, Length
+    'ID' : '\s+'.join(['^(\S+)','(\S.+);','(\d+)\s+(AA|BP)']),    # ID, Type, Length
     'AC' : '(\S+);',     # Primary Acc
     'DE' : '\s*(\S.+)',  # Description
     'GN' : 'Name=(\S+);?',   # Gene Name
@@ -277,7 +281,7 @@ uniparse = {
     'RC' : 'TISSUE=(.+);',  # Tissue(s)
     'DR' : '^(\S+);\s+(\S.+)$',  # Database links (Dbase,Details)
     'CC' : '^-!-\s+(\S.+):\s+(\S.+)$',  # Comments (Type, Details)
-    'FT' : string.join(['(\S+)','<*(\d+)','>*(\d+)\.*','(\S.+)\s*$'], '\s+')   # Feature type, start, stop, desc
+    'FT' : '\s+'.join(['(\S+)','<*(\d+)','>*(\d+)\.*','(\S.+)\s*$'])   # Feature type, start, stop, desc
     }
 #########################################################################################################################
 useful_data = ['ID','AC','DE','GN','OS','OC','OX','RX','CC','DR','RC','KW','FT']     # Data to retain following parsing # ?? #
@@ -2853,7 +2857,7 @@ class UniProtEntry(rje.RJE_Object):
             if not seq:
                 seq = self.obj['Sequence']
             if not seq:
-                raise ValueError, 'No sequence information given'
+                raise ValueError('No sequence information given')
             self.obj['Sequence'] = seq
 
             ### Update self ###
@@ -3481,7 +3485,7 @@ def runMain():
     try: [info,out,mainlog,cmd_list] = setupProgram()
     except SystemExit: return  
     except:
-        print 'Unexpected error during program setup:', sys.exc_info()[0]
+        print('Unexpected error during program setup:', sys.exc_info()[0])
         return
         
     ### Rest of Functionality... ###
@@ -3498,7 +3502,7 @@ def runMain():
 #########################################################################################################################
 if __name__ == "__main__":      ### Call runMain 
     try: runMain()
-    except: print 'Cataclysmic run error:', sys.exc_info()[0]
+    except: print('Cataclysmic run error: {0}'.format(sys.exc_info()[0]))
     sys.exit()
 #########################################################################################################################
 ### END OF SECTION V                                                                                                    #

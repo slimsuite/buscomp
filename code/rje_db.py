@@ -19,8 +19,8 @@
 """
 Module:       rje_db
 Description:  R Edwards Relational Database module
-Version:      1.9.3
-Last Edit:    13/01/20
+Version:      1.10.0
+Last Edit:    21/08/20
 Copyright (C) 2007  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -83,6 +83,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.9.1 - Updated logging of adding/removing fields: default is now when debugging only.
     # 1.9.2 - Tweaked entrySummary - added collapse=True.
     # 1.9.3 - Added highest tied ranking.
+    # 1.10.0 - Initial Python3 code conversion.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -101,7 +102,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo():     ### Makes Info object
     '''Makes rje.Info object for program.'''
-    (program, version, last_edit, copy_right) = ('RJE_DB', '1.9.3', 'January 2020', '2008')
+    (program, version, last_edit, copy_right) = ('RJE_DB', '1.10.0', 'August 2020', '2008')
     description = 'R Edwards Relational Database module'
     author = 'Dr Richard J. Edwards.'
     comments = ['Please report bugs to Richard.Edwards@UNSW.edu.au']
@@ -114,7 +115,7 @@ def cmdHelp(info=None,out=None,cmd_list=[]):   ### Prints *.__doc__ and asks for
         if not out: out = rje.Out()
         helpx = cmd_list.count('help') + cmd_list.count('-help') + cmd_list.count('-h')
         if helpx > 0:
-            print '\n\nHelp for %s %s: %s\n' % (info.program, info.version, time.asctime(time.localtime(info.start_time)))
+            print('\n\nHelp for %s %s: %s\n' % (info.program, info.version, time.asctime(time.localtime(info.start_time))))
             out.verbose(-1,4,text=__doc__)
             if rje.yesNo('Show general commandline options?','N'): out.verbose(-1,4,text=rje.__doc__)
             if rje.yesNo('Quit?'): sys.exit()
@@ -123,7 +124,7 @@ def cmdHelp(info=None,out=None,cmd_list=[]):   ### Prints *.__doc__ and asks for
         return cmd_list
     except SystemExit: sys.exit()
     except KeyboardInterrupt: sys.exit()
-    except: print 'Major Problem with cmdHelp()'
+    except: print('Major Problem with cmdHelp()')
 #########################################################################################################################
 def setupProgram(): ### Basic Setup of Program
     '''
@@ -148,7 +149,7 @@ def setupProgram(): ### Basic Setup of Program
     except SystemExit: sys.exit()
     except KeyboardInterrupt: sys.exit()
     except:
-        print 'Problem during initial setup.'
+        print('Problem during initial setup.')
         raise
 #########################################################################################################################
 ### END OF SECTION I                                                                                                    #
@@ -1377,8 +1378,8 @@ class Table(rje.RJE_Object):
                     elif evalue != None: data[fieldname] = evalue
                     else: data[fieldname] = ''
                 except:
-                    print self.dict['Data']
-                    print data, fieldname; raise
+                    print(self.dict['Data'])
+                    print(data, fieldname); raise
             if after and after in self.list['Fields']: self.list['Fields'].insert(self.list['Fields'].index(after)+1,fieldname)
             else: self.list['Fields'].append(fieldname)
             if log: self.printLog('\r#FIELD','Added field "%s" to table "%s"' % (fieldname,self.info['Name']))
@@ -2019,10 +2020,10 @@ def runMain():
     try: [info,out,mainlog,cmd_list] = setupProgram()
     except SystemExit: return  
     except:
-        print 'Unexpected error during program setup:', sys.exc_info()[0]
+        print('Unexpected error during program setup:', sys.exc_info()[0])
         return 
     ### ~ [2] ~ Rest of Functionality... ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    try: print '\n\n *** No standalone functionality! *** \n\n'
+    try: print('\n\n *** No standalone functionality! *** \n\n')
     ### ~ [3] ~ End ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     except SystemExit: return  # Fork exit etc.
     except KeyboardInterrupt: mainlog.errorLog('User terminated.')
@@ -2031,7 +2032,7 @@ def runMain():
 #########################################################################################################################
 if __name__ == "__main__":      ### Call runMain 
     try: runMain()
-    except: print 'Cataclysmic run error:', sys.exc_info()[0]
+    except: print('Cataclysmic run error: {0}'.format(sys.exc_info()[0]))
     sys.exit()
 #########################################################################################################################
 ### END OF SECTION IV                                                                                                   #

@@ -11,7 +11,7 @@
 
 <meta name="author" content="Richard J. Edwards" />
 
-<meta name="date" content="2020-04-20" />
+<meta name="date" content="2020-12-03" />
 
 <title>BUSCOMP Documentation</title>
 
@@ -1729,7 +1729,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Documentation</h1>
 <h4 class="author">Richard J. Edwards</h4>
-<h4 class="date">2020-04-20</h4>
+<h4 class="date">2020-12-03</h4>
 
 </div>
 
@@ -1918,9 +1918,13 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <li><strong>MedLength</strong>: The median length of scaffolds/contigs in the assembly.</li>
 <li><strong>N50Length</strong>: At least half of the assembly is contained on scaffolds/contigs of this length or greater.</li>
 <li><strong>L50Count</strong>: The smallest number scaffolds/contigs needed to cover half the the assembly.</li>
+<li><strong>CtgNum</strong>: Number of contigs (<code>SeqNum</code>+<code>GapCount</code>).</li>
+<li><strong>N50Ctg</strong>: At least half of the assembly is contained on contigs of this length or greater.</li>
+<li><strong>L50Ctg</strong>: The smallest number contigs needed to cover half the the assembly.</li>
 <li><strong>NG50Length</strong>: At least half of the genome is contained on scaffolds/contigs of this length or greater. This is based on <code>genomesize=X</code>. If no genome size is given, it will be relative to the biggest assembly.</li>
 <li><strong>LG50Count</strong>: The smallest number scaffolds/contigs needed to cover half the the genome. This is based on <code>genomesize=X</code>. If no genome size is given, it will be relative to the biggest assembly.</li>
 <li><strong>GapLength</strong>: The total number of undefined “gap” (<code>N</code>) nucleotides in the assembly.</li>
+<li><strong>GapCount</strong>: The total number of undefined “gap” (<code>N</code>) regions above mingap=X (default 10bp).</li>
 <li><strong>GC</strong>: The %GC content of the assembly.</li>
 </ul>
 <p><strong>NOTE:</strong> <code>NG50Length</code> and <code>LG50Count</code> statistics use <code>genomesize=X</code> or the biggest assembly loaded. If BUSCOMP has been run more than once on the same data (<em>e.g.</em> to update descriptions or sorting), previously calculates statistics will be read from the <code>genomes=FILE</code> table, if loaded. This may cause some inconsistencies between reported NG50 and LG50 values and the given/calculated <code>genomesize=X</code>. If partial results are reloaded following a change in <code>genomesize=X</code>, this will give rise to inconsistencies between assemblies. When re-running, please make sure that a consistent genome size is used. If in doubt, run with <code>force=T</code> and force regeneration of statistics.</p>

@@ -35,6 +35,10 @@ Function:
 
     NOTE: Running the above generates a `*.html` file in the same place as the `*.Rmd` file (not the run directory).
 
+    NOTE: For HTML output, R must be installed and a pandoc environment variable must be set, e.g.
+
+        export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc
+
 Commandline:
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###

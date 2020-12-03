@@ -616,6 +616,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                     if not '*' in g: self.warnLog('No "%s" %s files found' % (g,arg),warntype='noglob',suppress=True,quitchoice=True)
                     else: self.warnLog('No "%s" %s files found' % (g,arg),warntype='noglob')
                 self.list[att] += newg
+            if value and not self.list[att]:
+                self.warnLog('{0}=FILES given values but nothing found! Check paths etc.'.format(att),quitchoice=True)
         elif type in ['cdict','cdictlist']:   # Converts a CSV list into a dictionary
             self.dict[att] = {}
             if type == 'cdictlist': self.list[att] = []
