@@ -19,8 +19,8 @@
 """
 Module:       rje_forker
 Description:  Generic RJE Forking Module
-Version:      0.0.2
-Last Edit:    28/04/20
+Version:      0.1.0
+Last Edit:    10/12/20
 Copyright (C) 2013  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -38,6 +38,7 @@ Commandline:
     noforks=T/F     : Whether to avoid forks [False]
     forks=X         : Number of parallel sequences to process at once [0]
     killforks=X     : Number of seconds of no activity before killing all remaining forks. [36000]
+    killmain=T/F    : Whether to kill main thread rather than individual forks when killforks reached. [True]
     forksleep=X     : Sleep time (seconds) between cycles of forking out more process [0]
     rjepy=T/F       : Whether forked commands are rje Python commands [False]
     logfork=T/F     : Whether to log forking in main log [True]
@@ -59,6 +60,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.0.0 - Initial Compilation.
     # 0.0.1 - Tweaked the logfork=F log forking output.
     # 0.0.2 - Fixed formatting for Python 2.6 back compatibility for servers.
+    # 0.1.0 - Added killmain=T/F    : Whether to kill main thread rather than individual forks when killforks reached. [True]
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -71,7 +73,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('rje_forker', '0.0.2', 'April 2020', '2013')
+    (program, version, last_edit, copy_right) = ('rje_forker', '0.1.0', 'December 2020', '2013')
     description = 'Generic RJE Forking Module'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -143,6 +145,7 @@ class Forker(rje_obj.RJE_Object):
     Num:float
     - ForkSleep = Sleep time (seconds) between cycles of forking out more process [0]
     - KillForks = Time to monitor for killing of hanging forks [36000]
+    - KillMain=T/F    : Whether to kill main thread rather than individual forks when killforks reached. [True]
     - KillTime = Monitors start of time period to be assessed for hanging forks [time.time()]
     - MemFree = Minimum % memory that should be free to start new fork. (Not yet implemented.)
 
@@ -162,7 +165,7 @@ class Forker(rje_obj.RJE_Object):
         '''Sets Attributes of Object.'''
         ### ~ Basics ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self.strlist = []
-        self.boollist = ['PIDCheck','RjePy','LogFork']
+        self.boollist = ['PIDCheck','RjePy','LogFork','KillMain']
         self.intlist = ['IOLimit']
         self.numlist = ['MemFree','ForkSleep','KillForks','KillTime']
         self.listlist = ['ToFork','Forked','ResFile']
@@ -171,11 +174,23 @@ class Forker(rje_obj.RJE_Object):
         ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True)
         self.setStr({})
-        self.setBool({'RjePy':False,'LogFork':True})
+        self.setBool({'RjePy':False,'LogFork':True,'KillMain':True})
         self.setInt({'IOLimit':50})
         self.setNum({'MemFree':0.0,'ForkSleep':0.0,'KillForks':36000,'KillTime':time.time()})
         ### ~ Other Attributes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setForkAttributes()   # Delete if no forking
+#########################################################################################################################
+    def _setForkerAttributes(self):   ### Sets additional Forkter Attributes of Object
+        '''Sets Attributes of Object.'''
+        ### ~ Basics ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        self.boollist += ['PIDCheck','RjePy','LogFork','KillMain']
+        self.intlist += ['IOLimit']
+        self.numlist += ['MemFree','ForkSleep','KillForks','KillTime']
+        self.listlist += ['ToFork','Forked','ResFile']
+        ### ~ Defaults ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        self.setBool({'RjePy':False,'LogFork':True,'KillMain':True})
+        self.setInt({'IOLimit':50})
+        self.setNum({'MemFree':0.0,'ForkSleep':0.0,'KillForks':36000,'KillTime':time.time()})
 #########################################################################################################################
     def _cmdList(self):     ### Sets Attributes from commandline
         '''
@@ -191,7 +206,7 @@ class Forker(rje_obj.RJE_Object):
                 #self._cmdReadList(cmd,'str',['Att'])   # Normal strings
                 self._cmdReadList(cmd,'path',['ForkDir'])  # String representing directory path 
                 #self._cmdReadList(cmd,'file',['Att'])  # String representing file path 
-                self._cmdReadList(cmd,'bool',['LogFork','PIDCheck','RjePy'])  # True/False Booleans
+                self._cmdReadList(cmd,'bool',['KillMain','LogFork','PIDCheck','RjePy'])  # True/False Booleans
                 self._cmdReadList(cmd,'int',['IOLimit'])   # Integers
                 self._cmdReadList(cmd,'float',['MemFree','ForkSleep','KillForks']) # Floats
                 #self._cmdReadList(cmd,'min',['Att'])   # Integer value part of min,max command
@@ -201,6 +216,24 @@ class Forker(rje_obj.RJE_Object):
                 #self._cmdReadList(cmd,'glist',['Att']) # List of files using wildcards and glob
                 #self._cmdReadList(cmd,'cdict',['Att']) # Splits comma separated X:Y pairs into dictionary
                 #self._cmdReadList(cmd,'cdictlist',['Att']) # As cdict but also enters keys into list
+            except: self.errorLog('Problem with cmd:%s' % cmd)
+        if self.parent(): self.baseFile(self.parent().baseFile()) # Set basefile to be the same as parent object
+        if self.getNum('MemFree') > 0.0 and self.getBool('Win32'): self.warnLog('Cannot use memfree=X in win32 mode')
+        if self.getNum('MemFree') > 0.0 and self.getBool('OSX'): self.warnLog('Cannot use memfree=X in win32 mode')
+        self.int['IOError'] = self.int['IOLimit']
+#########################################################################################################################
+    def _forkerCmd(self):     ### Sets additional Forker Attributes from commandline
+        '''
+        Sets attributes according to commandline parameters:
+        - see .__doc__ or run with 'help' option
+        '''
+        for cmd in self.cmd_list:
+            try:
+                self._cmdReadList(cmd,'path',['ForkDir'])  # String representing directory path
+                self._cmdReadList(cmd,'bool',['KillMain','LogFork','PIDCheck','RjePy'])  # True/False Booleans
+                self._cmdReadList(cmd,'int',['IOLimit'])   # Integers
+                self._cmdReadList(cmd,'float',['MemFree','ForkSleep','KillForks']) # Floats
+                self._cmdReadList(cmd,'list',['ToFork'])  # List of strings (split on commas or file lines)
             except: self.errorLog('Problem with cmd:%s' % cmd)
         if self.parent(): self.baseFile(self.parent().baseFile()) # Set basefile to be the same as parent object
         if self.getNum('MemFree') > 0.0 and self.getBool('Win32'): self.warnLog('Cannot use memfree=X in win32 mode')
@@ -261,9 +294,10 @@ class Forker(rje_obj.RJE_Object):
                 self.verbose(0,1,'\n%d seconds of main thread inactivity. %d forks still active!' % (self.getNum('KillForks'),len(self.list['Forked'])),1)
                 for fdict in self.list['Forked']:
                     self.verbose(0,2,' => Fork %s, PID %d still Active!' % (fdict['ID'],fdict['PID']),1)
-                if self.i() < 0 or rje.yesNo('Kill Main Thread?'):
+                if (self.i() < 0 and self.getBool('KillMain')) or rje.yesNo('Kill Main Thread?',default={True:'N',False:'Y'}[self.getBool('KillMain')]):
                     raise ValueError('%d seconds of main thread inactivity. %d forks still active!' % (self.getNum('KillForks'),len(self.list['Forked'])))
-                elif rje.yesNo('Kill hanging forks?'):
+                elif self.i() < 0 or rje.yesNo('Kill hanging forks?'):
+                    self.printLog('#KILL','KillForks=%d seconds walltime reached.' % (self.getNum('KillForks')))
                     for fdict in self.list['Forked']:
                         self.printLog('#KILL','Killing Fork %s, PID %d.' % (fdict['ID'],fdict['PID']))
                         os.system('kill %d' % fdict['PID'])
@@ -290,7 +324,7 @@ class Forker(rje_obj.RJE_Object):
         '''Sets a new fork going using the data in fdict.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             fdict['cmd'] = self.list['ToFork'].pop(0)
-            fdict['ID'] = 'Fork %d' % self.list['Forked'].index(fdict)
+            fdict['ID'] = 'Fork -%d' % (len(self.list['ToFork'])+1)
             fdict['FID'] = 'f_%s' % rje.randomString(6)
             if self.getBool('RjePy'):
                 fdict['Log'] = '%s%s.log' % (self.getStr('RunPath'),fdict['FID'])
@@ -319,7 +353,9 @@ class Forker(rje_obj.RJE_Object):
                     fromfile = '%s.%s' % (fdict['FID'],resfile)
                     if not rje.exists(fromfile): continue #self.warnLog('Results file %s missing!' % fromfile); continue
                     tofile = '%s.%s' % (self.baseFile(),resfile)
-                    if rje.exists(tofile): open(tofile,'a').writelines(open(fromfile,'r').readlines()[1:])
+                    if rje.exists(tofile):
+                        open(tofile,'a').writelines(open(fromfile,'r').readlines()[1:])
+                        os.unlink(fromfile)
                     else: rje.fileTransfer(fromfile,tofile)
             if 'Log' in fdict:
                 if 'cmd' in fdict:

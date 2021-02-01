@@ -386,6 +386,25 @@ class Rmd(rje_obj.RJE_Object):
 #########################################################################################################################
 ### SECTION III: MODULE METHODS                                                                                         #
 #########################################################################################################################
+def docHTML(self):  ### Generate Rmd and HTML documents from main run() method docstring.
+    '''Generate Rmd and HTML documents from main run() method docstring.'''
+    try:### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+        info = self.log.obj['Info']
+        if not self.getStrLC('Basefile'): self.baseFile(info.program.lower())
+        prog = '%s V%s' % (info.program,info.version)
+        rmd = Rmd(self.log,self.cmd_list)
+        rtxt = rmd.rmdHead(title='%s Documentation' % prog,author='Richard J. Edwards',setup=True)
+        #!# Replace this with documentation text?
+        rtxt += string.replace(self.run.__doc__,'\n        ','\n')
+        rtxt += '\n\n<br>\n<small>&copy; 2021 Richard Edwards | richard.edwards@unsw.edu.au</small>\n'
+        rmdfile = '%s.docs.Rmd' % self.baseFile()
+        open(rmdfile,'w').write(rtxt)
+        self.printLog('#RMD','RMarkdown %s documentation output to %s' % (prog,rmdfile))
+        rmd.rmdKnit(rmdfile)
+    except:
+        self.errorLog(self.zen())
+        raise   # Delete this if method error not terrible
+#########################################################################################################################
 headTest = '''---
 title: "RJE_RMD"
 author: "Rich Edwards"

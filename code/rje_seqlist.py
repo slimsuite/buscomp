@@ -19,8 +19,8 @@
 """
 Module:       rje_seqlist
 Description:  RJE Nucleotide and Protein Sequence List Object (Revised)
-Version:      1.45.1
-Last Edit:    13/10/20
+Version:      1.45.2
+Last Edit:    14/12/20
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -243,6 +243,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.44.0 - Added some additional parsing of common sequence formats from rje_sequence: need to expand.
     # 1.45.0 - Modified the newDesc() method for updating descriptions.
     # 1.45.1 - Added CtgNum to output stats.
+    # 1.45.2 - Slight increase of gap extraction speed.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -266,7 +267,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('SeqList', '1.45.1', 'October 2020', '2011')
+    (program, version, last_edit, copy_right) = ('SeqList', '1.45.2', 'December 2020', '2011')
     description = 'RJE Nucleotide and Protein Sequence List Object (Revised)'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_zen.Zen().wisdom()]
@@ -1038,7 +1039,7 @@ class SeqList(rje_obj.RJE_Object):
                 else:
                     fracdb = db.addEmptyTable('fracstats',['file','fraction','LXX','NXX','CtgLXX','CtgNXX'],['file','fraction'])
                     if self.getNum('GenomeSize') > 0: fracdb.addFields(['LGXX','NGXX'])
-            if self.dna() and mingap: self.printLog('#GAPS','Identifying all runs of %d+ Ns as gaps' % mingap)
+            if self.dna() and mingap: self.printLog('#GAPS','Identifying all runs of %d+ Ns as gaps. (Warning: can be slow for large, gappy genomes.)' % mingap)
             #?# Should we add an option to trim/ignore terminal gaps? #?#
             #self.printLog('#~~#','# ~~~~~~~~~~~~~~~~~~~~~~~ SEQUENCE SUMMARY FOR %s ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #' % basename)
             self.headLog('Sequence Summary for %s' % basename)
@@ -1052,9 +1053,9 @@ class SeqList(rje_obj.RJE_Object):
                     self.progLog('\r#SUM','Total number of sequences: %s' % rje.iLen(seqlen),rand=0.01)
                 else:
                     self.progLog('\r#SUM','Total number of sequences: %s' % rje.iLen(seqlen))
+                sname = self.shortName(seq)
                 seqlen.append(self.seqLen(seq))
                 gapn = 0
-                gapnum = 0
                 if self.dna():
                     sequence = self.seqSequence(seq).upper()
                     seqdata['GC'] += sequence.count('G') + sequence.count('C')
@@ -1065,22 +1066,21 @@ class SeqList(rje_obj.RJE_Object):
                     gapn = len(''.join(gaps))
                     seqdata['GapLength'] += gapn
                     seqdata['GapCount'] += len(gaps)
-                    if gapstats:
-                        for m in gapre.finditer(sequence):
-                            gapx = m.start() + 1
-                            gapy = m.end()
-                            gapl = len(m.group())
-                            gapdb.addEntry({'seqname':self.shortName(seq),'start':gapx,'end':gapy,'seqlen':len(sequence),'gaplen':gapl})
                     gapy = 0
                     if gapn:
                         for m in gapre.finditer(sequence):
                             ctg = m.start() - gapy
                             if ctg: ctglen.append(ctg)
+                            gapx = m.start() + 1
                             gapy = m.end()
+                            gapl = len(m.group())
+                            if gapstats:
+                                gapdb.dict['Data'][(sname,gapx,gapy)] = {'seqname':sname,'start':gapx,'end':gapy,'seqlen':len(sequence),'gaplen':gapl}
+                                #gapdb.addEntry({'seqname':self.shortName(seq),'start':gapx,'end':gapy,'seqlen':len(sequence),'gaplen':gapl})
                     if gapy < len(sequence):
                         ctglen.append(len(sequence) - gapy)
                 if sumdb or self.mode().endswith('db'):
-                    entry = {'name':self.shortName(seq),'desc':self.seqDesc(seq),'gene':self.seqGene(seq),
+                    entry = {'name':sname,'desc':self.seqDesc(seq),'gene':self.seqGene(seq),
                              'spec':self.seqSpec(seq),'accnum':self.seqAcc(seq),'length':self.seqLen(seq)}
                     if self.dna():
                         nonN = (len(sequence) - sequence.count('N'))
@@ -1089,9 +1089,9 @@ class SeqList(rje_obj.RJE_Object):
                         else:
                             entry['gc'] = -1
                             if len(sequence) > 0:
-                                self.warnLog('%s is 100%% Ns!' % self.shortName(seq),warntype="alln")
+                                self.warnLog('%s is 100%% Ns!' % sname,warntype="alln")
                             else:
-                                self.warnLog('%s is zero length!' % self.shortName(seq),warntype="zerolen")
+                                self.warnLog('%s is zero length!' % sname,warntype="zerolen")
                         entry['basen'] = float(sequence.count('N')) / len(sequence)
                         entry['gapn'] = gapn
                         entry['gapnum'] = len(gaps)

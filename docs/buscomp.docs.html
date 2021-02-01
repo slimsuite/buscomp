@@ -11,7 +11,7 @@
 
 <meta name="author" content="Richard J. Edwards" />
 
-<meta name="date" content="2020-12-03" />
+<meta name="date" content="2021-02-01" />
 
 <title>BUSCOMP Documentation</title>
 
@@ -1729,14 +1729,14 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Documentation</h1>
 <h4 class="author">Richard J. Edwards</h4>
-<h4 class="date">2020-12-03</h4>
+<h4 class="date">2021-02-01</h4>
 
 </div>
 
 
 <p><a name="Top"></a></p>
-<div id="buscomp-busco-compiler-and-comparison-tool" class="section level1">
-<h1><span class="header-section-number">1</span> BUSCOMP: BUSCO Compiler and Comparison tool</h1>
+<div id="buscomp-busco-compilation-and-comparison-tool" class="section level1">
+<h1><span class="header-section-number">1</span> BUSCOMP: BUSCO Compilation and Comparison tool</h1>
 <p>BUSCOMP is designed to overcome some of the non-deterministic limitations of BUSCO to:</p>
 <ol style="list-style-type: decimal">
 <li>compile a non-redundant maximal set of complete BUSCOs from a set of assemblies, and</li>
@@ -1752,6 +1752,7 @@ div.tocify {
 <li><strong>Ghost</strong>: Hits meeting local cutoff but &lt;40% combined coverage.</li>
 <li><strong>Missing</strong>: No hits meeting local cutoff.</li>
 </ul>
+<p><strong>NOTE:</strong> <code>Duplicated</code> genes are explicitly those with hits on two <em>different</em> contigs/scaffolds. BUSCOMP is focused on identifying the coding potential of an assembly rather than a detailed completeness assessment. Duplicated genes on the <em>same</em> contig/scaffold will be marked as <code>Complete</code>.</p>
 <p>In addition to individual assembly stats, BUSCO and BUSCOMP ratings are compiled across user-defined groups of assemblies with various outputs to give insight into how different assemblies complement each other. Ratings are also combined with traditional genome assembly statistics (NG50 and LG50) based on a given <code>genomesize=X</code> to help identify the “best” assemblies. Details of settings, key results, tables and plots are output to an HTML report using Rmarkdown.</p>
 <p><strong>NOTE:</strong> For HTML output, R must be installed and a pandoc environment variable must be set, e.g.</p>
 <pre><code>export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc</code></pre>
@@ -1981,7 +1982,7 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <p>BUSCOMP uses results from both the <code>*.hitsum.tdt</code> table (overall coverage in assembly) and the <code>*.gablam.tdt</code> table (coverage in a single contig/scaffold) to rate sequences as:</p>
 <ul>
 <li><strong>Complete</strong>: 95%+ Coverage in a single contig/scaffold. (Note: unlike BUSCO, accuracy/identity is not considered. This will make it more prone to misidentification of closely related paralogues.)</li>
-<li><strong>Duplicated</strong>: 95%+ Coverage in 2+ contigs/scaffolds.</li>
+<li><strong>Duplicated</strong>: 95%+ Coverage in 2+ contigs/scaffolds. (Note: unlike BUSCO, multiple hits must be on different sequences to be counted as Duplicated. This will make it prone to missing false tandem repeats etc.)</li>
 <li><strong>Fragmented</strong>: 95%+ combined coverage but not in any single contig/scaffold. (Note: as with BUSCOMP <code>Complete</code> ratings, these might include part of closely related paralogues.)</li>
 <li><strong>Partial</strong>: 40-95% combined coverage. (Note: these might be marked as “Fragmented” by BUSCO, which does not discriminate between “split” full-length hits, and single partial hits.)</li>
 <li><strong>Ghost</strong>: Hits meeting local cutoff but &lt;40% combined coverage.</li>
@@ -2282,7 +2283,7 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <li>6.1 BUSCOMP errors</li>
 <li>6.2 BUSCOMP warnings</li>
 </ul>
-<p><br> <small>© 2019 Richard Edwards | <a href="mailto:richard.edwards@unsw.edu.au" class="email">richard.edwards@unsw.edu.au</a></small></p>
+<p><br> <small>© 2019 Richard Edwards | <a href="mailto:richard.edwards@unsw.edu.au">richard.edwards@unsw.edu.au</a></small></p>
 </div>
 </div>
 </div>

@@ -1,7 +1,5 @@
-# BUSCOMP: BUSCO Compiler and Comparison tool
-
 ```
-BUSCOMP v0.9.7
+BUSCOMP v0.10.1
 ```
 
 For a better rendering and navigation of this document, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -36,6 +34,10 @@ definitions. In addition, two extra classes of low quality hit have been added: 
 * **Partial**: 40-95% combined coverage.
 * **Ghost**: Hits meeting local cutoff but <40% combined coverage.
 * **Missing**: No hits meeting local cutoff.
+
+**NOTE:** `Duplicated` genes are explicitly those with hits on two *different* contigs/scaffolds. BUSCOMP is focused
+on identifying the coding potential of an assembly rather than a detailed completeness assessment. Duplicated
+genes on the *same* contig/scaffold will be marked as `Complete`.
 
 In addition to individual assembly stats, BUSCO and BUSCOMP ratings are compiled across user-defined groups of
 assemblies with various outputs to give insight into how different assemblies complement each other. Ratings are
@@ -470,7 +472,8 @@ table (coverage in a single contig/scaffold) to rate sequences as:
 
 * **Complete**: 95%+ Coverage in a single contig/scaffold. (Note: unlike BUSCO, accuracy/identity is not considered.
 This will make it more prone to misidentification of closely related paralogues.)
-* **Duplicated**: 95%+ Coverage in 2+ contigs/scaffolds.
+* **Duplicated**: 95%+ Coverage in 2+ contigs/scaffolds. (Note: unlike BUSCO, multiple hits must be on different
+sequences to be counted as Duplicated. This will make it prone to missing false tandem repeats etc.)
 * **Fragmented**: 95%+ combined coverage but not in any single contig/scaffold. (Note: as with BUSCOMP `Complete`
 ratings, these might include part of closely related paralogues.)
 * **Partial**: 40-95% combined coverage. (Note: these might be marked as "Fragmented" by BUSCO, which does not

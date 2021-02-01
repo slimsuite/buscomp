@@ -809,6 +809,9 @@ class Table(rje.RJE_Object):
             if logstr: self.printLog(logstr,'%s "%s" %s:%s entries.' % (rje.iLen(self.indexEntries(index,ikey)),ikey,self.name(),index))
             else: self.printLog('#%s' % index.upper()[:6],'%s %s %s:%s entries.' % (rje.iLen(self.indexEntries(index,ikey)),ikey,self.name(),index))
         return ikeys
+    def entrySort(self,keys=None):
+        if keys: keys.sort()
+        return self.entries(keys,sorted=True)
     def entries(self,keys=None,sorted=False):
         '''Returns all entries as a list.'''
         if not keys and not sorted: return self.dict['Data'].values()
