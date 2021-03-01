@@ -1,3 +1,5 @@
+# BUSCOMP: BUSCO Compilation and Comparison tool
+
 ```
 BUSCOMP v0.10.1
 ```
