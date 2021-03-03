@@ -1,10 +1,10 @@
 #~~#	#~+~~+~#	#~~#
-#LOG	00:00:00	Activity Log for BUSCOMP V0.9.3: Tue Jun 23 09:57:38 2020
-#DIR	00:00:00	Run from directory: /Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run
+#LOG	00:00:00	Activity Log for BUSCOMP V0.11.0: Wed Mar  3 13:51:06 2021
+#DIR	00:00:00	Run from directory: /Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/githubdev/example/run
 #ARG	00:00:00	Commandline arguments: ini=../run/example.ini i=-1 forks=4
-#INI	00:00:00	INI file: ../../code/buscomp.ini; Commands loaded: -minimap2 /Users/redwards/Data/BiowareOSX/minimap2/minimap2
+#INI	00:00:00	INI file: buscomp.ini; Commands loaded: minimap2=minimap2
 #INI	00:00:00	INI file: ../run/example.ini; Commands loaded: genomesize=13.1e6 genomes=../example.genomes.csv groups=../example.groups.csv runs="../busco3/run_*" fastadir=../fasta/ basefile=yeast
-#CMD	00:00:00	Full Command List: log=buscomp.log minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2 ini=../run/example.ini genomesize=13.1e6 genomes=../example.genomes.csv groups=../example.groups.csv runs=../busco3/run_* fastadir=../fasta/ basefile=yeast i=-1 forks=4
+#CMD	00:00:00	Full Command List: log=buscomp.log minimap2=minimap2 ini=../run/example.ini genomesize=13.1e6 genomes=../example.genomes.csv groups=../example.groups.csv runs=../busco3/run_* fastadir=../fasta/ basefile=yeast i=-1 forks=4
 #VIO	00:00:00	Verbosity: 1; Interactivity: -1.
 #==#	00:00:00	# ================================= SETUP BUSCOMP RUN ================================== #
 #RUNDIR	00:00:00	../busco3/run_MBG344001 run type: Single
@@ -39,13 +39,12 @@
 #TABLE	00:00:00	Table "groups" added: 3 fields; 3 entries.
 #GRP	00:00:00	HighQuality: 01_SGD|02_PacBioHQ|03_chrIIIdup
 #GROUP	00:00:00	Group BUSCOMP added: 3 -> 7 Genome-Group pairs
-#GROUP	00:00:00	Added group BUSCOMP to Genome table (AllGenomes)
 #GROUP	00:00:00	Added group HighQuality to Genome table (01_SGD|02_PacBioHQ|03_chrIIIdup)
 #SORT	00:00:00	Genomes sorted by genome name and group
 #==#	00:00:00	# ==================================== LOAD GENOMES ==================================== #
 #FASTA	00:00:00	Loading sequences for 01_SGD (SGDR64.2.1)
 #SEQ	00:00:00	18 of 18 sequences loaded from ../fasta/SGDR64.2.1.fsa.index (Format: index).
-#GAPS	00:00:00	Identifying all runs of 10+ Ns as gaps
+#GAPS	00:00:00	Identifying all runs of 10+ Ns as gaps. (Warning: can be slow for large, gappy genomes.)
 #~~#	00:00:00	# ~~~~~~~~~~~ Sequence Summary for SGDR64.2.1 ~~~~~~~~~~~~ #
 #SUM	00:00:00	Total number of sequences: 18
 #SUM	00:00:00	Total length of sequences: 12,163,423
@@ -55,6 +54,7 @@
 #SUM	00:00:00	Median length of sequences: 706,283
 #SUM	00:00:00	N50 length of sequences: 924,431
 #SUM	00:00:00	L50 count of sequences: 6
+#SUM	00:00:00	Total number of contigs: 18
 #SUM	00:00:00	NG50 length of sequences (13.10 Mb): 924,431
 #SUM	00:00:00	LG50 count of sequences (13.10 Mb): 6
 #SUM	00:00:00	GC content: 38.15%
@@ -63,7 +63,7 @@
 #SUM	00:00:00	Gap (10+ N) count: 0
 #FASTA	00:00:00	Loading sequences for 02_PacBioHQ (MBG344001)
 #SEQ	00:00:00	17 of 17 sequences loaded from ../fasta/MBG344001.fsa.index (Format: index).
-#GAPS	00:00:00	Identifying all runs of 10+ Ns as gaps
+#GAPS	00:00:00	Identifying all runs of 10+ Ns as gaps. (Warning: can be slow for large, gappy genomes.)
 #~~#	00:00:00	# ~~~~~~~~~~~~ Sequence Summary for MBG344001 ~~~~~~~~~~~~ #
 #SUM	00:00:01	Total number of sequences: 17
 #SUM	00:00:01	Total length of sequences: 12,275,942
@@ -73,6 +73,7 @@
 #SUM	00:00:01	Median length of sequences: 746,591
 #SUM	00:00:01	N50 length of sequences: 930,848
 #SUM	00:00:01	L50 count of sequences: 6
+#SUM	00:00:01	Total number of contigs: 17
 #SUM	00:00:01	NG50 length of sequences (13.10 Mb): 930,848
 #SUM	00:00:01	LG50 count of sequences (13.10 Mb): 6
 #SUM	00:00:01	GC content: 38.17%
@@ -81,7 +82,7 @@
 #SUM	00:00:01	Gap (10+ N) count: 0
 #FASTA	00:00:01	Loading sequences for 03_chrIIIdup (chrIIIdup)
 #SEQ	00:00:01	2 of 2 sequences loaded from ../fasta/chrIIIdup.fsa.index (Format: index).
-#GAPS	00:00:01	Identifying all runs of 10+ Ns as gaps
+#GAPS	00:00:01	Identifying all runs of 10+ Ns as gaps. (Warning: can be slow for large, gappy genomes.)
 #~~#	00:00:01	# ~~~~~~~~~~~~ Sequence Summary for chrIIIdup ~~~~~~~~~~~~ #
 #SUM	00:00:01	Total number of sequences: 2
 #SUM	00:00:01	Total length of sequences: 695,514
@@ -91,6 +92,7 @@
 #SUM	00:00:01	Median length of sequences: 347,757
 #SUM	00:00:01	N50 length of sequences: 347,757
 #SUM	00:00:01	L50 count of sequences: 1
+#SUM	00:00:01	Total number of contigs: 2
 #SUM	00:00:01	Half genome size (13.10 Mb) not reached for NG50!
 #SUM	00:00:01	GC content: 38.52%
 #SUM	00:00:01	N bases: 0 (0.00%)
@@ -98,7 +100,7 @@
 #SUM	00:00:01	Gap (10+ N) count: 0
 #FASTA	00:00:01	Loading sequences for 10_PacBioWTDBG2 (MBG344WTDBG2)
 #SEQ	00:00:01	29 of 29 sequences loaded from ../fasta/MBG344WTDBG2.fsa.index (Format: index).
-#GAPS	00:00:01	Identifying all runs of 10+ Ns as gaps
+#GAPS	00:00:01	Identifying all runs of 10+ Ns as gaps. (Warning: can be slow for large, gappy genomes.)
 #~~#	00:00:01	# ~~~~~~~~~~ Sequence Summary for MBG344WTDBG2 ~~~~~~~~~~~ #
 #SUM	00:00:02	Total number of sequences: 29
 #SUM	00:00:02	Total length of sequences: 12,109,398
@@ -108,6 +110,7 @@
 #SUM	00:00:02	Median length of sequences: 344,232
 #SUM	00:00:02	N50 length of sequences: 764,884
 #SUM	00:00:02	L50 count of sequences: 6
+#SUM	00:00:02	Total number of contigs: 29
 #SUM	00:00:02	NG50 length of sequences (13.10 Mb): 755,429
 #SUM	00:00:02	LG50 count of sequences (13.10 Mb): 7
 #SUM	00:00:02	GC content: 37.85%
@@ -117,7 +120,7 @@
 #==#	00:00:02	# =============================== COMPILE BUSCO RESULTS ================================ #
 #BUSCO	00:00:02	Processed 01_SGD [../busco3/run_SGDR64.2.1/full_table_SGDR64.2.1.tsv] (1724 entries-> 1711 BUSCOs).
 #BUSCO	00:00:02	Processed 02_PacBioHQ [../busco3/run_MBG344001/full_table_MBG344001.tsv] (1724 entries-> 1711 BUSCOs).
-#BUSCO	00:00:03	Processed 03_chrIIIdup [../busco3/run_chrIIIdup/full_table_chrIIIdup.tsv] (1756 entries-> 1711 BUSCOs).
+#BUSCO	00:00:02	Processed 03_chrIIIdup [../busco3/run_chrIIIdup/full_table_chrIIIdup.tsv] (1756 entries-> 1711 BUSCOs).
 #BUSCO	00:00:03	Processed 10_PacBioWTDBG2 [../busco3/run_MBG344WTDBG2/full_table_MBG344WTDBG2.tsv] (1721 entries-> 1711 BUSCOs).
 #GRP	00:00:03	Compiled BUSCO stats for group BUSCOMP (4 of 4 genomes)
 #GRP	00:00:03	Compiled BUSCO stats for group HighQuality (3 of 3 genomes)
@@ -130,340 +133,364 @@
 #BUSCO	00:00:03	Results: C:80.9%[S:80.4%,D:0.5%],F:7.9%,M:11.2%,n:1711 - PacBioWTDBG2
 #BUSCO	00:00:03	Results: C:98.7%[S:98.2%,D:0.5%],F:0.5%,M:0.8%,n:1711 - BUSCOMP
 #SAVE	00:00:03	Table "genomes" saved to "yeast.genomes.tdt": 6 entries.
-#SAVE	00:00:04	Table "full" saved to "yeast.full.tdt": 6,925 entries.
-#SAVE	00:00:04	Table "busco" saved to "yeast.busco.tdt": 1,711 entries.
-#==#	00:00:04	# ============================== COMPILE BUSCO SEQUENCES =============================== #
-#DROP	00:00:04	6,925 buscoseq entries reduced to 4,278 entries on Rank.
-#DROP	00:00:05	4,278 buscoseq entries reduced to 1,711 entries on Rank.
-#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
-#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#SAVE	00:00:03	Table "full" saved to "yeast.full.tdt": 6,925 entries.
+#SAVE	00:00:03	Table "busco" saved to "yeast.busco.tdt": 1,711 entries.
+#==#	00:00:03	# ============================== COMPILE BUSCO SEQUENCES =============================== #
+#DROP	00:00:03	6,925 buscoseq entries reduced to 4,278 entries on Rank.
+#DROP	00:00:03	4,278 buscoseq entries reduced to 1,711 entries on Rank.
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
 #WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
 #WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
-#SEQ	00:00:06	DNA sequences for 1,681 best (of 1,711 total) BUSCO hits output to yeast.buscomp.fasta
-#SEQ	00:00:06	Protein sequences for 1,681 best (of 1,711 total) BUSCO hits output to yeast.buscomp.faa
-#==#	00:00:06	# ================================= MINIMAP2 SEARCHES ================================== #
-#--#	00:00:06	# ----------------------------- SGD Minimap ----------------------------- #
-#BASE	00:00:06	yeast.minimap/SGDR64.2.1.N3L20ID0U
-#REFIN	00:00:06	Loading reference (target) sequences.
-#SEQ	00:00:06	18 of 18 sequences loaded from ../fasta/SGDR64.2.1.fsa.index (Format: index).
-#FILT	00:00:06	18 of 18 sequences retained.
-#SEQIN	00:00:06	Loading assembly (query) sequences.
-#SEQ	00:00:06	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta (Format: fas).
-#INDEX	00:00:06	Index file yeast.buscomp.fasta.index made
-#FILT	00:00:06	1,681 of 1,681 sequences retained.
-#PAFIN	00:00:06	Minimap2 PAF file set: yeast.minimap/SGDR64.2.1.N3L20ID0U.paf
-#SYS	00:00:06	/Users/redwards/Data/BiowareOSX/minimap2/minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/SGDR64.2.1.fsa yeast.buscomp.fasta > yeast.minimap/SGDR64.2.1.N3L20ID0U.paf
+#SEQ	00:00:07	DNA sequences for 1,681 best (of 1,711 total) BUSCO hits output to yeast.buscomp.fasta
+#SEQ	00:00:07	Protein sequences for 1,681 best (of 1,711 total) BUSCO hits output to yeast.buscomp.faa
+#==#	00:00:07	# ================================= MINIMAP2 SEARCHES ================================== #
+#--#	00:00:07	# ----------------------------- SGD Minimap ----------------------------- #
+#BASE	00:00:07	yeast.minimap/SGDR64.2.1.N3L20ID0U
+#REFIN	00:00:07	Loading reference (target) sequences.
+#SEQ	00:00:07	18 of 18 sequences loaded from ../fasta/SGDR64.2.1.fsa.index (Format: index).
+#FILT	00:00:07	18 of 18 sequences retained.
+#SEQIN	00:00:07	Loading assembly (query) sequences.
+#SEQ	00:00:07	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta (Format: fas).
+#INDEX	00:00:07	Index file yeast.buscomp.fasta.index made
+#FILT	00:00:07	1,681 of 1,681 sequences retained.
+#PAFIN	00:00:07	Minimap2 PAF file set: yeast.minimap/SGDR64.2.1.N3L20ID0U.paf
+#SYS	00:00:07	minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/SGDR64.2.1.fsa yeast.buscomp.fasta > yeast.minimap/SGDR64.2.1.N3L20ID0U.paf
 #~~#	00:00:09	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
 #PAF	00:00:09	Parsing yeast.minimap/SGDR64.2.1.N3L20ID0U.paf
 #PAF	00:00:09	Parsed 1,811 lines from yeast.minimap/SGDR64.2.1.N3L20ID0U.paf
 #~~#	00:00:09	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
 #DROP	00:00:09	31 local fields reduced to 17 fields
-#ALN	00:00:10	Conversion of 1,811 PAF cs alignments complete.
-#SAVE	00:00:10	Table "local" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.local.tdt": 1,811 entries.
-#~~#	00:00:10	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
+#ALN	00:00:09	Conversion of 1,811 PAF cs alignments complete.
+#SAVE	00:00:09	Table "local" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.local.tdt": 1,811 entries.
+#~~#	00:00:09	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
+#~~#	00:00:09	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:10	Reduced local alignment CS to unique coverage: 1,811 -> 1,718 (6 failed to meet minloclen=20)
 #~~#	00:00:10	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:00:11	Reduced local alignment CS to unique coverage: 1,811 -> 1,718 (6 failed to meet minloclen=20)
-#~~#	00:00:11	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:00:12	Reduced local alignment CS to unique coverage: 1,811 -> 1,681 (0 failed to meet minloclen=20)
-#SAVE	00:00:12	Table "hitunique" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.hitunique.tdt": 1,718 entries.
-#SAVE	00:00:12	Table "qryunique" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.qryunique.tdt": 1,681 entries.
-#~~#	00:00:12	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
-#INFO	00:00:12	Converting query-unique reduced local hits into hit summary statistics
-#INFO	00:00:12	Using hit-unique reduced local hits for GABLAM summary statistics
-#DROP	00:00:13	19 hitsum fields reduced to 13 fields
-#CMPRSS	00:00:13	Compressed table "hitsum": 13 fields; 1,681 entries
-#SAVE	00:00:14	Table "hitsum" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.hitsum.tdt": 1,681 entries.
-#~~#	00:00:14	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
-#FORK	00:00:19	1,723 Qry-Hit pairs for forking
-#GABLAM	00:00:28	Forked 3,446 local qry-hit GABLAM reductions: 3,446 complete (3,446 forked; 0 skipped).
-#CMPRSS	00:00:28	Compressed table "gablam": 17 fields; 1,723 entries
-#DROP	00:00:28	18 gablam fields reduced to 6 fields
-#GABLAM	00:00:38	Generated GABLAM table from 1,723 Qry-Hit pairs (0 MinLocID filtered).
-#SAVE	00:00:39	Table "gablam" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.gablam.tdt": 1,723 entries.
-#DEL	00:00:39	3,446 temporary GABLAM files deleted from yeast.minimap/SGDR64.2.1.N3L20ID0U.tmp/ (0 missing)
-#PAF	00:00:39	Renamed yeast.minimap/SGDR64.2.1.N3L20ID0U.paf -> yeast.minimap/SGDR64.2.1.N3.paf
-#PAF	00:00:39	Renamed yeast.minimap/SGDR64.2.1.N3L20ID0U.paf.cmd -> yeast.minimap/SGDR64.2.1.N3.paf.cmd
-#--#	00:00:39	# -------------------------- PacBioHQ Minimap --------------------------- #
-#BASE	00:00:39	yeast.minimap/MBG344001.N3L20ID0U
-#REFIN	00:00:39	Loading reference (target) sequences.
-#SEQ	00:00:39	17 of 17 sequences loaded from ../fasta/MBG344001.fsa.index (Format: index).
-#FILT	00:00:39	17 of 17 sequences retained.
-#SEQIN	00:00:39	Loading assembly (query) sequences.
-#SEQ	00:00:39	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta.index (Format: index).
-#FILT	00:00:39	1,681 of 1,681 sequences retained.
-#PAFIN	00:00:39	Minimap2 PAF file set: yeast.minimap/MBG344001.N3L20ID0U.paf
-#SYS	00:00:39	/Users/redwards/Data/BiowareOSX/minimap2/minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/MBG344001.fsa yeast.buscomp.fasta > yeast.minimap/MBG344001.N3L20ID0U.paf
-#~~#	00:00:45	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
-#PAF	00:00:45	Parsing yeast.minimap/MBG344001.N3L20ID0U.paf
-#PAF	00:00:45	Parsed 1,843 lines from yeast.minimap/MBG344001.N3L20ID0U.paf
-#~~#	00:00:45	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
-#DROP	00:00:45	31 local fields reduced to 17 fields
-#ALN	00:00:46	Conversion of 1,843 PAF cs alignments complete.
-#SAVE	00:00:46	Table "local" saved to "yeast.minimap/MBG344001.N3L20ID0U.local.tdt": 1,843 entries.
-#~~#	00:00:46	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
-#~~#	00:00:46	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:00:47	Reduced local alignment CS to unique coverage: 1,843 -> 1,709 (7 failed to meet minloclen=20)
-#~~#	00:00:47	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:00:48	Reduced local alignment CS to unique coverage: 1,843 -> 1,681 (0 failed to meet minloclen=20)
-#SAVE	00:00:48	Table "hitunique" saved to "yeast.minimap/MBG344001.N3L20ID0U.hitunique.tdt": 1,709 entries.
-#SAVE	00:00:48	Table "qryunique" saved to "yeast.minimap/MBG344001.N3L20ID0U.qryunique.tdt": 1,681 entries.
-#~~#	00:00:48	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
-#INFO	00:00:48	Converting query-unique reduced local hits into hit summary statistics
-#INFO	00:00:48	Using hit-unique reduced local hits for GABLAM summary statistics
-#DROP	00:00:48	19 hitsum fields reduced to 13 fields
-#CMPRSS	00:00:48	Compressed table "hitsum": 13 fields; 1,681 entries
-#SAVE	00:00:49	Table "hitsum" saved to "yeast.minimap/MBG344001.N3L20ID0U.hitsum.tdt": 1,681 entries.
-#~~#	00:00:49	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
-#FORK	00:00:55	1,723 Qry-Hit pairs for forking
-#GABLAM	00:01:05	Forked 3,446 local qry-hit GABLAM reductions: 3,446 complete (3,446 forked; 0 skipped).
-#CMPRSS	00:01:05	Compressed table "gablam": 17 fields; 1,723 entries
-#DROP	00:01:05	18 gablam fields reduced to 6 fields
-#GABLAM	00:01:17	Generated GABLAM table from 1,723 Qry-Hit pairs (0 MinLocID filtered).
-#SAVE	00:01:17	Table "gablam" saved to "yeast.minimap/MBG344001.N3L20ID0U.gablam.tdt": 1,723 entries.
-#DEL	00:01:18	3,446 temporary GABLAM files deleted from yeast.minimap/MBG344001.N3L20ID0U.tmp/ (0 missing)
-#PAF	00:01:18	Renamed yeast.minimap/MBG344001.N3L20ID0U.paf -> yeast.minimap/MBG344001.N3.paf
-#PAF	00:01:18	Renamed yeast.minimap/MBG344001.N3L20ID0U.paf.cmd -> yeast.minimap/MBG344001.N3.paf.cmd
-#--#	00:01:18	# -------------------------- chrIIIdup Minimap -------------------------- #
-#BASE	00:01:18	yeast.minimap/chrIIIdup.N3L20ID0U
-#REFIN	00:01:18	Loading reference (target) sequences.
-#SEQ	00:01:18	2 of 2 sequences loaded from ../fasta/chrIIIdup.fsa.index (Format: index).
-#FILT	00:01:18	2 of 2 sequences retained.
-#SEQIN	00:01:18	Loading assembly (query) sequences.
-#SEQ	00:01:18	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta.index (Format: index).
-#FILT	00:01:18	1,681 of 1,681 sequences retained.
-#PAFIN	00:01:18	Minimap2 PAF file set: yeast.minimap/chrIIIdup.N3L20ID0U.paf
-#SYS	00:01:18	/Users/redwards/Data/BiowareOSX/minimap2/minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/chrIIIdup.fsa yeast.buscomp.fasta > yeast.minimap/chrIIIdup.N3L20ID0U.paf
-#~~#	00:01:19	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
-#PAF	00:01:19	Parsing yeast.minimap/chrIIIdup.N3L20ID0U.paf
-#PAF	00:01:19	Parsed 123 lines from yeast.minimap/chrIIIdup.N3L20ID0U.paf
-#~~#	00:01:19	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
-#DROP	00:01:19	31 local fields reduced to 17 fields
-#ALN	00:01:19	Conversion of 123 PAF cs alignments complete.
-#SAVE	00:01:19	Table "local" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.local.tdt": 123 entries.
-#~~#	00:01:19	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
-#~~#	00:01:19	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:01:19	Reduced local alignment CS to unique coverage: 123 -> 89 (0 failed to meet minloclen=20)
-#~~#	00:01:19	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:01:19	Reduced local alignment CS to unique coverage: 123 -> 47 (0 failed to meet minloclen=20)
-#SAVE	00:01:19	Table "hitunique" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.hitunique.tdt": 89 entries.
-#SAVE	00:01:19	Table "qryunique" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.qryunique.tdt": 47 entries.
-#~~#	00:01:19	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
-#INFO	00:01:19	Converting query-unique reduced local hits into hit summary statistics
-#INFO	00:01:19	Using hit-unique reduced local hits for GABLAM summary statistics
-#DROP	00:01:19	19 hitsum fields reduced to 13 fields
-#CMPRSS	00:01:19	Compressed table "hitsum": 13 fields; 47 entries
-#SAVE	00:01:20	Table "hitsum" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.hitsum.tdt": 1,681 entries.
-#~~#	00:01:20	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
-#FORK	00:01:20	94 Qry-Hit pairs for forking
-#GABLAM	00:01:21	Forked 188 local qry-hit GABLAM reductions: 188 complete (188 forked; 0 skipped).
-#CMPRSS	00:01:21	Compressed table "gablam": 17 fields; 94 entries
-#DROP	00:01:21	18 gablam fields reduced to 6 fields
-#GABLAM	00:01:21	Generated GABLAM table from 94 Qry-Hit pairs (0 MinLocID filtered).
-#SAVE	00:01:21	Table "gablam" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.gablam.tdt": 94 entries.
-#DEL	00:01:21	188 temporary GABLAM files deleted from yeast.minimap/chrIIIdup.N3L20ID0U.tmp/ (0 missing)
-#PAF	00:01:21	Renamed yeast.minimap/chrIIIdup.N3L20ID0U.paf -> yeast.minimap/chrIIIdup.N3.paf
-#PAF	00:01:21	Renamed yeast.minimap/chrIIIdup.N3L20ID0U.paf.cmd -> yeast.minimap/chrIIIdup.N3.paf.cmd
-#--#	00:01:21	# ------------------------ PacBioWTDBG2 Minimap ------------------------- #
-#BASE	00:01:21	yeast.minimap/MBG344WTDBG2.N3L20ID0U
-#REFIN	00:01:21	Loading reference (target) sequences.
-#SEQ	00:01:21	29 of 29 sequences loaded from ../fasta/MBG344WTDBG2.fsa.index (Format: index).
-#FILT	00:01:21	29 of 29 sequences retained.
-#SEQIN	00:01:21	Loading assembly (query) sequences.
-#SEQ	00:01:21	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta.index (Format: index).
-#FILT	00:01:21	1,681 of 1,681 sequences retained.
-#PAFIN	00:01:21	Minimap2 PAF file set: yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
-#SYS	00:01:22	/Users/redwards/Data/BiowareOSX/minimap2/minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/MBG344WTDBG2.fsa yeast.buscomp.fasta > yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
-#~~#	00:01:25	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
-#PAF	00:01:25	Parsing yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
-#PAF	00:01:25	Parsed 1,818 lines from yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
-#~~#	00:01:25	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
-#DROP	00:01:25	31 local fields reduced to 17 fields
-#ALN	00:01:26	Conversion of 1,818 PAF cs alignments complete.
-#SAVE	00:01:26	Table "local" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.local.tdt": 1,818 entries.
-#~~#	00:01:26	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
-#~~#	00:01:26	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:01:27	Reduced local alignment CS to unique coverage: 1,818 -> 1,696 (6 failed to meet minloclen=20)
-#~~#	00:01:27	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
-#LOCALN	00:01:29	Reduced local alignment CS to unique coverage: 1,818 -> 1,681 (0 failed to meet minloclen=20)
-#SAVE	00:01:29	Table "hitunique" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.hitunique.tdt": 1,696 entries.
-#SAVE	00:01:29	Table "qryunique" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.qryunique.tdt": 1,681 entries.
-#~~#	00:01:29	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
-#INFO	00:01:29	Converting query-unique reduced local hits into hit summary statistics
-#INFO	00:01:29	Using hit-unique reduced local hits for GABLAM summary statistics
-#DROP	00:01:29	19 hitsum fields reduced to 13 fields
-#CMPRSS	00:01:29	Compressed table "hitsum": 13 fields; 1,681 entries
-#SAVE	00:01:30	Table "hitsum" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.hitsum.tdt": 1,681 entries.
-#~~#	00:01:30	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
-#FORK	00:01:36	1,722 Qry-Hit pairs for forking
-#GABLAM	00:01:45	Forked 3,444 local qry-hit GABLAM reductions: 3,444 complete (3,444 forked; 0 skipped).
-#CMPRSS	00:01:45	Compressed table "gablam": 17 fields; 1,722 entries
-#DROP	00:01:45	18 gablam fields reduced to 6 fields
-#GABLAM	00:02:00	Generated GABLAM table from 1,722 Qry-Hit pairs (0 MinLocID filtered).
-#SAVE	00:02:01	Table "gablam" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.gablam.tdt": 1,722 entries.
-#DEL	00:02:01	3,444 temporary GABLAM files deleted from yeast.minimap/MBG344WTDBG2.N3L20ID0U.tmp/ (0 missing)
-#PAF	00:02:01	Renamed yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf -> yeast.minimap/MBG344WTDBG2.N3.paf
-#PAF	00:02:01	Renamed yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf.cmd -> yeast.minimap/MBG344WTDBG2.N3.paf.cmd
-#PAF	00:02:01	RJE_PAF Minimap2 runs complete for 4 genomes; 0 failed; 0 skipped.
-#==#	00:02:01	# ============================= COMPILE MINIMAP2 SEARCHES ============================== #
-#~~#	00:02:01	# ~~~~~~~~~~~~~~~~~ SGD Minimap2 ratings ~~~~~~~~~~~~~~~~~ #
-#LOAD	00:02:02	Loaded table "SGDR64.2.1.N3L20ID0U.hitsum" renamed "01_SGD.hitsum".
-#TABLE	00:02:02	Table "01_SGD.hitsum" added: 13 fields; 1,681 entries.
-#LOAD	00:02:02	Loaded table "SGDR64.2.1.N3L20ID0U.gablam" renamed "01_SGD.gablam".
-#TABLE	00:02:02	Table "01_SGD.gablam" added: 19 fields; 1,723 entries.
-#RATING	00:02:02	Rating 1,723 01_SGD hits complete.
-#RATING	00:02:02	Rating 1,681 01_SGD BUSCOs complete.
-#SEQID	00:02:02	1,609 of 1,681 identical to BUSCOSeq
-#RATING	00:02:02	1,678 Complete 01_SGD.hitsum:Rating entries.
-#RATING	00:02:02	1 Duplicated 01_SGD.hitsum:Rating entries.
-#RATING	00:02:02	2 Partial 01_SGD.hitsum:Rating entries.
-#COMP	00:02:02	01_SGD (SGDR64.2.1) BUSCOMP Rating complete
-#~~#	00:02:02	# ~~~~~~~~~~~~~~ PacBioHQ Minimap2 ratings ~~~~~~~~~~~~~~~ #
-#LOAD	00:02:03	Loaded table "MBG344001.N3L20ID0U.hitsum" renamed "02_PacBioHQ.hitsum".
-#TABLE	00:02:03	Table "02_PacBioHQ.hitsum" added: 13 fields; 1,681 entries.
-#LOAD	00:02:03	Loaded table "MBG344001.N3L20ID0U.gablam" renamed "02_PacBioHQ.gablam".
-#TABLE	00:02:03	Table "02_PacBioHQ.gablam" added: 19 fields; 1,723 entries.
-#RATING	00:02:03	Rating 1,723 02_PacBioHQ hits complete.
-#RATING	00:02:04	Rating 1,681 02_PacBioHQ BUSCOs complete.
-#SEQID	00:02:04	1,611 of 1,681 identical to BUSCOSeq
-#RATING	00:02:04	1,678 Complete 02_PacBioHQ.hitsum:Rating entries.
-#RATING	00:02:04	1 Duplicated 02_PacBioHQ.hitsum:Rating entries.
-#RATING	00:02:04	2 Partial 02_PacBioHQ.hitsum:Rating entries.
-#COMP	00:02:04	02_PacBioHQ (MBG344001) BUSCOMP Rating complete
-#~~#	00:02:04	# ~~~~~~~~~~~~~~ chrIIIdup Minimap2 ratings ~~~~~~~~~~~~~~ #
-#LOAD	00:02:04	Loaded table "chrIIIdup.N3L20ID0U.hitsum" renamed "03_chrIIIdup.hitsum".
-#TABLE	00:02:04	Table "03_chrIIIdup.hitsum" added: 13 fields; 1,681 entries.
-#LOAD	00:02:04	Loaded table "chrIIIdup.N3L20ID0U.gablam" renamed "03_chrIIIdup.gablam".
-#TABLE	00:02:04	Table "03_chrIIIdup.gablam" added: 19 fields; 94 entries.
-#RATING	00:02:04	Rating 94 03_chrIIIdup hits complete.
-#RATING	00:02:04	Rating 1,681 03_chrIIIdup BUSCOs complete.
-#SEQID	00:02:04	43 of 1,681 identical to BUSCOSeq
-#RATING	00:02:04	45 Duplicated 03_chrIIIdup.hitsum:Rating entries.
-#RATING	00:02:04	1 Ghost 03_chrIIIdup.hitsum:Rating entries.
-#RATING	00:02:04	1,634 Missing 03_chrIIIdup.hitsum:Rating entries.
-#RATING	00:02:04	1 Partial 03_chrIIIdup.hitsum:Rating entries.
-#COMP	00:02:04	03_chrIIIdup (chrIIIdup) BUSCOMP Rating complete
-#~~#	00:02:04	# ~~~~~~~~~~~~ PacBioWTDBG2 Minimap2 ratings ~~~~~~~~~~~~~ #
-#LOAD	00:02:04	Loaded table "MBG344WTDBG2.N3L20ID0U.hitsum" renamed "10_PacBioWTDBG2.hitsum".
-#TABLE	00:02:04	Table "10_PacBioWTDBG2.hitsum" added: 13 fields; 1,681 entries.
-#LOAD	00:02:04	Loaded table "MBG344WTDBG2.N3L20ID0U.gablam" renamed "10_PacBioWTDBG2.gablam".
-#TABLE	00:02:04	Table "10_PacBioWTDBG2.gablam" added: 19 fields; 1,722 entries.
-#RATING	00:02:05	Rating 1,722 10_PacBioWTDBG2 hits complete.
-#RATING	00:02:05	Rating 1,681 10_PacBioWTDBG2 BUSCOs complete.
-#SEQID	00:02:05	1,018 of 1,681 identical to BUSCOSeq
-#RATING	00:02:05	1,677 Complete 10_PacBioWTDBG2.hitsum:Rating entries.
-#RATING	00:02:05	2 Duplicated 10_PacBioWTDBG2.hitsum:Rating entries.
-#RATING	00:02:05	2 Partial 10_PacBioWTDBG2.hitsum:Rating entries.
-#COMP	00:02:05	10_PacBioWTDBG2 (MBG344WTDBG2) BUSCOMP Rating complete
-#==#	00:02:05	# =========================== COMPILE BUSCOMP GROUP RATINGS ============================ #
-#GRP	00:02:05	Compiled BUSCOMP stats for group BUSCOMP (4 of 4 genomes)
-#GRP	00:02:05	Compiled BUSCOMP stats for group HighQuality (3 of 3 genomes)
-#SAVE	00:02:05	Table "buscoseq" saved to "yeast.buscoseq.tdt": 1,711 entries.
-#SAVE	00:02:05	Table "buscomp" saved to "yeast.N3L20ID0U.buscomp.tdt": 1,681 entries.
-#SAVE	00:02:05	Table "ratings" saved to "yeast.N3L20ID0U.ratings.tdt": 6 entries.
-#DROP	00:02:06	1,711 best entries reduced to 1,681 entries on Status.
-#==#	00:02:06	# ================================== BUSCOMP RESULTS =================================== #
-#~~#	00:02:06	# ~~~~~~~~~~~~~~~~~~~ BUSCOMP BUSCOMP ~~~~~~~~~~~~~~~~~~~~ #
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - BUSCOMP [1689 (98.71%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
-#INFO	00:02:06	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
-#INFO	00:02:06	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
-#INFO	00:02:06	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
-#INFO	00:02:06	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
-#INFO	00:02:06	2 Partial BUSCOs (P)  [40-95% coverage]
-#INFO	00:02:06	0 Ghost BUSCOs (G)  [<40% coverage]
-#INFO	00:02:06	0 Missing BUSCOs (M)  [No hits]
-#INFO	00:02:06	1681 Total BUSCO gene hits searched
-#~~#	00:02:06	# ~~~~~~~~~~~~~~~~~ HighQuality BUSCOMP ~~~~~~~~~~~~~~~~~~ #
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - HighQuality [1684 (98.42%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
-#INFO	00:02:06	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
-#INFO	00:02:06	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
-#INFO	00:02:06	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
-#INFO	00:02:06	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
-#INFO	00:02:06	2 Partial BUSCOs (P)  [40-95% coverage]
-#INFO	00:02:06	0 Ghost BUSCOs (G)  [<40% coverage]
-#INFO	00:02:06	0 Missing BUSCOs (M)  [No hits]
-#INFO	00:02:06	1681 Total BUSCO gene hits searched
-#~~#	00:02:06	# ~~~~~~~~~~~~~~~~~~~ PacBioHQ BUSCOMP ~~~~~~~~~~~~~~~~~~~ #
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%,I:95.8%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioHQ [1684 (98.42%) Complete BUSCOs; 1599 (95.12%) BUSCOMP Seqs]
-#INFO	00:02:06	1611 Identical BUSCOs (I)  [100% complete and identical]
-#INFO	00:02:06	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
-#INFO	00:02:06	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
-#INFO	00:02:06	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
-#INFO	00:02:06	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
-#INFO	00:02:06	2 Partial BUSCOs (P)  [40-95% coverage]
-#INFO	00:02:06	0 Ghost BUSCOs (G)  [<40% coverage]
-#INFO	00:02:06	0 Missing BUSCOs (M)  [No hits]
-#INFO	00:02:06	1681 Total BUSCO gene hits searched
-#~~#	00:02:06	# ~~~~~~~~~~~~~~~~~ PacBioWTDBG2 BUSCOMP ~~~~~~~~~~~~~~~~~ #
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%,I:60.6%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioWTDBG2 [1384 (80.89%) Complete BUSCOs; 77 (4.58%) BUSCOMP Seqs]
-#INFO	00:02:06	1018 Identical BUSCOs (I)  [100% complete and identical]
-#INFO	00:02:06	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
-#INFO	00:02:06	1677 Complete and single-copy BUSCOs (S)  [1 Complete hit]
-#INFO	00:02:06	2 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
-#INFO	00:02:06	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
-#INFO	00:02:06	2 Partial BUSCOs (P)  [40-95% coverage]
-#INFO	00:02:06	0 Ghost BUSCOs (G)  [<40% coverage]
-#INFO	00:02:06	0 Missing BUSCOs (M)  [No hits]
-#INFO	00:02:06	1681 Total BUSCO gene hits searched
-#~~#	00:02:06	# ~~~~~~~~~~~~~~~~~~~~~ SGD BUSCOMP ~~~~~~~~~~~~~~~~~~~~~~ #
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%,I:95.7%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - SGD [1683 (98.36%) Complete BUSCOs; 5 (0.30%) BUSCOMP Seqs]
-#INFO	00:02:06	1609 Identical BUSCOs (I)  [100% complete and identical]
-#INFO	00:02:06	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
-#INFO	00:02:06	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
-#INFO	00:02:06	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
-#INFO	00:02:06	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
-#INFO	00:02:06	2 Partial BUSCOs (P)  [40-95% coverage]
-#INFO	00:02:06	0 Ghost BUSCOs (G)  [<40% coverage]
-#INFO	00:02:06	0 Missing BUSCOs (M)  [No hits]
-#INFO	00:02:06	1681 Total BUSCO gene hits searched
-#~~#	00:02:06	# ~~~~~~~~~~~~~~~~~~ chrIIIdup BUSCOMP ~~~~~~~~~~~~~~~~~~~ #
-#BUSCO	00:02:06	Results: C:2.7%[S:0.0%,D:2.7%,I:2.6%],F:0.0%,P:0.1%,G:0.1%,M:97.2%,n:1681 - chrIIIdup [45 (2.63%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
-#INFO	00:02:06	43 Identical BUSCOs (I)  [100% complete and identical]
-#INFO	00:02:06	45 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
-#INFO	00:02:06	0 Complete and single-copy BUSCOs (S)  [1 Complete hit]
-#INFO	00:02:06	45 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
-#INFO	00:02:06	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
-#INFO	00:02:06	1 Partial BUSCOs (P)  [40-95% coverage]
-#INFO	00:02:06	1 Ghost BUSCOs (G)  [<40% coverage]
-#INFO	00:02:06	1634 Missing BUSCOs (M)  [No hits]
-#INFO	00:02:06	1681 Total BUSCO gene hits searched
-#DROP	00:02:06	1,711 best entries reduced to 1,681 entries on Status.
-#==#	00:02:06	# ================================== BUSCOMP SUMMARY =================================== #
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - BUSCOMP [1689 (98.71%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - HighQuality [1684 (98.42%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%,I:95.8%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioHQ [1684 (98.42%) Complete BUSCOs; 1599 (95.12%) BUSCOMP Seqs]
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%,I:60.6%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioWTDBG2 [1384 (80.89%) Complete BUSCOs; 77 (4.58%) BUSCOMP Seqs]
-#BUSCO	00:02:06	Results: C:99.9%[S:99.8%,D:0.1%,I:95.7%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - SGD [1683 (98.36%) Complete BUSCOs; 5 (0.30%) BUSCOMP Seqs]
-#BUSCO	00:02:06	Results: C:2.7%[S:0.0%,D:2.7%,I:2.6%],F:0.0%,P:0.1%,G:0.1%,M:97.2%,n:1681 - chrIIIdup [45 (2.63%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
-#==#	00:02:06	# =============================== BUSCOMP RATING CHANGES =============================== #
-#DROP	00:02:06	28 changes entries reduced to 14 entries on TOTAL.
-#SAVE	00:02:06	Table "changes.full" saved to "yeast.N3L20ID0U.changes.full.tdt": 1,711 entries.
-#SAVE	00:02:06	Table "changes" saved to "yeast.N3L20ID0U.changes.tdt": 14 entries.
-#SAVE	00:02:06	Table "gain" saved to "yeast.N3L20ID0U.gain.tdt": 4 entries.
-#==#	00:02:06	# =============================== UNIQUE COMPLETE BUSCOs =============================== #
-#SAVE	00:02:06	Table "unique" saved to "yeast.N3L20ID0U.unique.tdt": 1,711 entries.
-#UNIQ	00:02:06	SGD unique Complete genes: 0 BUSCO; 0 BUSCOMP
-#UNIQ	00:02:06	PacBioHQ unique Complete genes: 1 BUSCO; 0 BUSCOMP
-#UNIQ	00:02:06	chrIIIdup unique Complete genes: 0 BUSCO; 0 BUSCOMP
-#UNIQ	00:02:06	PacBioWTDBG2 unique Complete genes: 5 BUSCO; 0 BUSCOMP
-#UNIQ	00:02:06	HighQuality unique Complete genes: 0 BUSCO; 0 BUSCOMP
-#==#	00:02:06	# ================================ SETUP RMARKDOWN DATA ================================ #
-#BEST	00:02:06	Best NG50Length: 930848
-#BEST	00:02:06	Best LG50Count: 6
-#BEST	00:02:06	Best MaxLength: 1553502
-#BEST	00:02:06	Best Complete: 99.88%
-#BEST	00:02:06	Best Missing: 0.0%
-#BEST	00:02:06	Best BUSCO: 98.42%
-#BEST	00:02:06	Best NoBUSCO: 0.94%
-#SAVE	00:02:06	Table "rdata" saved to "yeast.N3L20ID0U.rdata.tdt": 6 entries.
-#==#	00:02:06	# ============================== SUMMARY RMARKDOWN OUTPUT ============================== #
-#DROP	00:02:06	1,711 best entries reduced to 1,681 entries on Status.
-#RMD	00:02:06	RMarkdown BUSCOMP summary output to yeast.N3L20ID0U.Rmd
-#RCMD	00:02:06	Rscript -e 'library(rmarkdown); rmarkdown::render("yeast.N3L20ID0U.Rmd", "html_document")'
-#RCMD	00:02:12	yeast.N3L20ID0U.html generated from yeast.N3L20ID0U.Rmd
-#==#	00:02:12	# =============================== FULL RMARKDOWN OUTPUT ================================ #
-#DROP	00:02:12	1,711 best entries reduced to 1,681 entries on Status.
-#RMD	00:02:13	RMarkdown BUSCOMP summary output to yeast.N3L20ID0U.full.Rmd
-#RCMD	00:02:13	Rscript -e 'library(rmarkdown); rmarkdown::render("yeast.N3L20ID0U.full.Rmd", "html_document")'
-#RCMD	00:02:22	yeast.N3L20ID0U.full.html generated from yeast.N3L20ID0U.full.Rmd
-#WARN	00:02:22	4 warning messages: check log for details.
-#LOG	00:02:22	BUSCOMP V0.9.3 End: Tue Jun 23 10:00:00 2020
+#LOCALN	00:00:10	Reduced local alignment CS to unique coverage: 1,811 -> 1,681 (0 failed to meet minloclen=20)
+#SAVE	00:00:10	Table "hitunique" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.hitunique.tdt": 1,718 entries.
+#SAVE	00:00:10	Table "qryunique" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.qryunique.tdt": 1,681 entries.
+#~~#	00:00:10	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
+#INFO	00:00:10	Converting query-unique reduced local hits into hit summary statistics
+#INFO	00:00:10	Using hit-unique reduced local hits for GABLAM summary statistics
+#DROP	00:00:10	19 hitsum fields reduced to 13 fields
+#CMPRSS	00:00:10	Compressed table "hitsum": 13 fields; 1,681 entries
+#SAVE	00:00:11	Table "hitsum" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.hitsum.tdt": 1,681 entries.
+#~~#	00:00:11	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
+#FORK	00:00:15	1,723 Qry-Hit pairs for forking
+#GABLAM	00:00:21	Forked 3,446 local qry-hit GABLAM reductions: 3,446 complete (3,446 forked; 0 skipped).
+#CMPRSS	00:00:21	Compressed table "gablam": 17 fields; 1,723 entries
+#DROP	00:00:21	18 gablam fields reduced to 6 fields
+#GABLAM	00:00:28	Generated GABLAM table from 1,723 Qry-Hit pairs (0 MinLocID filtered).
+#SAVE	00:00:28	Table "gablam" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.gablam.tdt": 1,723 entries.
+#DEL	00:00:29	3,446 temporary GABLAM files deleted from yeast.minimap/SGDR64.2.1.N3L20ID0U.tmp/ (0 missing)
+#PAF	00:00:29	Renamed yeast.minimap/SGDR64.2.1.N3L20ID0U.paf -> yeast.minimap/SGDR64.2.1.N3.paf
+#PAF	00:00:29	Renamed yeast.minimap/SGDR64.2.1.N3L20ID0U.paf.cmd -> yeast.minimap/SGDR64.2.1.N3.paf.cmd
+#--#	00:00:29	# -------------------------- PacBioHQ Minimap --------------------------- #
+#BASE	00:00:29	yeast.minimap/MBG344001.N3L20ID0U
+#REFIN	00:00:29	Loading reference (target) sequences.
+#SEQ	00:00:29	17 of 17 sequences loaded from ../fasta/MBG344001.fsa.index (Format: index).
+#FILT	00:00:29	17 of 17 sequences retained.
+#SEQIN	00:00:29	Loading assembly (query) sequences.
+#SEQ	00:00:29	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta.index (Format: index).
+#FILT	00:00:29	1,681 of 1,681 sequences retained.
+#PAFIN	00:00:29	Minimap2 PAF file set: yeast.minimap/MBG344001.N3L20ID0U.paf
+#SYS	00:00:29	minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/MBG344001.fsa yeast.buscomp.fasta > yeast.minimap/MBG344001.N3L20ID0U.paf
+#~~#	00:00:32	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
+#PAF	00:00:32	Parsing yeast.minimap/MBG344001.N3L20ID0U.paf
+#PAF	00:00:32	Parsed 1,843 lines from yeast.minimap/MBG344001.N3L20ID0U.paf
+#~~#	00:00:32	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
+#DROP	00:00:32	31 local fields reduced to 17 fields
+#ALN	00:00:32	Conversion of 1,843 PAF cs alignments complete.
+#SAVE	00:00:32	Table "local" saved to "yeast.minimap/MBG344001.N3L20ID0U.local.tdt": 1,843 entries.
+#~~#	00:00:32	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
+#~~#	00:00:32	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:32	Reduced local alignment CS to unique coverage: 1,843 -> 1,709 (7 failed to meet minloclen=20)
+#~~#	00:00:32	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:33	Reduced local alignment CS to unique coverage: 1,843 -> 1,681 (0 failed to meet minloclen=20)
+#SAVE	00:00:33	Table "hitunique" saved to "yeast.minimap/MBG344001.N3L20ID0U.hitunique.tdt": 1,709 entries.
+#SAVE	00:00:33	Table "qryunique" saved to "yeast.minimap/MBG344001.N3L20ID0U.qryunique.tdt": 1,681 entries.
+#~~#	00:00:33	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
+#INFO	00:00:33	Converting query-unique reduced local hits into hit summary statistics
+#INFO	00:00:33	Using hit-unique reduced local hits for GABLAM summary statistics
+#DROP	00:00:33	19 hitsum fields reduced to 13 fields
+#CMPRSS	00:00:33	Compressed table "hitsum": 13 fields; 1,681 entries
+#SAVE	00:00:34	Table "hitsum" saved to "yeast.minimap/MBG344001.N3L20ID0U.hitsum.tdt": 1,681 entries.
+#~~#	00:00:34	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
+#FORK	00:00:38	1,723 Qry-Hit pairs for forking
+#GABLAM	00:00:44	Forked 3,446 local qry-hit GABLAM reductions: 3,446 complete (3,446 forked; 0 skipped).
+#CMPRSS	00:00:44	Compressed table "gablam": 17 fields; 1,723 entries
+#DROP	00:00:44	18 gablam fields reduced to 6 fields
+#GABLAM	00:00:51	Generated GABLAM table from 1,723 Qry-Hit pairs (0 MinLocID filtered).
+#SAVE	00:00:51	Table "gablam" saved to "yeast.minimap/MBG344001.N3L20ID0U.gablam.tdt": 1,723 entries.
+#DEL	00:00:51	3,446 temporary GABLAM files deleted from yeast.minimap/MBG344001.N3L20ID0U.tmp/ (0 missing)
+#PAF	00:00:51	Renamed yeast.minimap/MBG344001.N3L20ID0U.paf -> yeast.minimap/MBG344001.N3.paf
+#PAF	00:00:51	Renamed yeast.minimap/MBG344001.N3L20ID0U.paf.cmd -> yeast.minimap/MBG344001.N3.paf.cmd
+#--#	00:00:51	# -------------------------- chrIIIdup Minimap -------------------------- #
+#BASE	00:00:51	yeast.minimap/chrIIIdup.N3L20ID0U
+#REFIN	00:00:51	Loading reference (target) sequences.
+#SEQ	00:00:51	2 of 2 sequences loaded from ../fasta/chrIIIdup.fsa.index (Format: index).
+#FILT	00:00:51	2 of 2 sequences retained.
+#SEQIN	00:00:51	Loading assembly (query) sequences.
+#SEQ	00:00:51	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta.index (Format: index).
+#FILT	00:00:51	1,681 of 1,681 sequences retained.
+#PAFIN	00:00:51	Minimap2 PAF file set: yeast.minimap/chrIIIdup.N3L20ID0U.paf
+#SYS	00:00:51	minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/chrIIIdup.fsa yeast.buscomp.fasta > yeast.minimap/chrIIIdup.N3L20ID0U.paf
+#~~#	00:00:52	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
+#PAF	00:00:52	Parsing yeast.minimap/chrIIIdup.N3L20ID0U.paf
+#PAF	00:00:52	Parsed 123 lines from yeast.minimap/chrIIIdup.N3L20ID0U.paf
+#~~#	00:00:52	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
+#DROP	00:00:52	31 local fields reduced to 17 fields
+#ALN	00:00:52	Conversion of 123 PAF cs alignments complete.
+#SAVE	00:00:52	Table "local" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.local.tdt": 123 entries.
+#~~#	00:00:52	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
+#~~#	00:00:52	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:52	Reduced local alignment CS to unique coverage: 123 -> 89 (0 failed to meet minloclen=20)
+#~~#	00:00:52	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:52	Reduced local alignment CS to unique coverage: 123 -> 47 (0 failed to meet minloclen=20)
+#SAVE	00:00:52	Table "hitunique" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.hitunique.tdt": 89 entries.
+#SAVE	00:00:52	Table "qryunique" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.qryunique.tdt": 47 entries.
+#~~#	00:00:52	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
+#INFO	00:00:52	Converting query-unique reduced local hits into hit summary statistics
+#INFO	00:00:52	Using hit-unique reduced local hits for GABLAM summary statistics
+#DROP	00:00:52	19 hitsum fields reduced to 13 fields
+#CMPRSS	00:00:52	Compressed table "hitsum": 13 fields; 47 entries
+#SAVE	00:00:53	Table "hitsum" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.hitsum.tdt": 1,681 entries.
+#~~#	00:00:53	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
+#FORK	00:00:53	94 Qry-Hit pairs for forking
+#GABLAM	00:00:53	Forked 188 local qry-hit GABLAM reductions: 188 complete (188 forked; 0 skipped).
+#CMPRSS	00:00:53	Compressed table "gablam": 17 fields; 94 entries
+#DROP	00:00:53	18 gablam fields reduced to 6 fields
+#GABLAM	00:00:53	Generated GABLAM table from 94 Qry-Hit pairs (0 MinLocID filtered).
+#SAVE	00:00:54	Table "gablam" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.gablam.tdt": 94 entries.
+#DEL	00:00:54	188 temporary GABLAM files deleted from yeast.minimap/chrIIIdup.N3L20ID0U.tmp/ (0 missing)
+#PAF	00:00:54	Renamed yeast.minimap/chrIIIdup.N3L20ID0U.paf -> yeast.minimap/chrIIIdup.N3.paf
+#PAF	00:00:54	Renamed yeast.minimap/chrIIIdup.N3L20ID0U.paf.cmd -> yeast.minimap/chrIIIdup.N3.paf.cmd
+#--#	00:00:54	# ------------------------ PacBioWTDBG2 Minimap ------------------------- #
+#BASE	00:00:54	yeast.minimap/MBG344WTDBG2.N3L20ID0U
+#REFIN	00:00:54	Loading reference (target) sequences.
+#SEQ	00:00:54	29 of 29 sequences loaded from ../fasta/MBG344WTDBG2.fsa.index (Format: index).
+#FILT	00:00:54	29 of 29 sequences retained.
+#SEQIN	00:00:54	Loading assembly (query) sequences.
+#SEQ	00:00:54	1,681 of 1,681 sequences loaded from yeast.buscomp.fasta.index (Format: index).
+#FILT	00:00:54	1,681 of 1,681 sequences retained.
+#PAFIN	00:00:54	Minimap2 PAF file set: yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
+#SYS	00:00:54	minimap2 --cs -x splice -N 3 -t 4 -p 0.0 ../fasta/MBG344WTDBG2.fsa yeast.buscomp.fasta > yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
+#~~#	00:00:56	# ~~~~~~~~~~~~~~~~ Parsing PAF Alignments ~~~~~~~~~~~~~~~~ #
+#PAF	00:00:56	Parsing yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
+#PAF	00:00:56	Parsed 1,818 lines from yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf
+#~~#	00:00:56	# ~~~~~~~~~ PAF CS to Local Alignment Conversion ~~~~~~~~~ #
+#DROP	00:00:56	31 local fields reduced to 17 fields
+#ALN	00:00:56	Conversion of 1,818 PAF cs alignments complete.
+#SAVE	00:00:56	Table "local" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.local.tdt": 1,818 entries.
+#~~#	00:00:56	# ~~~~~~~~~~ PAF Local Alignment to Unique Hits ~~~~~~~~~~ #
+#~~#	00:00:56	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:57	Reduced local alignment CS to unique coverage: 1,818 -> 1,696 (6 failed to meet minloclen=20)
+#~~#	00:00:57	# ~~~~~~~~~~~~ PAF Local Alignment Reduction ~~~~~~~~~~~~~ #
+#LOCALN	00:00:57	Reduced local alignment CS to unique coverage: 1,818 -> 1,681 (0 failed to meet minloclen=20)
+#SAVE	00:00:57	Table "hitunique" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.hitunique.tdt": 1,696 entries.
+#SAVE	00:00:57	Table "qryunique" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.qryunique.tdt": 1,681 entries.
+#~~#	00:00:57	# ~~~~~~~~~ PAF Local and Unique Hits to HitSum ~~~~~~~~~~ #
+#INFO	00:00:57	Converting query-unique reduced local hits into hit summary statistics
+#INFO	00:00:57	Using hit-unique reduced local hits for GABLAM summary statistics
+#DROP	00:00:57	19 hitsum fields reduced to 13 fields
+#CMPRSS	00:00:57	Compressed table "hitsum": 13 fields; 1,681 entries
+#SAVE	00:00:58	Table "hitsum" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.hitsum.tdt": 1,681 entries.
+#~~#	00:00:58	# ~~~~~ Forking PAF Local Alignment to GABLAM Stats ~~~~~~ #
+#FORK	00:01:02	1,722 Qry-Hit pairs for forking
+#GABLAM	00:01:08	Forked 3,444 local qry-hit GABLAM reductions: 3,444 complete (3,444 forked; 0 skipped).
+#CMPRSS	00:01:08	Compressed table "gablam": 17 fields; 1,722 entries
+#DROP	00:01:08	18 gablam fields reduced to 6 fields
+#GABLAM	00:01:15	Generated GABLAM table from 1,722 Qry-Hit pairs (0 MinLocID filtered).
+#SAVE	00:01:15	Table "gablam" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.gablam.tdt": 1,722 entries.
+#DEL	00:01:15	3,444 temporary GABLAM files deleted from yeast.minimap/MBG344WTDBG2.N3L20ID0U.tmp/ (0 missing)
+#PAF	00:01:15	Renamed yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf -> yeast.minimap/MBG344WTDBG2.N3.paf
+#PAF	00:01:15	Renamed yeast.minimap/MBG344WTDBG2.N3L20ID0U.paf.cmd -> yeast.minimap/MBG344WTDBG2.N3.paf.cmd
+#PAF	00:01:15	RJE_PAF Minimap2 runs complete for 4 genomes; 0 failed; 0 skipped.
+#==#	00:01:15	# ============================= COMPILE MINIMAP2 SEARCHES ============================== #
+#~~#	00:01:15	# ~~~~~~~~~~~~~~~~~ SGD Minimap2 ratings ~~~~~~~~~~~~~~~~~ #
+#LOAD	00:01:16	Loaded table "SGDR64.2.1.N3L20ID0U.hitsum" renamed "01_SGD.hitsum".
+#TABLE	00:01:16	Table "01_SGD.hitsum" added: 13 fields; 1,681 entries.
+#LOAD	00:01:16	Loaded table "SGDR64.2.1.N3L20ID0U.gablam" renamed "01_SGD.gablam".
+#TABLE	00:01:16	Table "01_SGD.gablam" added: 19 fields; 1,723 entries.
+#RATING	00:01:16	Rating 1,723 01_SGD hits complete.
+#RATING	00:01:16	Rating 1,681 01_SGD BUSCOs complete.
+#DROP	00:01:16	1,723 01_SGD.gablam entries reduced to 1,681 entries on Rank.
+#DROP	00:01:16	1,681 01_SGD.gablam entries reduced to 1,678 entries on Qry.
+#DROP	00:01:16	21 01_SGD.gablam fields reduced to 7 fields
+#FIELD	00:01:16	Set 01_SGD.gablam fields: Qry, Status, Hit, Hit_Start, Hit_End, Score, Length
+#SAVE	00:01:16	yeast.minimap/SGDR64.2.1.N3L20ID0U.complete.tsv: 6 leading comments
+#SAVE	00:01:16	Table "01_SGD.gablam" saved to "yeast.minimap/SGDR64.2.1.N3L20ID0U.complete.tsv": 1,678 entries.
+#SEQID	00:01:16	1,609 of 1,681 identical to BUSCOSeq
+#RATING	00:01:16	1,678 Complete 01_SGD.hitsum:Rating entries.
+#RATING	00:01:16	1 Duplicated 01_SGD.hitsum:Rating entries.
+#RATING	00:01:16	2 Partial 01_SGD.hitsum:Rating entries.
+#COMP	00:01:16	01_SGD (SGDR64.2.1) BUSCOMP Rating complete
+#~~#	00:01:16	# ~~~~~~~~~~~~~~ PacBioHQ Minimap2 ratings ~~~~~~~~~~~~~~~ #
+#LOAD	00:01:16	Loaded table "MBG344001.N3L20ID0U.hitsum" renamed "02_PacBioHQ.hitsum".
+#TABLE	00:01:16	Table "02_PacBioHQ.hitsum" added: 13 fields; 1,681 entries.
+#LOAD	00:01:16	Loaded table "MBG344001.N3L20ID0U.gablam" renamed "02_PacBioHQ.gablam".
+#TABLE	00:01:16	Table "02_PacBioHQ.gablam" added: 19 fields; 1,723 entries.
+#RATING	00:01:16	Rating 1,723 02_PacBioHQ hits complete.
+#RATING	00:01:16	Rating 1,681 02_PacBioHQ BUSCOs complete.
+#DROP	00:01:16	1,723 02_PacBioHQ.gablam entries reduced to 1,681 entries on Rank.
+#DROP	00:01:16	1,681 02_PacBioHQ.gablam entries reduced to 1,678 entries on Qry.
+#DROP	00:01:16	21 02_PacBioHQ.gablam fields reduced to 7 fields
+#FIELD	00:01:16	Set 02_PacBioHQ.gablam fields: Qry, Status, Hit, Hit_Start, Hit_End, Score, Length
+#SAVE	00:01:16	yeast.minimap/MBG344001.N3L20ID0U.complete.tsv: 6 leading comments
+#SAVE	00:01:16	Table "02_PacBioHQ.gablam" saved to "yeast.minimap/MBG344001.N3L20ID0U.complete.tsv": 1,678 entries.
+#SEQID	00:01:16	1,611 of 1,681 identical to BUSCOSeq
+#RATING	00:01:16	1,678 Complete 02_PacBioHQ.hitsum:Rating entries.
+#RATING	00:01:16	1 Duplicated 02_PacBioHQ.hitsum:Rating entries.
+#RATING	00:01:16	2 Partial 02_PacBioHQ.hitsum:Rating entries.
+#COMP	00:01:16	02_PacBioHQ (MBG344001) BUSCOMP Rating complete
+#~~#	00:01:16	# ~~~~~~~~~~~~~~ chrIIIdup Minimap2 ratings ~~~~~~~~~~~~~~ #
+#LOAD	00:01:16	Loaded table "chrIIIdup.N3L20ID0U.hitsum" renamed "03_chrIIIdup.hitsum".
+#TABLE	00:01:16	Table "03_chrIIIdup.hitsum" added: 13 fields; 1,681 entries.
+#LOAD	00:01:16	Loaded table "chrIIIdup.N3L20ID0U.gablam" renamed "03_chrIIIdup.gablam".
+#TABLE	00:01:16	Table "03_chrIIIdup.gablam" added: 19 fields; 94 entries.
+#RATING	00:01:16	Rating 94 03_chrIIIdup hits complete.
+#RATING	00:01:16	Rating 1,681 03_chrIIIdup BUSCOs complete.
+#DROP	00:01:16	94 03_chrIIIdup.gablam entries reduced to 47 entries on Rank.
+#DROP	00:01:16	47 03_chrIIIdup.gablam entries reduced to 0 entries on Qry.
+#DROP	00:01:16	21 03_chrIIIdup.gablam fields reduced to 7 fields
+#FIELD	00:01:16	Set 03_chrIIIdup.gablam fields: Qry, Status, Hit, Hit_Start, Hit_End, Score, Length
+#SAVE	00:01:16	yeast.minimap/chrIIIdup.N3L20ID0U.complete.tsv: 6 leading comments
+#SAVE	00:01:16	Table "03_chrIIIdup.gablam" saved to "yeast.minimap/chrIIIdup.N3L20ID0U.complete.tsv": headers only.
+#SEQID	00:01:16	43 of 1,681 identical to BUSCOSeq
+#RATING	00:01:16	45 Duplicated 03_chrIIIdup.hitsum:Rating entries.
+#RATING	00:01:16	1 Ghost 03_chrIIIdup.hitsum:Rating entries.
+#RATING	00:01:16	1,634 Missing 03_chrIIIdup.hitsum:Rating entries.
+#RATING	00:01:16	1 Partial 03_chrIIIdup.hitsum:Rating entries.
+#COMP	00:01:16	03_chrIIIdup (chrIIIdup) BUSCOMP Rating complete
+#~~#	00:01:16	# ~~~~~~~~~~~~ PacBioWTDBG2 Minimap2 ratings ~~~~~~~~~~~~~ #
+#LOAD	00:01:16	Loaded table "MBG344WTDBG2.N3L20ID0U.hitsum" renamed "10_PacBioWTDBG2.hitsum".
+#TABLE	00:01:16	Table "10_PacBioWTDBG2.hitsum" added: 13 fields; 1,681 entries.
+#LOAD	00:01:16	Loaded table "MBG344WTDBG2.N3L20ID0U.gablam" renamed "10_PacBioWTDBG2.gablam".
+#TABLE	00:01:16	Table "10_PacBioWTDBG2.gablam" added: 19 fields; 1,722 entries.
+#RATING	00:01:17	Rating 1,722 10_PacBioWTDBG2 hits complete.
+#RATING	00:01:17	Rating 1,681 10_PacBioWTDBG2 BUSCOs complete.
+#DROP	00:01:17	1,722 10_PacBioWTDBG2.gablam entries reduced to 1,681 entries on Rank.
+#DROP	00:01:17	1,681 10_PacBioWTDBG2.gablam entries reduced to 1,677 entries on Qry.
+#DROP	00:01:17	21 10_PacBioWTDBG2.gablam fields reduced to 7 fields
+#FIELD	00:01:17	Set 10_PacBioWTDBG2.gablam fields: Qry, Status, Hit, Hit_Start, Hit_End, Score, Length
+#SAVE	00:01:17	yeast.minimap/MBG344WTDBG2.N3L20ID0U.complete.tsv: 6 leading comments
+#SAVE	00:01:17	Table "10_PacBioWTDBG2.gablam" saved to "yeast.minimap/MBG344WTDBG2.N3L20ID0U.complete.tsv": 1,677 entries.
+#SEQID	00:01:17	1,018 of 1,681 identical to BUSCOSeq
+#RATING	00:01:17	1,677 Complete 10_PacBioWTDBG2.hitsum:Rating entries.
+#RATING	00:01:17	2 Duplicated 10_PacBioWTDBG2.hitsum:Rating entries.
+#RATING	00:01:17	2 Partial 10_PacBioWTDBG2.hitsum:Rating entries.
+#COMP	00:01:17	10_PacBioWTDBG2 (MBG344WTDBG2) BUSCOMP Rating complete
+#==#	00:01:17	# =========================== COMPILE BUSCOMP GROUP RATINGS ============================ #
+#GRP	00:01:17	Compiled BUSCOMP stats for group BUSCOMP (4 of 4 genomes)
+#GRP	00:01:17	Compiled BUSCOMP stats for group HighQuality (3 of 3 genomes)
+#SAVE	00:01:17	Table "buscoseq" saved to "yeast.buscoseq.tdt": 1,711 entries.
+#SAVE	00:01:17	Table "buscomp" saved to "yeast.N3L20ID0U.buscomp.tdt": 1,681 entries.
+#SAVE	00:01:17	Table "ratings" saved to "yeast.N3L20ID0U.ratings.tdt": 6 entries.
+#DROP	00:01:17	1,711 best entries reduced to 1,681 entries on Status.
+#==#	00:01:17	# ================================== BUSCOMP RESULTS =================================== #
+#~~#	00:01:17	# ~~~~~~~~~~~~~~~~~~~ BUSCOMP BUSCOMP ~~~~~~~~~~~~~~~~~~~~ #
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - BUSCOMP [1689 (98.71%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
+#INFO	00:01:17	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
+#INFO	00:01:17	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
+#INFO	00:01:17	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
+#INFO	00:01:17	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
+#INFO	00:01:17	2 Partial BUSCOs (P)  [40-95% coverage]
+#INFO	00:01:17	0 Ghost BUSCOs (G)  [<40% coverage]
+#INFO	00:01:17	0 Missing BUSCOs (M)  [No hits]
+#INFO	00:01:17	1681 Total BUSCO gene hits searched
+#~~#	00:01:17	# ~~~~~~~~~~~~~~~~~ HighQuality BUSCOMP ~~~~~~~~~~~~~~~~~~ #
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - HighQuality [1684 (98.42%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
+#INFO	00:01:17	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
+#INFO	00:01:17	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
+#INFO	00:01:17	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
+#INFO	00:01:17	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
+#INFO	00:01:17	2 Partial BUSCOs (P)  [40-95% coverage]
+#INFO	00:01:17	0 Ghost BUSCOs (G)  [<40% coverage]
+#INFO	00:01:17	0 Missing BUSCOs (M)  [No hits]
+#INFO	00:01:17	1681 Total BUSCO gene hits searched
+#~~#	00:01:17	# ~~~~~~~~~~~~~~~~~~~ PacBioHQ BUSCOMP ~~~~~~~~~~~~~~~~~~~ #
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%,I:95.8%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioHQ [1684 (98.42%) Complete BUSCOs; 1599 (95.12%) BUSCOMP Seqs]
+#INFO	00:01:17	1611 Identical BUSCOs (I)  [100% complete and identical]
+#INFO	00:01:17	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
+#INFO	00:01:17	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
+#INFO	00:01:17	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
+#INFO	00:01:17	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
+#INFO	00:01:17	2 Partial BUSCOs (P)  [40-95% coverage]
+#INFO	00:01:17	0 Ghost BUSCOs (G)  [<40% coverage]
+#INFO	00:01:17	0 Missing BUSCOs (M)  [No hits]
+#INFO	00:01:17	1681 Total BUSCO gene hits searched
+#~~#	00:01:17	# ~~~~~~~~~~~~~~~~~ PacBioWTDBG2 BUSCOMP ~~~~~~~~~~~~~~~~~ #
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%,I:60.6%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioWTDBG2 [1384 (80.89%) Complete BUSCOs; 77 (4.58%) BUSCOMP Seqs]
+#INFO	00:01:17	1018 Identical BUSCOs (I)  [100% complete and identical]
+#INFO	00:01:17	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
+#INFO	00:01:17	1677 Complete and single-copy BUSCOs (S)  [1 Complete hit]
+#INFO	00:01:17	2 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
+#INFO	00:01:17	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
+#INFO	00:01:17	2 Partial BUSCOs (P)  [40-95% coverage]
+#INFO	00:01:17	0 Ghost BUSCOs (G)  [<40% coverage]
+#INFO	00:01:17	0 Missing BUSCOs (M)  [No hits]
+#INFO	00:01:17	1681 Total BUSCO gene hits searched
+#~~#	00:01:17	# ~~~~~~~~~~~~~~~~~~~~~ SGD BUSCOMP ~~~~~~~~~~~~~~~~~~~~~~ #
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%,I:95.7%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - SGD [1683 (98.36%) Complete BUSCOs; 5 (0.30%) BUSCOMP Seqs]
+#INFO	00:01:17	1609 Identical BUSCOs (I)  [100% complete and identical]
+#INFO	00:01:17	1679 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
+#INFO	00:01:17	1678 Complete and single-copy BUSCOs (S)  [1 Complete hit]
+#INFO	00:01:17	1 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
+#INFO	00:01:17	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
+#INFO	00:01:17	2 Partial BUSCOs (P)  [40-95% coverage]
+#INFO	00:01:17	0 Ghost BUSCOs (G)  [<40% coverage]
+#INFO	00:01:17	0 Missing BUSCOs (M)  [No hits]
+#INFO	00:01:17	1681 Total BUSCO gene hits searched
+#~~#	00:01:17	# ~~~~~~~~~~~~~~~~~~ chrIIIdup BUSCOMP ~~~~~~~~~~~~~~~~~~~ #
+#BUSCO	00:01:17	Results: C:2.7%[S:0.0%,D:2.7%,I:2.6%],F:0.0%,P:0.1%,G:0.1%,M:97.2%,n:1681 - chrIIIdup [45 (2.63%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
+#INFO	00:01:17	43 Identical BUSCOs (I)  [100% complete and identical]
+#INFO	00:01:17	45 Complete BUSCOs (C)  [95%+ coverage in a single contig/scaffold]
+#INFO	00:01:17	0 Complete and single-copy BUSCOs (S)  [1 Complete hit]
+#INFO	00:01:17	45 Complete and duplicated BUSCOs (D)  [2+ Complete hits]
+#INFO	00:01:17	0 Fragmented BUSCOs (F)  [95%+ coverage spread over 2+ contigs/scaffolds]
+#INFO	00:01:17	1 Partial BUSCOs (P)  [40-95% coverage]
+#INFO	00:01:17	1 Ghost BUSCOs (G)  [<40% coverage]
+#INFO	00:01:17	1634 Missing BUSCOs (M)  [No hits]
+#INFO	00:01:17	1681 Total BUSCO gene hits searched
+#DROP	00:01:17	1,711 best entries reduced to 1,681 entries on Status.
+#==#	00:01:17	# ================================== BUSCOMP SUMMARY =================================== #
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - BUSCOMP [1689 (98.71%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - HighQuality [1684 (98.42%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%,I:95.8%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioHQ [1684 (98.42%) Complete BUSCOs; 1599 (95.12%) BUSCOMP Seqs]
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%,I:60.6%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - PacBioWTDBG2 [1384 (80.89%) Complete BUSCOs; 77 (4.58%) BUSCOMP Seqs]
+#BUSCO	00:01:17	Results: C:99.9%[S:99.8%,D:0.1%,I:95.7%],F:0.0%,P:0.1%,G:0.0%,M:0.0%,n:1681 - SGD [1683 (98.36%) Complete BUSCOs; 5 (0.30%) BUSCOMP Seqs]
+#BUSCO	00:01:17	Results: C:2.7%[S:0.0%,D:2.7%,I:2.6%],F:0.0%,P:0.1%,G:0.1%,M:97.2%,n:1681 - chrIIIdup [45 (2.63%) Complete BUSCOs; 0 (0.00%) BUSCOMP Seqs]
+#==#	00:01:17	# =============================== BUSCOMP RATING CHANGES =============================== #
+#DROP	00:01:17	28 changes entries reduced to 14 entries on TOTAL.
+#SAVE	00:01:17	Table "changes.full" saved to "yeast.N3L20ID0U.changes.full.tdt": 1,711 entries.
+#SAVE	00:01:17	Table "changes" saved to "yeast.N3L20ID0U.changes.tdt": 14 entries.
+#SAVE	00:01:17	Table "gain" saved to "yeast.N3L20ID0U.gain.tdt": 4 entries.
+#==#	00:01:17	# =============================== UNIQUE COMPLETE BUSCOs =============================== #
+#SAVE	00:01:17	Table "unique" saved to "yeast.N3L20ID0U.unique.tdt": 1,711 entries.
+#UNIQ	00:01:17	SGD unique Complete genes: 0 BUSCO; 0 BUSCOMP
+#UNIQ	00:01:17	PacBioHQ unique Complete genes: 1 BUSCO; 0 BUSCOMP
+#UNIQ	00:01:17	chrIIIdup unique Complete genes: 0 BUSCO; 0 BUSCOMP
+#UNIQ	00:01:17	PacBioWTDBG2 unique Complete genes: 5 BUSCO; 0 BUSCOMP
+#UNIQ	00:01:17	HighQuality unique Complete genes: 0 BUSCO; 0 BUSCOMP
+#==#	00:01:17	# ================================ SETUP RMARKDOWN DATA ================================ #
+#BEST	00:01:17	Best NG50Length: 930848
+#BEST	00:01:17	Best LG50Count: 6
+#BEST	00:01:17	Best MaxLength: 1553502
+#BEST	00:01:17	Best Complete: 99.88%
+#BEST	00:01:17	Best Missing: 0.0%
+#BEST	00:01:17	Best BUSCO: 98.42%
+#BEST	00:01:17	Best NoBUSCO: 0.94%
+#SAVE	00:01:17	Table "rdata" saved to "yeast.N3L20ID0U.rdata.tdt": 6 entries.
+#==#	00:01:17	# ============================== SUMMARY RMARKDOWN OUTPUT ============================== #
+#DROP	00:01:17	1,711 best entries reduced to 1,681 entries on Status.
+#RMD	00:01:17	RMarkdown BUSCOMP summary output to yeast.N3L20ID0U.Rmd
+#RCMD	00:01:17	Rscript -e 'library(rmarkdown); rmarkdown::render("yeast.N3L20ID0U.Rmd", "html_document")'
+#RCMD	00:01:23	yeast.N3L20ID0U.html generated from yeast.N3L20ID0U.Rmd
+#==#	00:01:23	# =============================== FULL RMARKDOWN OUTPUT ================================ #
+#DROP	00:01:23	1,711 best entries reduced to 1,681 entries on Status.
+#RMD	00:01:23	RMarkdown BUSCOMP summary output to yeast.N3L20ID0U.full.Rmd
+#RCMD	00:01:23	Rscript -e 'library(rmarkdown); rmarkdown::render("yeast.N3L20ID0U.full.Rmd", "html_document")'
+#RCMD	00:01:31	yeast.N3L20ID0U.full.html generated from yeast.N3L20ID0U.full.Rmd
+#WARN	00:01:31	4 warning messages: check log for details.
+#LOG	00:01:31	BUSCOMP V0.11.0 End: Wed Mar  3 13:52:38 2021

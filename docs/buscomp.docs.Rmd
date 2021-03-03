@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Documentation"
 author: "Richard J. Edwards"
-date: "2021-02-01"
+date: "2021-03-03"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -157,6 +157,8 @@ BUSCOMP should be able to parse results generated using `-o assembly`, `-o assem
 `-o run_assembly.busco`. If none of these settings were used, the results directory can be manually renamed. For
 additional sorting, a XX_ numerical prefix _can_ be used (see below), e.g. `run_01_assembly` will still look
 for `assembly.*` in the `fastadir` path.
+
+**BUSCO v5.x** From `v0.11.0`, BUSCOMP should recognised BUSCO v5 output. This will be treated like v4 output.
 
 ### BUSCOMPSeq Analysis Only
 

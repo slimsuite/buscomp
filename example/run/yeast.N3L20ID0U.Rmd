@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Summary Report"
 author: "yeast BUSCOMP Analysis"
-date: "2020-06-23"
+date: "2021-03-03"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -30,11 +30,11 @@ library(ggrepel)
 
 # BUSCOMP Run Summary
 
-    BUSCOMP V0.9.3: run Tue Jun 23 09:57:38 2020
+    BUSCOMP V0.11.0: run Wed Mar  3 13:51:06 2021
 
 
 
-See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
+See the <a href="#Appendix">run details appendix</a> end of this document for details of the <a href="/Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/githubdev/example/run/yeast.log">log file</a>, <a href="#Appendix">commandline parameters</a> and runtime <a href="#Errors">BUSCOMP errors and warnings</a>.
 
 **NOTE:** To edit this document, open `yeast.N3L20ID0U.Rmd` in RStudio, edit and re-knit to HTML.
 
@@ -80,8 +80,9 @@ gentable$Genome = rdata$Genome
 rownames(gentable) = gentable[,1]
 gensum = gentable[! is.na(gentable$N),2:6]
 gensum = gensum[! (gensum$Directory == "" & gensum$Fasta == ""),]
-genstat = gentable[! is.na(gentable$SeqNum),c(4,9:20)]
-busco = gentable[,c(4,21:25)]
+nfield = which(colnames(gentable)=="N")
+genstat = gentable[! is.na(gentable$SeqNum),c(4,9:nfield-1)]
+busco = gentable[,c(4,nfield:ncol(gentable))]
 busco$Single = busco$Complete
 busco$Complete = busco$Single + busco$Duplicated
 busco = busco[,c(1,2,4,7,3,5:6)]
@@ -120,11 +121,15 @@ The following genome statistics were also calculated by `RJE_SeqList` for each g
 * **MedLength**: The median length of scaffolds/contigs in the assembly.
 * **N50Length**: At least half of the assembly is contained on scaffolds/contigs of this length or greater.
 * **L50Count**: The smallest number scaffolds/contigs needed to cover half the the assembly.
+* **CtgNum**: Number of contigs (`SeqNum`+`GapCount`).
+* **N50Ctg**: At least half of the assembly is contained on contigs of this length or greater.
+* **L50Ctg**: The smallest number contigs needed to cover half the the assembly.
 * **NG50Length**: At least half of the genome is contained on scaffolds/contigs of this length or greater.
 This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
 * **LG50Count**: The smallest number scaffolds/contigs needed to cover half the the genome.
 This is based on `genomesize=X`. If no genome size is given, it will be relative to the biggest assembly.
 * **GapLength**: The total number of undefined "gap" (`N`) nucleotides in the assembly.
+* **GapCount**: The total number of undefined "gap" (`N`) regions in the assembly.
 * **GC**: The %GC content of the assembly.
 
 
@@ -408,7 +413,8 @@ BUSCOMP ratings for each assembly are then given in subsequent fields:
     * `Ghost`: Hits meeting local cutoff but <40% combined coverage.
     * `Missing`: No hits meeting local cutoff.
     
-    <a name="BUSCOMP" />
+    
+<a name="BUSCOMP" />
 
 ## BUSCOSeq Rating Summary
 
@@ -592,15 +598,15 @@ Plots for `Missing` BUSCO genes are only produced for `fullreport=T` output.
 
 # Appendix: BUSCOMP run details
 
-    BUSCOMP V0.9.3: run Tue Jun 23 09:57:38 2020
+    BUSCOMP V0.11.0: run Wed Mar  3 13:51:06 2021
 
 This analysis was run in:
 
-    /Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run
+    /Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/githubdev/example/run
 
-* Log file: <a href="/Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run/yeast.log">`/Users/redwards/onedrive/OneDrive - UNSW/projects/BUSCOMP-Jan19/github/example/run/yeast.log`</a>
+* Log file: <a href="/Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/githubdev/example/run/yeast.log">`/Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/githubdev/example/run/yeast.log`</a>
 * Commandline arguments: `ini=../run/example.ini` `i=-1` `forks=4`
-* Full Command List: `minimap2=/Users/redwards/Data/BiowareOSX/minimap2/minimap2` `ini=../run/example.ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
+* Full Command List: `minimap2=minimap2` `ini=../run/example.ini` `genomesize=13.1e6` `genomes=../example.genomes.csv` `groups=../example.groups.csv` `runs=../busco3/run_*` `fastadir=../fasta/` `basefile=yeast` `i=-1` `forks=4`
 
 <a name="Errors" />
 
@@ -613,8 +619,8 @@ BUSCOMP returned no runtime errors.
 See run log for further details:
 
 ```
-#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
-#WARN	00:00:05	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.fna! (Keeping first.)
+#WARN	00:00:04	"Single copy" BUSCO EOG092E01WO has 2+ sequences in ../busco3/run_MBG344001/single_copy_busco_sequences/EOG092E01WO.faa! (Keeping first.)
 #WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.fna! (Keeping first.)
 #WARN	00:00:05	"Single copy" BUSCO EOG092E0EIP has 2+ sequences in ../busco3/run_MBG344WTDBG2/single_copy_busco_sequences/EOG092E0EIP.faa! (Keeping first.)
 ```
@@ -638,4 +644,4 @@ See run log for further details:
 ---
 
 
-<small>Output generated by BUSCOMP v0.9.3 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>
+<small>Output generated by BUSCOMP v0.11.0 &copy; 2019 Richard Edwards | richard.edwards@unsw.edu.au</small>

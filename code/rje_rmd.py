@@ -19,8 +19,8 @@
 """
 Module:       rje_rmd
 Description:  R Markdown generation and execution module
-Version:      0.0.0
-Last Edit:    05/02/19
+Version:      0.1.0
+Last Edit:    01/02/21
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -56,6 +56,7 @@ import rje, rje_obj
 def history():  ### Program History - only a method for PythonWin collapsing! ###
     '''
     # 0.0.0 - Initial Compilation.
+    # 0.1.0 - Added docHTML.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -72,7 +73,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_Rmd', '0.0.0', 'February 2019', '2019')
+    (program, version, last_edit, copy_right) = ('RJE_Rmd', '0.1.0', 'January 2021', '2019')
     description = 'R Markdown generation and execution module'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]

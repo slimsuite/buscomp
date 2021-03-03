@@ -1,7 +1,13 @@
 # BUSCOMP: BUSCO Compilation and Comparison tool
 
+--
+## BUSCO Compilation
+
+--
+## Compilation of ratings and genomes tables for summary plots and tables.
+
 ```
-BUSCOMP v0.10.1
+BUSCOMP v0.11.0
 ```
 
 For a better rendering and navigation of this document, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -143,6 +149,8 @@ BUSCOMP should be able to parse results generated using `-o assembly`, `-o assem
 `-o run_assembly.busco`. If none of these settings were used, the results directory can be manually renamed. For
 additional sorting, a XX_ numerical prefix _can_ be used (see below), e.g. `run_01_assembly` will still look
 for `assembly.*` in the `fastadir` path.
+
+**BUSCO v5.x** From `v0.11.0`, BUSCOMP should recognised BUSCO v5 output. This will be treated like v4 output.
 
 ### BUSCOMPSeq Analysis Only
 
