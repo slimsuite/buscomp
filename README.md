@@ -1,11 +1,5 @@
 # BUSCOMP: BUSCO Compilation and Comparison tool
 
---
-## BUSCO Compilation
-
---
-## Compilation of ratings and genomes tables for summary plots and tables.
-
 ```
 BUSCOMP v0.11.0
 ```
