@@ -1554,7 +1554,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
 #########################################################################################################################
     ### <2> ### Object Attributes                                                                                       #
 #########################################################################################################################
-    def details(self): return attDetails(printblanks=False)  ### Prints Details to screen
+    def details(self): return self.attDetails(printblanks=False)  ### Prints Details to screen
     def attDetails(self,types=['All'],printblanks=True):     ### Prints Details to screen
         '''Returns object details as text.'''
         try:### ~ [0] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###

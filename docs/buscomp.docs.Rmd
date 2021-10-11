@@ -1,7 +1,7 @@
 ---
 title: "BUSCOMP Documentation"
 author: "Richard J. Edwards"
-date: "2021-03-04"
+date: "2021-10-11"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -102,6 +102,7 @@ runsort=X       : Output sorting order for genomes and groups (or "Genome","Pref
 stripnum=T/F    : Whether to strip numbers ("XX_*") at start of Genome alias in output [True]
 groups=FILE     : File of Genome and Group fields to define Groups for compilation [*.groups.tdt]
 buscofas=FASFILE: Fasta file of BUSCO DNA sequences. Will combine and make (NR) if not given [None]
+metaeukfna=T/F  : Perform v5 metaeuk nucleotide busco sequences extraction if missing [True]
 buscomp=T/F     : Whether to run BUSCO compilation across full results tables [True]
 dupbest=T/F     : Whether to rate "Duplicated" above "Complete" when compiling "best" BUSCOs across Groups [False]
 buscompseq=T/F  : Whether to run full BUSCO comparison using buscofas and minimap2 [True]
@@ -511,7 +512,7 @@ the `minloclen=nn` and `minlocid=xx` settings. Compiled ratings are output to `*
 
 ### BUSCOMP Summary
 
-The final step of the BUSCOMP compilation is to summarise the findings in the log afile, akin to the BUSCO
+The final step of the BUSCOMP compilation is to summarise the findings in the log file, akin to the BUSCO
 summary file. This will first generate a one line summary of the percentages, along with the original number of
 complete BUSCOs and the number of BUSCOMP sequences contributed by that assembly (i.e. the number with the best
 score of all the BUSCO searches.) This is followed by a more detailed breakdown of each category. For example:
