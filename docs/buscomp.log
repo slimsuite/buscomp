@@ -1,5 +1,5 @@
 #~~#	#~+~~+~#	#~~#
-#LOG	00:00:00	Activity Log for BUSCOMP V0.13.0: Mon Oct 11 15:09:48 2021
+#LOG	00:00:00	Activity Log for BUSCOMP V0.13.0: Mon Oct 11 15:41:22 2021
 #DIR	00:00:00	Run from directory: /Users/redwards/OneDrive - UNSW/projects/BUSCOMP-Jan19/githubdev/docs
 #ARG	00:00:00	Commandline arguments: dochtml newlog
 #INI	00:00:00	INI file: ../code/buscomp.ini; Commands loaded: -minimap2 /Users/redwards/Data/BiowareOSX/minimap2/minimap2
@@ -7,5 +7,5 @@
 #VIO	00:00:00	Verbosity: 1; Interactivity: 0.
 #RMD	00:00:00	RMarkdown BUSCOMP documentation output to buscomp.docs.Rmd
 #RCMD	00:00:00	Rscript -e 'library(rmarkdown); rmarkdown::render("buscomp.docs.Rmd", "html_document")'
-#RCMD	00:00:03	buscomp.docs.html generated from buscomp.docs.Rmd
-#LOG	00:00:03	BUSCOMP V0.13.0 End: Mon Oct 11 15:09:51 2021
+#RCMD	00:00:01	buscomp.docs.html generated from buscomp.docs.Rmd
+#LOG	00:00:01	BUSCOMP V0.13.0 End: Mon Oct 11 15:41:24 2021

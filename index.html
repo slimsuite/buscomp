@@ -280,9 +280,28 @@ div.tocify {
 <pre><code>python $CODEPATH/buscomp.py [OPTIONS]</code></pre>
 <p>If running as part of <a href="http://slimsuite.blogspot.com/">SLiMSuite</a>, <code>$CODEPATH</code> will be the SLiMSuite <code>tools/</code> directory. If running from the standalone <a href="https://github.com/slimsuite/buscomp">BUSCOMP git repo</a>, <code>$CODEPATH</code> will be the path the to <code>code/</code> directory. Please see details in the <a href="https://github.com/slimsuite/buscomp">BUSCOMP git repo</a> for running on example data.</p>
 <p>For BUSCOMPSeq analysis, <a href="https://github.com/lh3/minimap2">minimap2</a> must be installed and either added to the environment <code>$PATH</code> or given to BUSCOMP with the <code>minimap2=PROG</code> setting.</p>
-<div id="commandline-options" class="section level2" number="2.1">
-<h2 number="2.1"><span class="header-section-number">2.1</span> Commandline options</h2>
-<p>A list of commandline options can be generated at run-time using the <code>-h</code> or <code>help</code> flags. Please see the general <a href="http://slimsuite.blogspot.com/2013/08/command-line-options.html">SLiMSuite documentation</a> for details of how to use commandline options, including setting default values with <strong>INI files</strong>.</p>
+<div id="quickstart" class="section level2" number="2.1">
+<h2 number="2.1"><span class="header-section-number">2.1</span> Quickstart</h2>
+<p>A full list of options and the workflow is provided below. The easiest/standard way to run BUSCOMP is to:</p>
+<ol style="list-style-type: decimal">
+<li>Stick one or more assemblies in a directory, e.g. <code>fasta/</code></li>
+<li>Run BUSCO on all of them in another directory, e.g. <code>busco/</code>, with <code>run_</code> prefixes (<code>-o setting</code>)</li>
+<li>Run BUSCOMP with a <code>basefile=$PREFIX</code> setting to get <code>$PREFIX.*</code> outputs, e.g.</li>
+</ol>
+<pre><code># Generate a name-matched BUSCO run per genome
+cd busco/
+for GENOME in ../fasta/*.fasta; do
+  GENBASE=$( basename ${GENOME/.fasta/} )
+  busco -o run_$GENBASE -i $GENOME -l $LINEAGE --cpu $PPN -m genome
+done
+cd ../
+# Run BUSCOMP
+python $CODEPATH/buscomp.py runs=&quot;./busco/run_*&quot; fastadir=./fasta/ basefile=$PREFIX</code></pre>
+<p>If you want to run the full BUSCOMP comparison, make sure minimap2 is installed and give the number of threads to use with <code>forks=$THREADNUM</code>. If you only want the BUSCO compilation, add <code>buscompseq=F</code>.</p>
+</div>
+<div id="commandline-options" class="section level2" number="2.2">
+<h2 number="2.2"><span class="header-section-number">2.2</span> Commandline options</h2>
+<p>A list of commandline options can be generated at run-time using the <code>-h</code> or <code>help</code> flags. Please see the general <a href="http://slimsuite.blogspot.com/2013/08/command-line-options.html">SLiMSuite documentation</a> for details of how to use commandline options, including setting default values with <strong>INI files</strong>. If anything is not clear, or for questions how to perform a particular analysis, please post a question in the GitHub Issues.</p>
 <pre><code>### ~ Input/Output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 runs=DIRLIST    : List of BUSCO run directories (wildcards allowed) [run_*]
 fastadir=DIRLIST: List of directories containing genome fasta files (wildcards allowed) [./]
@@ -319,20 +338,20 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###</code></pre>
 <hr />
 </div>
-<div id="input-data-busco-runs-and-assembly-fasta-files" class="section level2" number="2.2">
-<h2 number="2.2"><span class="header-section-number">2.2</span> Input Data: BUSCO runs and Assembly fasta files</h2>
+<div id="input-data-busco-runs-and-assembly-fasta-files" class="section level2" number="2.3">
+<h2 number="2.3"><span class="header-section-number">2.3</span> Input Data: BUSCO runs and Assembly fasta files</h2>
 <p>STEP 1 is to set up the input data. BUSCOMP will first identify and check the run directories (given with the <code>runs=DIRLIST</code> command). This command can either be a list of directories, or an expandable list with wildcard. A list of individual directories can be provided as a file if desired.</p>
 <p><strong>NOTE:</strong> <code>runs=DIRLIST</code> wants the actual BUSCO run directories (<code>run_$PREFIX[.busco]/</code>), not the parent directory. These directories can optionally have a <code>.busco</code> suffix, which will be trimmed off. By default, BUSCOMP will look for <code>./run*</code>.</p>
 <p>From these, the run list will be extracted, consisting of a number of genome <code>$PREFIX</code> values. It is expected that the <code>$PREFIX</code> for each run will match the input genome file, found in a directory set by <code>fastadir=DIRLIST</code>. This file can also match the <code>Genome</code> alias for that genome (see below). If you have not used consistent naming across files, please check data has been loaded and mapped correctly during the Review phase (below).</p>
 <p>The presence of a <code>full_$PREFIX[.busco].tsv</code> table and <code>single_copy_busco_sequences/</code> directory within each run directory will also be checked. If <code>buscocompseq=F</code> then all of the <code>full_*.tsv</code> tables in the <code>runs</code> directories will be loaded for compilation, but no sequence searching will be performed. The presence of sequences available for compilation will be stored in the <code>Sequences</code> field of <code>*.genomes.tdt</code>.</p>
 <p><strong>BUSCO v4.x:</strong> From <code>v0.9.1</code>, BUSCOMP should recognise BUSCO v4 output. Due to the reorganisation and altered naming strategy of version 4, the naming of results files is more strict. The main results directory (set by <code>-o</code> when you run BUSCO) should match the genome assembly prefix with an optional <code>.busco</code> suffix. (A leading <code>run_</code> is also permitted and will be ignored. For example, if <code>assembly.fasta</code> was analysed with BUSCO v4, BUSCOMP should be able to parse results generated using <code>-o assembly</code>, <code>-o assembly.busco</code>, <code>-o run_assembly</code>, or <code>-o run_assembly.busco</code>. If none of these settings were used, the results directory can be manually renamed. For additional sorting, a XX_ numerical prefix <em>can</em> be used (see below), e.g. <code>run_01_assembly</code> will still look for <code>assembly.*</code> in the <code>fastadir</code> path.</p>
 <p><strong>BUSCO v5.x</strong> From <code>v0.11.0</code>, BUSCOMP should recognised BUSCO v5 output. This will be treated like v4 output.</p>
-<div id="buscompseq-analysis-only" class="section level3" number="2.2.1">
-<h3 number="2.2.1"><span class="header-section-number">2.2.1</span> BUSCOMPSeq Analysis Only</h3>
+<div id="buscompseq-analysis-only" class="section level3" number="2.3.1">
+<h3 number="2.3.1"><span class="header-section-number">2.3.1</span> BUSCOMPSeq Analysis Only</h3>
 <p>Additional assemblies can rated using the BUSCOMPSeq analysis (see below) without having BUSCO data analysed. These are given with the <code>ratefas=LIST</code> command (wildcards allowed), and will be added to the main Genomes table after BUSCO compilation has been performed. The default prefix for these files will be their basename (filename, minus path and extension). This can be linked to an alias and/or have a prefix number stripped, as with the run directories. When combined with <code>buscofas=FASFILE</code>, this enables the BUSCOMPSeq analysis to be performed in the absence of <em>any</em> BUSCO results.</p>
 </div>
-<div id="genome-prefixes" class="section level3" number="2.2.2">
-<h3 number="2.2.2"><span class="header-section-number">2.2.2</span> Genome Prefixes</h3>
+<div id="genome-prefixes" class="section level3" number="2.3.2">
+<h3 number="2.3.2"><span class="header-section-number">2.3.2</span> Genome Prefixes</h3>
 <p>Each genome analysed has a “Prefix” that can be used to help sorting (if <code>runsort=prefix</code>) and identify relevant BUSCO files where the genome (Fasta) name and BUSCO run name do not match. It is generally assumed that this Prefix will match the prefix of the original assembly file on which BUSCO was run. This Prefix is set once as the data is loaded and is never changed. (Sorting and visualisations can be made more informative altered using the Genome (a.k.a. Alias) and Description fields.)</p>
 <p>The assembly Prefix will be set as:</p>
 <ol style="list-style-type: decimal">
@@ -340,8 +359,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <li>If no BUSCO results are available, the path- and extension-stripped fasta file name will be used for the prefix</li>
 </ol>
 </div>
-<div id="genome-aliases" class="section level3" number="2.2.3">
-<h3 number="2.2.3"><span class="header-section-number">2.2.3</span> Genome Aliases</h3>
+<div id="genome-aliases" class="section level3" number="2.3.3">
+<h3 number="2.3.3"><span class="header-section-number">2.3.3</span> Genome Aliases</h3>
 <p>Genome Aliases will be parsed initially from the loaded data:</p>
 <ol style="list-style-type: decimal">
 <li>If a BUSCO run directory is given and it contains a single BUSCO run, the run directory name will be used for the <code>Genome</code> alias, minus the leading “<code>run_</code>”.</li>
@@ -358,16 +377,16 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <hr />
 </div>
 </div>
-<div id="grouping-and-busco-compilation" class="section level2" number="2.3">
-<h2 number="2.3"><span class="header-section-number">2.3</span> Grouping and BUSCO compilation</h2>
+<div id="grouping-and-busco-compilation" class="section level2" number="2.4">
+<h2 number="2.4"><span class="header-section-number">2.4</span> Grouping and BUSCO compilation</h2>
 <p>BUSCOMP compilation will take a set of genomes and identify the best rating for each BUSCO across the set. By default, this is done for all input genomes and assigned to a “BUSCOMP” rating. Ratings are compiled according to the <code>ratings=LIST</code> hierarchy, which by default is: <code>Complete</code>, <code>Duplicated</code>, <code>Fragmented</code>, <code>Missing</code>. The “best” rating (first in the hierarchy) will be used for that group, even if it is found in only a single assembly in the group. If <code>dupbest=T</code>, the hierarchy is <code>Duplicated</code>, <code>Complete</code>, <code>Fragmented</code>, <code>Missing</code>.</p>
-<div id="loading-groups" class="section level3" number="2.3.1">
-<h3 number="2.3.1"><span class="header-section-number">2.3.1</span> Loading Groups</h3>
+<div id="loading-groups" class="section level3" number="2.4.1">
+<h3 number="2.4.1"><span class="header-section-number">2.4.1</span> Loading Groups</h3>
 <p>Additional subsets of genomes can also be grouped together for compilation, using the <code>groups=FILE</code> input. This must have <code>Genome</code> and <code>Group</code> fields. Once generated, a Group becomes a “Genome”. Groups can therefore include other Groups in them, provided there is no circular membership. Genome mapping should also recognise Prefix values. The “BUSCOMP” group with <em>all</em> genomes will be added unless a conflicting “BUSCOMP” group is provided, or <code>buscomp=F</code>.</p>
 <p><strong>NOTE:</strong> Genome groups are generated mapping onto the <code>Genome</code> (or <code>Prefix</code>) values <em>after</em> any alias mapping but <em>before</em> any manual editing of <code>Genome</code> aliases.</p>
 </div>
-<div id="manual-group-reviewediting" class="section level3" number="2.3.2">
-<h3 number="2.3.2"><span class="header-section-number">2.3.2</span> Manual group review/editing</h3>
+<div id="manual-group-reviewediting" class="section level3" number="2.4.2">
+<h3 number="2.4.2"><span class="header-section-number">2.4.2</span> Manual group review/editing</h3>
 <p>When running interactively (<code>i&gt;=0</code>), Group review and editing can be accessed from the main Genome menu. This will show the genomes currently in each group, and provides the following menu options:</p>
 <ul>
 <li><code>&lt;A&gt;dd</code> = Create a new Group. First, a group name will need to be chosen, then the <code>&lt;E&gt;dit</code> menu will be triggered.</li>
@@ -378,13 +397,13 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <li><code>&lt;Q&gt;uit</code> = Quit BUSCOMP.</li>
 </ul>
 </div>
-<div id="saving-and-sorting" class="section level3" number="2.3.3">
-<h3 number="2.3.3"><span class="header-section-number">2.3.3</span> Saving and sorting</h3>
+<div id="saving-and-sorting" class="section level3" number="2.4.3">
+<h3 number="2.4.3"><span class="header-section-number">2.4.3</span> Saving and sorting</h3>
 <p>Once group edits are complete, group data will be saved to the <code>*.groups.tdt</code> file. If <code>runsort=group</code> then genome sorting will also be performed following group edits.</p>
 </div>
 </div>
-<div id="buscomp-genomegroup-menu" class="section level2" number="2.4">
-<h2 number="2.4"><span class="header-section-number">2.4</span> BUSCOMP Genome/Group menu</h2>
+<div id="buscomp-genomegroup-menu" class="section level2" number="2.5">
+<h2 number="2.5"><span class="header-section-number">2.5</span> BUSCOMP Genome/Group menu</h2>
 <p>Following initial setup of genomes and groups, a Genome/Group edit menu enables updating loaded information. (This menu will not be available if running in non-interactive mode, e.g. <code>i=-1</code>.) The primary use for this is to convert unwieldy genome and/or BUSCO run names into something more user-friendly for display. It can also be used for adding descriptions to assemblies, adding or modifying group membership, and sorting genomes using different criteria. Assemblies can also be dropped from analysis from this menu.</p>
 <p>The main menu offers five options:</p>
 <ul>
@@ -394,8 +413,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <li><code>Q</code> = Quit BUSCOMP</li>
 <li><code>X</code> = Exit Menu and Proceed [default]</li>
 </ul>
-<div id="genome-review-menu" class="section level3" number="2.4.1">
-<h3 number="2.4.1"><span class="header-section-number">2.4.1</span> Genome review menu</h3>
+<div id="genome-review-menu" class="section level3" number="2.5.1">
+<h3 number="2.5.1"><span class="header-section-number">2.5.1</span> Genome review menu</h3>
 <p>If running in interactive mode, users will have the option to review and manually update loaded data. Each loaded genome will be displayed in turn, in its current sorted order. (Sorting can be altered or updated via the <code>Sort genomes</code> option of the main genome/group menu.) Options will be presented to modify data, or quit the menu (or BUSCOMP program). Modifications permitted are:</p>
 <ul>
 <li><code>&lt;A&gt;lias</code> = Sets the <code>Genome</code> field for the entry. This can have a “silent” numeric prefix for sorting if <code>runsort=Genome</code> or <code>runsort=Group</code>. Most importantly, this will be the default label in tables and plots, and used for fields in compiled data.</li>
@@ -404,8 +423,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 </ul>
 <p>If genomes are edited and <code>runsort=Genome</code> or <code>runsort=Group</code>, they will be re-sorted upon exiting the menu.</p>
 </div>
-<div id="output-order" class="section level3" number="2.4.2">
-<h3 number="2.4.2"><span class="header-section-number">2.4.2</span> Output order</h3>
+<div id="output-order" class="section level3" number="2.5.2">
+<h3 number="2.5.2"><span class="header-section-number">2.5.2</span> Output order</h3>
 <p>An optional <code>runsort=LIST</code> parameter will determine the output order. Future releases of BUSCOMP will proceess a mixed list of Prefix, Genome and Group names. Any data missing from the list will be appended at the end in Genome order. (NOTE: Group names are a special kind of Genome in this context.) This sorting is preformed after all manual reviews and updates are complete. Currently, providing a list of genomes (or <code>runsort=Manual</code>) will trigger manual ordering via the sort menu.</p>
 <p>There are also four special sort modes that can be implemented:</p>
 <ul>
@@ -424,8 +443,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <hr />
 </div>
 </div>
-<div id="genome-summary-statistics" class="section level2" number="2.5">
-<h2 number="2.5"><span class="header-section-number">2.5</span> Genome Summary Statistics</h2>
+<div id="genome-summary-statistics" class="section level2" number="2.6">
+<h2 number="2.6"><span class="header-section-number">2.6</span> Genome Summary Statistics</h2>
 <p>The final setup step is to load any genomes for which Fasta files have been provided. Unless <code>summarise=F</code>, summary statistics will be calculated for each genome, enabling assessements of genome completeness and quality in combination with the BUSCO and BUSCOMP results. Summary statistics are calculated by <code>rje_seqlist</code>. The following statistics are calculated for each genome:</p>
 <ul>
 <li><strong>SeqNum</strong>: The total number of scaffolds/contigs in the assembly.</li>
@@ -448,8 +467,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <p><strong>NOTE:</strong> <code>NG50Length</code> and <code>LG50Count</code> statistics use <code>genomesize=X</code> or the biggest assembly loaded. If BUSCOMP has been run more than once on the same data (<em>e.g.</em> to update descriptions or sorting), previously calculates statistics will be read from the <code>genomes=FILE</code> table, if loaded. This may cause some inconsistencies between reported NG50 and LG50 values and the given/calculated <code>genomesize=X</code>. If partial results are reloaded following a change in <code>genomesize=X</code>, this will give rise to inconsistencies between assemblies. When re-running, please make sure that a consistent genome size is used. If in doubt, run with <code>force=T</code> and force regeneration of statistics.</p>
 <hr />
 </div>
-<div id="busco-compilation" class="section level2" number="2.6">
-<h2 number="2.6"><span class="header-section-number">2.6</span> BUSCO Compilation</h2>
+<div id="busco-compilation" class="section level2" number="2.7">
+<h2 number="2.7"><span class="header-section-number">2.7</span> BUSCO Compilation</h2>
 <p>Once all the genomes are loaded, BUSCOMP compiles the BUSCO results. This is done for three purposes:</p>
 <ol style="list-style-type: decimal">
 <li>Report comparative BUSCO statistics across assemblies and plot with other assembly statistics.</li>
@@ -476,15 +495,15 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <li><code>*.full.tdt</code> = full BUSCO results across all assemblies.</li>
 <li><code>*.busco.tdt</code> = compiled BUSCO results showing the rating per genome/group for each BUSCO gene.</li>
 </ul>
-<div id="buscompseq-sequence-compilation" class="section level3" number="2.6.1">
-<h3 number="2.6.1"><span class="header-section-number">2.6.1</span> BUSCOMPSeq sequence compilation</h3>
+<div id="buscompseq-sequence-compilation" class="section level3" number="2.7.1">
+<h3 number="2.7.1"><span class="header-section-number">2.7.1</span> BUSCOMPSeq sequence compilation</h3>
 <p>The final step of the BUSCOMP BUSCO compilation is to extract the best Complete BUSCO sequences from those available. For all assemblies with BUSCO results and a <code>single_copy_busco_sequences/</code>, BUSCOMP ranks all the hits across all assemblies by <code>Score</code> and keeps the top-ranking hits. Ties are then resolved by <code>Length</code>, keeping the longest sequence. Ties for <code>Score</code> and <code>Length</code> will keep an arbitrary entry as the winner. <code>Single</code> complete hits are given preference over <code>Duplicate</code> hits, even if they have a lower score, because only <code>Single</code> hit have their sequences saved by BUSCO in the <code>single_copy_busco_sequences/</code> directory.</p>
 <p>If <code>buscofas=FASFILE</code> has been given, this will be used for BUSCOMPSeq searches. Otherwise, the best BUSCO seqences identified for each BUSCO gene will be saved as <code>*.buscomp.fasta</code> for BUSCOMPSeq analysis. The exception is if <code>buscofas=FASFILE</code> is pointing to the <code>*.buscomp.fasta</code> and <code>force=T</code>, or if the <code>buscofas=FILE</code> fasta file cannot be found.</p>
 <p><strong>NOTE:</strong> The <code>buscofas=FASFILE</code> option has not been tested and might give some unexpected behaviours, as some of the quoted figures will still be based on the calculated BUSCOMPSeq data.</p>
 </div>
 </div>
-<div id="buscompseq-minimap2-searches" class="section level2" number="2.7">
-<h2 number="2.7"><span class="header-section-number">2.7</span> BUSCOMPSeq Minimap2 searches</h2>
+<div id="buscompseq-minimap2-searches" class="section level2" number="2.8">
+<h2 number="2.8"><span class="header-section-number">2.8</span> BUSCOMPSeq Minimap2 searches</h2>
 <p>Once the gene sequences for BUSCOMPSeq have been established, the next step is to search for them in the assembly fasta files using a more deterministic (and faster) approach. For this, minimap2 has been chosen. BUSCOMP will perform a minimap2 search on each assembly fasta file. (Use <code>minimap2=FILE</code> to tell BUSCOMP where to find minimap2 if the path is not an environment variable.)</p>
 <p>Minimap2 will run with <code>-x splice -uf -C5</code> and hits will be filtered by length, keeping those that meet the <code>minloclen=X</code> cutoff (default 20 bp). A percentage identity cutoff can also be applied with <code>minlocid=X</code> (default 0%). Hits are also reduced to unique coverage by starting with the local alignment with the largest number of identical positions, and then trimming any other local alignments that overlap with the same part(s) of the query (BUSCO) sequence. This is repeated until all local alignments are non-overlapping (and still meet the identity and length criteria). Local hits are then compiled into global alignment (GABLAM) statistics of coverage and identity.</p>
 <p>By default, Minimap2 searches will keep the <strong>Top 3</strong> secondary alignments for each sequence (the minimap2 <code>-N</code> commandline parameter). In limited tests, this appears to give a good trade-off between search speed and the identification of <code>Duplicated</code> BUSCO genes. This default can be adjusted with <code>mmsecnum=INT</code> to make runs faster or more sensitive, as required. This can be further modulated using <code>mmpcut=NUM</code>, which sets the Minimap2 minimal secondary-to-primary score ratio to output secondary mappings (the minimap2 <code>-p</code> commandline parameter).</p>
@@ -493,8 +512,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <p>Minimap2 hits are first converted into BLAST-style “local” hits, which are then converted into <a href="http://rest.slimsuite.unsw.edu.au/gablam">GABLAM</a>-style summary statistics. For the <code>*.hitsum.tdt</code> table, local hits are reduced to unique coverage of each Query, such that each part of the Query is covered by a single hit. Local hits are selected in order of the number of identical positions between Query and Hit, followed by Length in the case of a tie. Overlapping regions from other local hits are trimmed, and the process repeated with the next-best local hit, ranked on trimmed stats where necessary. For the <code>*.gablam.tdt</code> output, each Query-Hit pair is considered independently and local hits are reduced to (a) unique coverage of the Query for <code>Qry_*</code> output, and (b) unique coverage of the Hit for <code>Hit_*</code> output. (Note that for each Query-Hit pair, only the local hits between that pair are considered for “unique” local hit reduction - there may be overlapping alignments to different queries/hits.) Unless <code>uniquehit=F</code>, hits will first be reduced to be non-overlapping across <em>all</em> queries before being coverted to Query-Hit pair GABLAM coverage stats.</p>
 <p><strong>NOTE:</strong> Re-using results does NOT robustly check whether the BUSCOMPSeq data has changed, so this directory should be deleted if re-running with different sequences. BUSCOMP will save the name of the BUSCO file along with the md5sum of its contents to <code>*.NX.input.md5</code>, which will be checked if present and re-using data. Some basic checks should also be performed during the following results compilation stage, but please note that BUSCO IDs are used for sequence identifiers and so changes in BUSCO hit sequences will not be identified if files have been inappropriatley copied/moved between runs etc. - please look out for unexpected behaviour outside a “clean” run.</p>
 <p><strong>NOTE:</strong> Minimap2 only works with high sequence identity. BUSCOMP is designed to be used on multiple assemblies <em>from the same species</em>. If using cross-species BUSCO analysis, odd results might be obtained, biased by the evolutionary distance from the species with the most BUSCOMP sequences. Under these circumstances, it might be better to swap out minimap2 for BLAST+. This can be achieved by independently running GABLAM using the BUSCOMPSeq fasta file as queries and each assembly as the search database, then replacing the <code>*.gablam.tdt</code> and <code>*.hitsum.tdt</code> files before re-running BUSCOMP. Please contact the author if you want help with this.</p>
-<div id="buscompseq-minimap2-search-compilation." class="section level3" number="2.7.1">
-<h3 number="2.7.1"><span class="header-section-number">2.7.1</span> BUSCOMPSeq Minimap2 search compilation.</h3>
+<div id="buscompseq-minimap2-search-compilation." class="section level3" number="2.8.1">
+<h3 number="2.8.1"><span class="header-section-number">2.8.1</span> BUSCOMPSeq Minimap2 search compilation.</h3>
 <p>Minimap2 searches of the compiled BUSCOMP sequences are then compiled in similar vein to the original BUSCO results. The primary difference is that the search results need to first be converted into BUSCO-style ratings. This rating is explicitly more “quick and dirty” than the original BUSCO ratings, and should be considered complementary rather than superior. It aims to provide a quick, consistent assessment, but does have fewer checks and balances as a result.</p>
 <p>BUSCOMP uses results from both the <code>*.hitsum.tdt</code> table (overall coverage in assembly) and the <code>*.gablam.tdt</code> table (coverage in a single contig/scaffold) to rate sequences as:</p>
 <ul>
@@ -509,8 +528,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <p>Once all the individual assemblies have been rated for the full set of assemblies, results are compiled across Groups as described for the original BUSCO results (above). Because no genes receive an individual “Identical” rating, Groups will <em>not</em> have a summary count for Identical hits.</p>
 <p>Individual gene ratings for each genome and group are output to <code>*.LnnIDxx.buscomp.tdt</code>, where <code>LnnIDxx</code> records the <code>minloclen=nn</code> and <code>minlocid=xx</code> settings. Compiled ratings are output to <code>*.LnnIDxx.ratings.tdt</code>.</p>
 </div>
-<div id="buscomp-summary" class="section level3" number="2.7.2">
-<h3 number="2.7.2"><span class="header-section-number">2.7.2</span> BUSCOMP Summary</h3>
+<div id="buscomp-summary" class="section level3" number="2.8.2">
+<h3 number="2.8.2"><span class="header-section-number">2.8.2</span> BUSCOMP Summary</h3>
 <p>The final step of the BUSCOMP compilation is to summarise the findings in the log file, akin to the BUSCO summary file. This will first generate a one line summary of the percentages, along with the original number of complete BUSCOs and the number of BUSCOMP sequences contributed by that assembly (i.e. the number with the best score of all the BUSCO searches.) This is followed by a more detailed breakdown of each category. For example:</p>
 <pre><code>#BUSCO  00:00:41    Results: C:89.2%[S:87.8%,D:1.4%,I:23.3%],F:5.8%,P:3.8%,G:1.6%,M:0.9%,n:3736 - canetoad_v2.2 (3194 Complete BUSCOs; 102 BUSCOMP Seqs)
 #INFO   00:00:41    870 Identical BUSCOs (I)  [100% complete and identical]
@@ -524,8 +543,8 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 #INFO   00:00:41    3736 Total BUSCO gene hits searched</code></pre>
 </div>
 </div>
-<div id="busco-versus-buscomp-comparisons" class="section level2" number="2.8">
-<h2 number="2.8"><span class="header-section-number">2.8</span> BUSCO versus BUSCOMP comparisons</h2>
+<div id="busco-versus-buscomp-comparisons" class="section level2" number="2.9">
+<h2 number="2.9"><span class="header-section-number">2.9</span> BUSCO versus BUSCOMP comparisons</h2>
 <p>There is a risk that performing a low stringency search will identify homologues or pseudogenes of the desired BUSCO gene in error. If there is a second copy of a gene in the genome that is detectable by the search then we would expect the same genes that go from <code>Missing</code> to <code>Complete</code> in some genomes to go from <code>Single</code> to <code>Duplicated</code> in others.</p>
 <p>To test this, data is reduced for each pair of genomes to BUSCO-BUSCOMP rating pairs of:</p>
 <ul>

@@ -71,11 +71,35 @@ for running on example data.
 For BUSCOMPSeq analysis, [minimap2](https://github.com/lh3/minimap2) must be installed and either added to the
 environment `$PATH` or given to BUSCOMP with the `minimap2=PROG` setting.
 
+## Quickstart
+
+A full list of options and the workflow is provided below. The easiest/standard way to run BUSCOMP is to:
+
+1. Stick one or more assemblies in a directory, e.g. `fasta/`
+2. Run BUSCO on all of them in another directory, e.g. `busco/`, with `run_` prefixes (`-o setting`)
+3. Run BUSCOMP with a `basefile=$PREFIX` setting to get `$PREFIX.*` outputs, e.g.
+
+```
+# Generate a name-matched BUSCO run per genome
+cd busco/
+for GENOME in ../fasta/*.fasta; do
+  GENBASE=$( basename ${GENOME/.fasta/} )
+  busco -o run_$GENBASE -i $GENOME -l $LINEAGE --cpu $PPN -m genome
+done
+cd ../
+# Run BUSCOMP
+python $CODEPATH/buscomp.py runs="./busco/run_*" fastadir=./fasta/ basefile=$PREFIX
+```
+
+If you want to run the full BUSCOMP comparison, make sure minimap2 is installed and give the number of threads to
+use with `forks=$THREADNUM`. If you only want the BUSCO compilation, add `buscompseq=F`.
+
 ## Commandline options
 
 A list of commandline options can be generated at run-time using the `-h` or `help` flags. Please see the general
 [SLiMSuite documentation](http://slimsuite.blogspot.com/2013/08/command-line-options.html) for details of how to
-use commandline options, including setting default values with **INI files**.
+use commandline options, including setting default values with **INI files**. If anything is not clear, or for
+questions how to perform a particular analysis, please post a question in the GitHub Issues.
 
 ```
 ### ~ Input/Output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
