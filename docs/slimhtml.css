@@ -1,0 +1,287 @@
+body{
+font: Georgia,serif;
+color:#007275;
+}
+
+p{
+font: Georgia,serif;
+color:#007275;
+}
+
+
+phelv{
+font: Helvetica,san-serif;
+color:#007275;
+}
+
+
+pgold{
+font: Georgia,serif; 
+color:#979E45;
+}
+
+
+table {
+    border-collapse: collapse;
+}
+#parse table {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+#parse th {
+    border: 1px solid black;
+    border-collapse: collapse;
+    background-color:#f8f8ff;
+    padding: 5px;
+    text-align: left;
+}
+#parse td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 5px;
+    text-align: left;
+}
+table#parse  tr:nth-child(odd) {
+    background-color: #eee;
+}
+table#parse  tr:nth-child(even) {
+    background-color: #fff;
+}
+
+/*
+a{ color: #014359; }
+
+a:visited {
+	color: #40778a;
+}
+*/
+
+a{
+text-decoration:none;
+color:#4088c8;
+font-weight:bold;
+}
+
+a:hover{text-decoration:underline;}
+
+h1{
+font-size:2.0em;
+font-family: Verdana,sans-serif;
+font-weight:bold;
+letter-spacing:-2px;
+/* border-bottom:12px solid #dadada; */
+color:#900;
+}
+
+
+h2{
+font-size:1.4em;
+font-family: Verdana,sans-serif;
+font-weight:bold;
+color:#979E45;
+border-bottom:4px solid #dadada;
+}
+
+h3{
+font-size:1.2em;
+font-weight:bold;
+font-family: Tahoma,sans-serif;
+color:#014359;
+line-height:50%;
+}
+
+scaps{ font-weight:bold; font-variant: small-caps; color: #979E45; }
+
+
+img{
+text-align:right;
+border:none;
+}
+
+.toolTip {
+   border: 1px solid #999999;
+   background-color: #dddddd;
+   position: absolute;
+   padding: 1px 5px 1px 5px;
+}
+
+.buttonSet {
+   font-family: Tahoma, sans-serif;
+   color: #336699;
+   background-color: #ffffff;
+   float: left;
+   border: 1px solid #999999;
+}
+
+/*
+td { font-family: tahoma,sans-serif; color: #323D43; }
+*/
+
+
+/*
+#tabs {
+	position: absolute;
+	bottom: 0px;
+	right: 20px;
+	margin: 0;
+	padding: 0;
+}
+
+#tabs li {
+	list-style: none;
+	display: inline;
+}
+
+#tabs li span,
+
+#tabs li span {
+	background-color: white;
+}
+*/
+#tabs li a {
+	display: inline-block;
+	background-color: #b3b9bc;
+	color: black;
+	text-decoration: none;
+	padding: 2px 8px 3px;
+	-moz-border-radius-topleft: 4px;
+	-moz-border-radius-topright: 4px;
+	-webkit-border-top-left-radius: 4px;
+	-webkit-border-top-right-radius: 4px;
+}
+
+
+#links {
+   font-family: Tahoma, sans-serif;
+}
+
+#links a{
+text-decoration:none;
+color:#0A96A9;
+font-weight:bold;
+}
+
+#links a:hover{text-decoration:underline;}
+
+#linktab {
+   font-family: Georgia, serif;
+    border-collapse: separate;
+}
+
+#linktab th{
+         font-size:1.1em;
+	font-weight: bold;
+        font-variant: small-caps;
+	background-color: #531F44;
+	color: white;
+	padding: 0.2em 1em;
+        text-align:left;
+}
+
+#linktab td{
+	font-weight: bold;
+	background-color: #0A96A9;
+	color: white;
+	padding: 0.1em 1em;
+        text-align:right;
+}
+
+#linktab2 td{
+	font-weight: bold;
+	background-color: #979E45;
+	color: white;
+	padding: 0.1em 1em;
+        text-align:right;
+}
+
+#linktab3 td{
+	font-weight: bold;
+	background-color: #014359;
+	color: white;
+	padding: 0.1em 1em;
+        text-align:right;
+}
+
+#doctab td{
+	font-weight: bold;
+	background-color: #0A96A9;
+	color: white;
+	padding: 0.1em 1em;
+        text-align:left;
+}
+
+#doctab2 td{
+	font-weight: bold;
+	background-color: #979E45;
+	color: white;
+	padding: 0.1em 1em;
+        text-align:left;
+}
+
+#doctab3 td{
+	font-weight: bold;
+	background-color: #014359;
+	color: white;
+	padding: 0.1em 1em;
+        text-align:left;
+}
+
+#linktab a{
+font-size:1.1em;
+text-decoration:none;
+color:white;
+font-weight:normal;
+}
+
+#linktab a:hover{text-decoration:underline;}
+
+# nonsig a{
+text-decoration:none;
+color:#4088c8;
+font-weight:regular;
+}
+
+blockquote {
+  border-left: 4px solid #dddddd;
+  padding: 0 15px;
+  color: #777777; }
+  blockquote > :first-child {
+    margin-top: 0; }
+  blockquote > :last-child {
+    margin-bottom: 0; }
+
+code, tt {
+  margin: 0 2px;
+  padding: 0 5px;
+  white-space: nowrap;
+  border: 1px solid #eaeaea;
+  background-color: #f8f8f8;
+  border-radius: 3px; }
+
+pre code {
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  border: none;
+  background: transparent; }
+
+.highlight pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+
+pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+  pre code, pre tt {
+    background-color: transparent;
+    border: none; }
