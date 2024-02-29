@@ -19,8 +19,8 @@
 """
 Module:       rje
 Description:  Contains SLiMSuite and Sequite General Objects
-Version:      4.23.0
-Last Edit:    21/08/20
+Version:      4.24.3
+Last Edit:    09/05/23
 Copyright (C) 2005  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -174,6 +174,11 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 4.22.4 - Added some Python 2.6 back-compatbility for the server.
     # 4.22.5 - Added checking of glist inputs.
     # 4.23.0 - Added rje_py2 and rje_py3 code divergence for Python3 compatibility development.
+    # 4.23.1 - Added HPC etc. warning for i>=0.
+    # 4.24.0 - Changed warning and error repeat behaviour at EndLog.
+    # 4.24.1 - Fixed signif calculation and sortKeys for python3.
+    # 4.24.2 - Fixed md5 hash bug.
+    # 4.23.3 - Py3 urllib bug fix. / to // bug fixes.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -181,9 +186,10 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [Y] : Split general functions into groups, like delimited text functions
     '''
 #########################################################################################################################
-import glob, hashlib, math, os, pickle, random, re, string, sys, time, traceback
+import glob, hashlib, math, os, pickle, random, re, string, sys, time, traceback, zlib
+import itertools
 py3 = False
-jstring = ' '
+stringj = ' '
 try:
     import urllib2 as urllib
     import rje_py2 as rje_py
@@ -191,7 +197,8 @@ except:
     import urllib.request as urllib
     py3 = True
     import rje_py3 as rje_py
-    print('>>> Python 3.x detected but not fully supported. Please report odd behaviour <<<')
+    if len(sys.argv) != 2 or sys.argv[1] not in ['version', '-version', '--version', 'details', '-details', '--details', 'description', '-description', '--description']:
+        print('>>> Python 3.x detected but not fully supported. Please report odd behaviour <<<')
 try:
    set
 except NameError:
@@ -204,8 +211,6 @@ sys.path.append(os.path.join(slimsuitepath,'libraries/'))
 sys.path.append(os.path.join(slimsuitepath,'tools/'))
 ini_dir = os.path.join(slimsuitepath,'settings/')
 docs_dir = os.path.join(slimsuitepath,'docs/')
-#ini_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../settings/')
-# SVN note: re02svnW
 #########################################################################################################################
 
 #########################################################################################################################
@@ -266,7 +271,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         self.info = {'Name':'None','Basefile':'None','Delimit':getDelimit(self.cmd_list),'Rest':'None',
                      'RunPath':makePath(os.path.abspath(os.curdir)),'ErrorLog':'None',
                      'RPath':'R'}
-        #self.info['Path'] = makePath(os.path.abspath(string.join(string.split(sys.argv[0],os.sep)[:-1]+[''],os.sep)))
+        #self.info['Path'] = makePath(os.path.abspath(join(split(sys.argv[0],os.sep)[:-1]+[''],os.sep)))
         self.info['Path'] = makePath(os.path.abspath(os.sep.join(sys.argv[0].split(os.sep)[:-1]+[''])))
         self.stat = {'Verbose':1,'Interactive':0}
         self.opt = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,'Force':False,
@@ -382,7 +387,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         ### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if arg == None: arg = att.lower()
         cmdarg = cmd.split('=')[0].lower()
-        if cmdarg not in [arg,'-{0}'.format(arg)]: return
+        if cmdarg[:1] == '-': cmdarg = cmdarg[1:]
+        if cmdarg != arg: return
         value = cmd[len('{0}='.format(arg)):]
         value = value.replace('#DATE',dateTime(dateonly=True))
         ### ~ [1] Basic commandline types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -549,7 +555,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
                     except: self.errorLog('Cannot unzip %s' % (gzfile)); return None
             if os.path.exists(pfile):
                 self.progLog('\r#LOAD','Attempting to load %s.' % pfile)
-                newme = pickle.load(open(pfile,'r'))
+                try: newme = pickle.load(open(pfile,'r'))
+                except: newme = pickle.load(open(pfile,'rb'))
                 self.printLog('\r#LOAD','%s Intermediate loaded: %s.' % (self.prog(),pfile))
                 if not self.opt['Win32']:
                     try:
@@ -1076,7 +1083,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
                 self.log.printLog('#LOAD','Loading data from %s ...' % openfile,newline=False,log=False)
             file_lines = open(openfile, 'r').readlines()
             if len(file_lines) == 1: file_lines = file_lines[0].split('\r')
-            #if chomplines: file_lines = string.split(chomp(string.join(file_lines,'!#ENDOFLINE#!')),'!#ENDOFLINE#!')
+            #if chomplines: file_lines = split(chomp(join(file_lines,'!#ENDOFLINE#!')),'!#ENDOFLINE#!')
             if chomplines: file_lines = chomp('!#ENDOFLINE#!'.join(file_lines)).split('!#ENDOFLINE#!')
             if v <= self.stat['Verbose']:
                 self.log.printLog('\r#LOAD','Loading data from %s complete: %s lines.' % (openfile,integerString(len(file_lines))),log=False)
@@ -1285,6 +1292,19 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             os.system('gzip %s' % filename)
             self.printLog('\r#GZIP','%s zipped.' % filename); return True
         else: self.printLog('\r#ERR','%s missing!' % filename); return False
+#########################################################################################################################
+    def compressionScore(self,str): # Uses zlib to generate a compression score for a string
+        ''' Uses the zlib library to score the compressibilty of a string as an estimate of complexity. Low is complex.'''
+        try:
+            # Compress the string
+            compressed_data = zlib.compress(bytes(str, 'utf-8'))
+            # Get the size of the compressed data
+            compressed_size = len(compressed_data)
+            raw_size = float(len(str))
+            # Calculate the compression ratio
+            compression_ratio = (raw_size - compressed_size) / raw_size
+            return compression_ratio
+        except: self.log.errorLog('Problem during compressionScore()')
 #########################################################################################################################
     def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True): ### Checks whether checkfile needs remake
         '''
@@ -2139,8 +2159,8 @@ class Log(RJE_Object_Shell):
         ### End of Program Log entry
         if proginfo: self.printLog('#LOG', '{0} V{1} End: {2}\n'.format(proginfo.program,proginfo.version,time.asctime(time.localtime(time.time()))))
         ### Optional repeat of warnings and error messages
-        if warnings and self.i() >= 0 and yesNo('Repeat {0} warnings?'.format(iLen(warnings)),default='N'): printf('\n'.join(warnings+['']))
-        if errors and self.i() >= 0 and yesNo('Repeat {0} error messages?'.format(iLen(errors))): printf('\n'.join(errors))
+        if warnings and ( len(warnings) < 10 or self.i() < 0 or yesNo('Repeat {0} warnings?'.format(iLen(warnings)),default='N') ): printf('\n'.join(warnings+['']))
+        if errors and ( len(errors) < 10 or self.i() < 0 or yesNo('Repeat {0} error messages?'.format(iLen(errors))) ): printf('\n'.join(errors))
 #########################################################################################################################
 ### End of Log                                                                                                          #
 #########################################################################################################################
@@ -2447,6 +2467,21 @@ def memoryUse(who=None): ### Returns memory usage in kb
 #     for el in inlist: outlist.append(str(el))
 #     return outlist
 #########################################################################################################################
+def atoi(instr): return int(instr)
+def atof(instr): return float(instr)
+def strip(instr,chars): return instr.strip(chars)
+#########################################################################################################################
+def count(instr,sub,start=0,end=-1):  ### Replaces the old string module count function
+    if end < 0: end = len(instr)
+    return instr.count(sub,start,end)
+#########################################################################################################################
+def join(inlist,sep=' '):   ### Replaces the old string module join function
+    return sep.join(inlist)
+#########################################################################################################################
+def split(instr,separator=None,maxsplit=-1,sep=None): ### Replaces the old string split function
+    if sep and not separator: separator = sep
+    return instr.split(separator,maxsplit)
+#########################################################################################################################
 def fixASCII(text,error='replace'): ### Converts non-ASCII string to ASCII
     return text.decode('ascii','replace').encode('ascii',error)
 #########################################################################################################################
@@ -2489,7 +2524,7 @@ def strSentence(instr,allwords=False,pure=False):     # Changes to sentence case
     if allwords:
         newstr = []
         for word in instr.split(): newstr.append(strSentence(word,pure=pure))
-        return jstring.join(newstr)
+        return stringj.join(newstr)
     if pure: instr[:1].upper() + instr[1:].lower()
     return instr[:1].upper() + instr[1:]
 #########################################################################################################################
@@ -2555,7 +2590,7 @@ def strSort(text,unique=False):   ### Returns sorted string
 #########################################################################################################################
 def strList(text,unique=False):   ### Returns string as list
     '''Returns string as list.'''
-    if not unique: return jstring.join(text).split()
+    if not unique: return stringj.join(text).split()
     letters = []
     for x in text:
         if not unique or x not in letters: letters.append(x)
@@ -2563,7 +2598,7 @@ def strList(text,unique=False):   ### Returns string as list
 #########################################################################################################################
 def strRearrange(text): ### Returns all possible orders of letters as list
     '''Returns all possible orders of letters as list.'''
-    letters = jstring.join(text).split()
+    letters = stringj.join(text).split()
     bases = ['']; variants = []
     for i in range(len(text)):
         variants = []
@@ -2625,7 +2660,10 @@ def fileSafeString(instr,replacestr=''):  ### Returns a string that is safe for 
 #########################################################################################################################
 def md5hash(instr): return hashlib.md5(instr).hexdigest()
 #########################################################################################################################
-def replace(instr,oldstr,newstr): return instr.replace(oldstr,newstr)
+def replace(instr,oldstr,newstr,maxrep=-1):
+    if maxrep > 0:
+        return instr.replace(oldstr, newstr, maxrep)
+    return instr.replace(oldstr,newstr)
 #########################################################################################################################
 ### End of String Functions                                                                                             #
 #########################################################################################################################
@@ -2766,8 +2804,8 @@ def median(numlist,avtie=True):    ### Returns median for a list of numbers
     n = len(numlist)
     ncopy = numlist[0:]
     ncopy.sort()
-    if isOdd(n) or not avtie: return ncopy[len(ncopy)/2]
-    return sum(ncopy[(len(ncopy)-1)/2:][:2]) / 2.0
+    if isOdd(n) or not avtie: return ncopy[len(ncopy)//2]
+    return sum(ncopy[(len(ncopy)-1)//2:][:2]) / 2.0
 #########################################################################################################################
 def mean(numlist):    ### Returns mean for a list of numbers
     '''Returns mean for a list of numbers.'''
@@ -2831,8 +2869,7 @@ def factorial(m,callobj=None): ### Returns the factorial of the number m
 def isEven(num): return not isOdd(num)
 def isOdd(num):     ### Returns True if Odd or False if Even
     '''Returns True if Odd or False if Even.'''
-    if (float(num) / 2) == (int(num) / 2): return False
-    return True
+    return num % 2 != 0
 #########################################################################################################################
 def geoMean(numlist=[]):    ### Returns geometric mean of numbers
     '''Returns geometric mean of numbers in list.'''
@@ -3124,27 +3161,7 @@ def sf(data,sf=3): ### Returns number rounded to X sf
     '''Returns number rounded to X sf.'''
     indata = data
     if not type(data) in [float,int]: data = float(data)
-    neg = data < 0
-    if neg: data = -data
-    if not data: return dp(data,sf-1)
-    #dpadd = 0
-    if data > 1:    # Make smaller, round, increase
-        x = 0
-        while data >= 1:
-            data /= 10.0
-            x += 1
-        data = dp(data,sf)
-        for i in range(x): data *= 10.0
-    else:   # Make bigger, round, decrease
-        x = 0
-        while (data*10) < 1:
-            data *= 10.0
-            x += 1
-        data = dp(data,sf)
-        #if int(data) == data: dpadd = sf - 1
-        #else: dpadd = sf - len('%f' % data) + 1
-        for i in range(x): data /= 10.0
-    if neg: data = -data
+    data = round(data, int(sf - math.floor(math.log10(abs(data))) - 1))
     if type(indata) == int: data = int(data)
     return data
 #########################################################################################################################
@@ -3179,14 +3196,34 @@ def ratio(num,denom,dividezero=0.0):   ### Returns num/denom unless denom=0.0 - 
 #########################################################################################################################
 ### Dictionary Functions                                                                                                #
 #########################################################################################################################
+# This solution was taken from https://stackoverflow.com/questions/26575183/how-can-i-get-2-x-like-sorting-behaviour-in-python-3-x
+def python2sort(x):
+    it = iter(x)
+    groups = [[next(it)]]
+    for item in it:
+        for group in groups:
+            try:
+                item < group[0]  # exception if not comparable
+                group.append(item)
+                break
+            except TypeError:
+                continue
+        else:  # did not break, make new group
+            groups.append([item])
+    #print(groups)  # for debugging
+    return itertools.chain.from_iterable(sorted(group) for group in groups)
+#########################################################################################################################
 def sortKeys(dic,revsort=False):  ### Returns sorted keys of dictionary as list
     '''
     Returns sorted keys of dictionary as list.
     >> dic:dictionary object
     >> revsort:boolean = whether to reverse list before returning
     '''
-    dkeys = dic.keys()
-    dkeys.sort()
+    dkeys = list(dic.keys())
+    try:
+        dkeys = sorted(dkeys)
+    except:
+        dkeys = list(python2sort(dkeys))
     if revsort: dkeys.reverse()
     return dkeys
 #########################################################################################################################
@@ -3297,7 +3334,7 @@ def valueSortedKeys(data,rev=False):    ### Returns list of keys, sorted by valu
     if rev: sorter.reverse()
     valsorted = []
     for val in sorter:
-        for d in sortdict.keys()[0:]:
+        for d in list(sortdict.keys())[0:]:
             if data[d] == val: valsorted.append(d); sortdict.pop(d)
     return valsorted
 #########################################################################################################################
@@ -3400,6 +3437,11 @@ def numList(inlist): ### Converts inlist to floats and returns
     '''Converts inlist to integers and returns.'''
     outlist = []
     for x in inlist: outlist.append(float(x))
+    return outlist
+#########################################################################################################################
+def decodeList(inlist): ### Decodes list of binaries to unicode
+    outlist = []
+    for x in inlist: outlist.append(x.decode('UTF-8'))
     return outlist
 #########################################################################################################################
 def iLen(inlist): return integerString(len(inlist))
@@ -3692,7 +3734,10 @@ def subDir(pathname,exclude=[]):   ### Returns the subdirectories given by glob.
 #########################################################################################################################
 def file2md5(filename): ### Returns md5hash of file contents
     if not exists(filename): return ''
-    return hashlib.md5(open(filename,'r').read()).hexdigest()
+    try:
+        return hashlib.md5(open(filename,'r').read()).hexdigest()
+    except:
+        return hashlib.md5(open(filename, 'r').read().encode('utf-8')).hexdigest()
 #########################################################################################################################
 def stripPath(path): return os.path.basename(path)
 def basePath(path): return makePath(os.path.dirname(path))
@@ -3918,7 +3963,7 @@ def posFromIndex(target,INDEX,start_pos=0,end_pos=-1,re_index='^(\S+)=',sortuniq
         else:   ## This line is after the accession number: move back
             jpos = ipos
         ## Redefine ipos and repeat ##
-        ipos = start_pos + ((jpos - start_pos) / 2)
+        ipos = start_pos + ((jpos - start_pos) // 2)
         if ipos in [start_pos,jpos]:   # target not found in Index
             ipos = -1
             break
@@ -3938,7 +3983,14 @@ def urlToFile(sourceurl,filename,callobj,appendable=True,backupfile=True,log=Tru
         if backupfile and callobj: backup(callobj,filename,appendable=appendable)
         ### ~ [1] Download ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if log and callobj: callobj.progLog('#URL','Downloading %s' % sourceurl)
-        open(filename,'a').write(urllib.urlopen(sourceurl).read())
+        try:
+            if py3:
+                open(filename,'a').write(urllib.urlopen(sourceurl).read().decode('utf-8'))
+            else:
+                open(filename,'a').write(urllib.urlopen(sourceurl).read())
+        except:
+            filstr = str(urllib.urlopen(sourceurl).read().decode('ascii'))
+            open(filename, 'a').write(filestr)
         if log and callobj: callobj.printLog('\r#URL','Downloaded %s -> %s' % (sourceurl,filename),log=log)
     except:
         if callobj: callobj.errorLog('urlToFile error!'); return False
@@ -4576,8 +4628,8 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
             log.printLog('#LOG','Activity Log for {0} V{1}: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
             if py3: log.warnLog('Python 3.x detected but not fully supported. Please report odd behaviour.')
             log.printLog('#DIR','Run from directory: {0}'.format(os.path.abspath(os.curdir)),screen=False)
-            log.printLog('#ARG','Commandline arguments: {0}'.format(jstring.join(argcmd)),screen=False)
-            #log.printLog('#CMD','Program arguments: %s' % jstring.join(cmd_list),screen=False)
+            log.printLog('#ARG','Commandline arguments: {0}'.format(stringj.join(argcmd)),screen=False)
+            #log.printLog('#CMD','Program arguments: %s' % stringj.join(cmd_list),screen=False)
             for infowarn in info.warnings:
                 if infowarn[0] == '#WARN':
                     log.warnLog(infowarn[1])
@@ -4590,6 +4642,8 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
             if fullcmd: log.printLog('#CMD','Full Command List: {0}'.format(argString(tidyArgs(cmd_list))),screen=False)
             log.printLog('#VIO','Verbosity: {0}; Interactivity: {1}.'.format(log.v(),log.i()))
             if log.dev() or log.test(): log.printLog('#DEV','Development mode: {0}; Testing mode: {1}.'.format(log.dev(),log.test()))
+            if log.i() >= 0:
+                log.printLog('#NOTE','Interactivity could cause problems for queued HPC jobs etc. If so, set i=-1.')
             if log.info['ErrorLog'].lower() not in ['','none']:
                 log.printLog('#~~#','#~~#',timeout=False,screen=False,error=True)
                 log.printLog('#LOG','Error Log for {0} {1}: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False,error=True)
@@ -4673,7 +4727,7 @@ def argString(arglist):    ### Returns correctly formatted string of commandline
             (opt,val) = cmd.split('=',1)
             argstr.append('{0}="{1}"'.format(opt,val))
         else: argstr.append(cmd)
-    return jstring.join(argstr)
+    return stringj.join(argstr)
 #########################################################################################################################
 ###  End of Input Command Functions                                                                                     #
 #########################################################################################################################

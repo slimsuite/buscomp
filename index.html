@@ -11,7 +11,7 @@
 
 <meta name="author" content="Richard J. Edwards" />
 
-<meta name="date" content="2021-10-11" />
+<meta name="date" content="2024-02-29" />
 
 <title>BUSCOMP Documentation</title>
 
@@ -244,7 +244,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">BUSCOMP Documentation</h1>
 <h4 class="author">Richard J. Edwards</h4>
-<h4 class="date">2021-10-11</h4>
+<h4 class="date">2024-02-29</h4>
 
 </div>
 
@@ -272,7 +272,14 @@ div.tocify {
 <p><strong>NOTE:</strong> For HTML output, R must be installed and a pandoc environment variable must be set, e.g.</p>
 <pre><code>export RSTUDIO_PANDOC=/Applications/RStudio.app/Contents/MacOS/pandoc</code></pre>
 <p><strong>NOTE:</strong> BUSCOMPSeq sequences can be provided with <code>buscofas=FILE</code> in place of compilation. This option has not been tested and might give some unexpected behaviours, as some of the quoted figures will still be based on the calculated BUSCOMPSeq data. Please report any unexpected behaviour.</p>
+<div id="citation" class="section level2" number="1.1">
+<h2 number="1.1"><span class="header-section-number">1.1</span> Citation</h2>
+<p>BUSCOMP is still under review as part of the Starling genome paper. For now, please cite the preprint:</p>
+<blockquote>
+<p>Stuart KC<em>, Edwards RJ</em>, Cheng Y, Warren WC, Burt DW, Sherwin WB, Hofmeister NR, Werner SJ, Ball GF, Bateson M, Brandley MC, Buchanan KL, Cassey P, Clayton DF, De Meyer T, Meddle SL &amp; Rollins LA (preprint): Transcript- and annotation-guided genome assembly of the European starling. <a href="https://www.biorxiv.org/content/10.1101/2021.04.07.438753v1.full">bioRxiv 2021.04.07.438753</a>; doi: 10.1101/2021.04.07.438753. [*Joint first authors]</p>
+</blockquote>
 <hr />
+</div>
 </div>
 <div id="running-buscomp" class="section level1" number="2">
 <h1 number="2"><span class="header-section-number">2</span> Running BUSCOMP</h1>
@@ -316,6 +323,7 @@ metaeukfna=T/F  : Perform v5 metaeuk nucleotide busco sequences extraction if mi
 buscomp=T/F     : Whether to run BUSCO compilation across full results tables [True]
 dupbest=T/F     : Whether to rate &quot;Duplicated&quot; above &quot;Complete&quot; when compiling &quot;best&quot; BUSCOs across Groups [False]
 buscompseq=T/F  : Whether to run full BUSCO comparison using buscofas and minimap2 [True]
+phylofas=T/F    : Generate output of compiled and renamed files for BUSCO-based phylogenomics [False]
 ratefas=FILELIST: Additional fasta files of assemblies to rate with BUSCOMPSeq (No BUSCO run) (wildcards allowed) []
 rmdreport=T/F   : Generate Rmarkdown report and knit into HTML [True]
 fullreport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
@@ -500,6 +508,12 @@ forksleep=X     : Sleep time (seconds) between cycles of forking out more proces
 <p>The final step of the BUSCOMP BUSCO compilation is to extract the best Complete BUSCO sequences from those available. For all assemblies with BUSCO results and a <code>single_copy_busco_sequences/</code>, BUSCOMP ranks all the hits across all assemblies by <code>Score</code> and keeps the top-ranking hits. Ties are then resolved by <code>Length</code>, keeping the longest sequence. Ties for <code>Score</code> and <code>Length</code> will keep an arbitrary entry as the winner. <code>Single</code> complete hits are given preference over <code>Duplicate</code> hits, even if they have a lower score, because only <code>Single</code> hit have their sequences saved by BUSCO in the <code>single_copy_busco_sequences/</code> directory.</p>
 <p>If <code>buscofas=FASFILE</code> has been given, this will be used for BUSCOMPSeq searches. Otherwise, the best BUSCO seqences identified for each BUSCO gene will be saved as <code>*.buscomp.fasta</code> for BUSCOMPSeq analysis. The exception is if <code>buscofas=FASFILE</code> is pointing to the <code>*.buscomp.fasta</code> and <code>force=T</code>, or if the <code>buscofas=FILE</code> fasta file cannot be found.</p>
 <p><strong>NOTE:</strong> The <code>buscofas=FASFILE</code> option has not been tested and might give some unexpected behaviours, as some of the quoted figures will still be based on the calculated BUSCOMPSeq data.</p>
+</div>
+<div id="busco-sequence-output-for-busco-based-phylogenomics" class="section level3" number="2.7.2">
+<h3 number="2.7.2"><span class="header-section-number">2.7.2</span> BUSCO sequence output for BUSCO-based phylogenomics</h3>
+<p>Optionally, BUSCOMP can compile fasta files for phylogenomic analysis (<code>phylofas=T</code>). These will be saved in the <code>phylogenomics/</code> directory as a series of nucleotide <code>*.fna</code> files in <code>phylofna</code> and protein <code>*.faa</code> files in <code>phylofaa</code>. The key organisation of these directories is a single file per BUSCO ID that contains sequences for every genome with a single Complete rating. Files will be renamed from <code>&gt;$SEQNAME:$START-$END</code> to <code>&gt;$PREFIX $SEQNAME:$START-$END:$BUSCOID</code> where <code>$PREFIX</code> is the assembly Prefix (see above).</p>
+<p>NOTE: for HAQESAC-based phylogenomics, you might want the prefixes to have the format eog_<span class="math inline">\(SPCODE__\)</span>ID, though. it should also run OK with unkspec=T allowvar=T gnspacc=F.</p>
+<hr />
 </div>
 </div>
 <div id="buscompseq-minimap2-searches" class="section level2" number="2.8">

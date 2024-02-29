@@ -1,7 +1,7 @@
 # BUSCOMP: BUSCO Compilation and Comparison tool
 
 ```
-BUSCOMP v0.13.0
+BUSCOMP v1.1.3
 ```
 
 For a better rendering and navigation of this documentation, please visit <https://slimsuite.github.io/buscomp/> or download and open [`./docs/buscomp.docs.html`](./docs/buscomp.docs.html).
@@ -55,7 +55,17 @@ using Rmarkdown.
 tested and might give some unexpected behaviours, as some of the quoted figures will still be based on the
 calculated BUSCOMPSeq data. Please report any unexpected behaviour.
 
+## Citation
+
+BUSCOMP is still under review as part of the Starling genome paper. For now, please cite the preprint:
+
+> Stuart KC*, Edwards RJ*, Cheng Y, Warren WC, Burt DW, Sherwin WB, Hofmeister NR, Werner SJ, Ball GF, Bateson M,
+Brandley MC, Buchanan KL, Cassey P, Clayton DF, De Meyer T, Meddle SL & Rollins LA (preprint):
+Transcript- and annotation-guided genome assembly of the European starling.
+[bioRxiv 2021.04.07.438753](https://www.biorxiv.org/content/10.1101/2021.04.07.438753v1.full); doi: 10.1101/2021.04.07.438753. [*Joint first authors]
+
 ---
+
 
 # Running BUSCOMP
 
@@ -116,6 +126,7 @@ metaeukfna=T/F  : Perform v5 metaeuk nucleotide busco sequences extraction if mi
 buscomp=T/F     : Whether to run BUSCO compilation across full results tables [True]
 dupbest=T/F     : Whether to rate "Duplicated" above "Complete" when compiling "best" BUSCOs across Groups [False]
 buscompseq=T/F  : Whether to run full BUSCO comparison using buscofas and minimap2 [True]
+phylofas=T/F    : Generate output of compiled and renamed files for BUSCO-based phylogenomics [False]
 ratefas=FILELIST: Additional fasta files of assemblies to rate with BUSCOMPSeq (No BUSCO run) (wildcards allowed) []
 rmdreport=T/F   : Generate Rmarkdown report and knit into HTML [True]
 fullreport=T/F  : Generate full Rmarkdown report including detailed tables of all ratings [True]
@@ -429,6 +440,19 @@ exception is if `buscofas=FASFILE` is pointing to the `*.buscomp.fasta` and `for
 
 **NOTE:** The `buscofas=FASFILE` option has not been tested and might give some unexpected behaviours, as some
 of the quoted figures will still be based on the calculated BUSCOMPSeq data.
+
+### BUSCO sequence output for BUSCO-based phylogenomics
+
+Optionally, BUSCOMP can compile fasta files for phylogenomic analysis (`phylofas=T`). These will be saved in the
+`phylogenomics/` directory as a series of nucleotide `*.fna` files in `phylofna` and protein `*.faa` files in
+`phylofaa`. The key organisation of these directories is a single file per BUSCO ID that contains sequences for
+every genome with a single Complete rating. Files will be renamed from `>$SEQNAME:$START-$END` to
+`>$PREFIX $SEQNAME:$START-$END:$BUSCOID` where `$PREFIX` is the assembly Prefix (see above).
+
+NOTE: for HAQESAC-based phylogenomics, you might want the prefixes to have the format eog_$SPCODE__$ID, though.
+it should also run OK with unkspec=T allowvar=T gnspacc=F.
+
+---
 
 ## BUSCOMPSeq Minimap2 searches
 

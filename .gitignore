@@ -102,3 +102,4 @@ code/mod.list
 docs/makedoc.sh
 example/run/makeexample.sh
 example/run/.DS_Store
+docs/.DS_Store

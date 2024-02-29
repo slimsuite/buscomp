@@ -19,8 +19,8 @@
 """
 Module:       rje_obj
 Description:  Contains revised General Object templates for Rich Edwards scripts and bioinformatics programs
-Version:      2.7.3
-Last Edit:    11/09/21
+Version:      2.10.0
+Last Edit:    29/05/23
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -62,6 +62,7 @@ System Commandline:
     soaplab=T/F     : Implement special options/defaults for SoapLab implementations [False]
     rest=X          : Variable that sets the output to be returned by REST services [None]
     screenwrap=X    : Maximum width for some screen outputs [200]
+    loadmod=T/F     : Whether to try to load modules when checking for external programs [True]
 
 Forking Commandline:
     noforks=T/F     : Whether to avoid forks [False]
@@ -122,15 +123,24 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 2.7.1 - Fixed formatting for Python 2.6 back compatibility for servers.
     # 2.7.2 - Tweaked the forks and threads settings and methods.
     # 2.7.3 - Added generic checkForProgram() method.
+    # 2.8.0 - Added recognition of -cmd=ARG arguments.
+    # 2.8.1 - Fixed ignoredate bug.
+    # 2.9.0 - Expanded checkForProgram() method to
+    # 2.10.0- Added compressionScore() function
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
     '''
     # [Y] : Get working objects with new str, int, num, bool, dict, list and obj.
+    # [Y] : Add checking for |:;&<> during file/path command loading.
     # [ ] : Add typeCheck() method to cycle through each attribute dictionary and check values are the correct types.
+    # [ ] : Add self.tool list for {External tool:version} following checks.
+    # [ ] : Add general code for checking external programs and populating self.tool with option warnings/exit.
+    # [ ] : Add option to look for `module avail` output and load module if found.
+    #     : - rje.split(os.popen('module avail samtools 2>&1').read())
     '''
 #########################################################################################################################
-import glob, os, pickle, random, string, sys, time, traceback
+import glob, os, pickle, random, string, sys, time, traceback, zlib
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'../libraries/'))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'../tools/'))
 import rje, rje_html, rje_zen
@@ -202,9 +212,9 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                     'RunPath':rje.makePath(os.path.abspath(os.curdir)),'RPath':'R','Rest':'None'}
         self.str['Path'] = rje.makePath(os.path.abspath(os.sep.join(sys.argv[0].split(os.sep)[:-1]+[''])))
         self.int = {'Verbose':1,'Interactive':0,'ScreenWrap':200}
-        self.bool = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,
+        self.bool = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,'IgnoreDate':False,
                      'Force':False,'Pickle':True,'SoapLab':False,'Test':False,'Backups':True,'Silent':False,'Quiet':False,
-                     'Webserver':False,'ProgLog':True,'Warn':True,'Dev':False,'Setup':False,'OSX':False}
+                     'Webserver':False,'ProgLog':True,'Warn':True,'Dev':False,'Setup':False,'OSX':False,'LoadMod':True}
         self.dict = {'Output':{}}
         self.obj['DB'] = None
 #########################################################################################################################
@@ -289,6 +299,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
     def warn(self): return self.getBool('Warn') and not self.getBool('Silent')
     def dev(self): return self.getBool('Dev')
     def zen(self): return rje_zen.Zen().wisdom()
+    def wisdom(self): return rje_zen.Zen().wisdom()
     def debugging(self): return self.getBool('DeBug')
     def win32(self): return self.getBool('Win32')
     def osx(self): return self.getBool('OSX')
@@ -312,13 +323,13 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''Returns string attribute.'''
         try:
             if not key: return self.str
-            if key in self.str: return self.str[key]
+            if key in self.str: return str(self.str[key])
         except:
             if not key: return self.info
-            if key in self.info: return self.info[key]
-        if checkdata and 'Data' in self.dict and key in self.dict['Data']: return self.dict['Data'][key]
+            if key in self.info: return str(self.info[key])
+        if checkdata and 'Data' in self.dict and key in self.dict['Data']: return str(self.dict['Data'][key])
         elif self.obj['Parent']: return self.obj['Parent'].getStr(key,default,checkdata)
-        else: return default
+        else: return str(default)
 #########################################################################################################################
     def getStrBase(self,key=None,default='',checkdata=False,strip_path=False,extlist=[]):   ### Returns file without extension, with or without path):    ### Returns string attribute
         '''Returns basefile for string attribute.'''
@@ -448,7 +459,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         elif type == 'dict': att = self.dict
         elif type == 'obj': att = self.obj
         ### Return ###
-        if att.has_key(key): return att[key]
+        if key in att: return att[key]
         else: return default
 #########################################################################################################################
     def setAttribute(self,type,key,newvalue):    ### Sets object information of correct type from string
@@ -538,8 +549,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             self._cmdReadList(cmd,'file',['Basefile','RPath','ErrorLog'])
             self._cmdReadList(cmd,'abspath',['Path','RunPath'])
             self._cmdRead(cmd,type='bool',att='Win32',arg='pwin')
-            self._cmdReadList(cmd,'bool',['DeBug','Win32','PWin','MemSaver','Append','Force','MySQL','Pickle','Test',
-                                         'SoapLab','Backups','Webserver','ProgLog','Dev','Warn','OSX'])
+            self._cmdReadList(cmd,'bool',['DeBug','Win32','PWin','MemSaver','Append','Force','MySQL','Pickle','Test','LoadMod',
+                                         'SoapLab','Backups','Webserver','ProgLog','Dev','Warn','OSX','IgnoreDate'])
         except:
             self.deBug(self.cmd_list)
             self.errorLog('Problem with %s.cmd:%s' % (self,cmd))
@@ -566,9 +577,15 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         ### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if arg == None: arg = att.lower()
         cmdarg = cmd.split('=')[0].lower()
+        if cmdarg[:1] == '-': cmdarg = cmdarg[1:]
         if cmdarg != arg: return
         value = cmd[len('%s=' % arg):]
         value = value.replace('#DATE',rje.dateTime(dateonly=True))
+        ## ~ [0a] Check files and paths for dodgy characters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+        if type in ['file'] or 'path' in type:
+            for char in '|:;&<>':
+                if char in value:
+                    raise ValueError('Forbidden character "{0}" in {1}={2} file/path.'.format(char,cmdarg,value))
         ### ~ [1] Basic commandline types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         if type in ['opt','bool']:
             if value[:1].lower() in ['f','0']: self.bool[att] = False
@@ -693,11 +710,11 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if not width and line in '~-=': width = {'=':90,'-':75,'~':60}[line]
         strlist = [hash,line*minside,text,line*minside,hash]
-        while len(rje.jstring.join(strlist)) < width:
+        while len(rje.stringj.join(strlist)) < width:
             strlist[1] += line
             strlist[3] += line
-        if len(rje.jstring.join(strlist)) == width + 1 and len(strlist[1]) > minside: strlist[1] = strlist[1][:-1]
-        self.printLog('%s%s%s%s' % (hash,line,line,hash),rje.jstring.join(strlist))
+        if len(rje.stringj.join(strlist)) == width + 1 and len(strlist[1]) > minside: strlist[1] = strlist[1][:-1]
+        self.printLog('%s%s%s%s' % (hash,line,line,hash),rje.stringj.join(strlist))
 #########################################################################################################################
     def vPrint(self,text,v=1): return self.verbose(v,text=text)
 #########################################################################################################################
@@ -781,7 +798,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             self.close()    # Cannot pickle file handles.
             ### ~ [2] ~ Pickle ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             self.progLog('#SAVE','Attempting to save %s to %s.' % (self.prog(),pfile))
-            pickle.dump(self,open(pfile,'w'))
+            try: pickle.dump(self,open(pfile,'w'))
+            except: pickle.dump(self,open(pfile,'wb'))
             self.printLog('\r#SAVE','%s Intermediate saved as %s (Python pickle).' % (self.prog(),pfile))
             ### ~ [3] ~ GZip and finish ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if not self.getBool('Win32') and gzip:
@@ -814,7 +832,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                     except: self.errorLog('Cannot unzip %s' % (gzfile)); return None
             if os.path.exists(pfile):
                 self.printLog('\r#LOAD','Attempting to load %s.' % pfile,log=False)
-                newme = pickle.load(open(pfile,'r'))
+                try: newme = pickle.load(open(pfile,'r'))
+                except: newme = pickle.load(open(pfile,'rb'))
                 self.printLog('\r#LOAD','%s Intermediate loaded: %s.' % (self.prog(),pfile))
                 if not self.getBool('Win32'):
                     try:
@@ -930,10 +949,23 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if checkforce and self.force(): return True
         if not os.path.exists(checkfile): return True
-        if checkdate == None and self.getBool('IgnoreDate',default=False) or checkdate == False: return True
+        if (checkdate == None and self.getBool('IgnoreDate',default=False)) or checkdate == False: return False
         if tiesok and rje.isYounger(checkfile,parentfile) != parentfile: return False
         elif rje.isYounger(parentfile,checkfile) == checkfile: return False
         return True
+#########################################################################################################################
+    def compressionScore(self,str): # Uses zlib to generate a compression score for a string
+        ''' Uses the zlib library to score the compressibilty of a string as an estimate of complexity. Low is complex.'''
+        try:
+            # Compress the string
+            compressed_data = zlib.compress(bytes(str, 'utf-8'))
+            # Get the size of the compressed data
+            compressed_size = len(compressed_data)
+            raw_size = float(len(str))
+            # Calculate the compression ratio
+            compression_ratio = (raw_size - compressed_size) / raw_size
+            return compression_ratio
+        except: self.log.errorLog('Problem during compressionScore()')
 #########################################################################################################################
     def sourceDataFile(self,str,ask=True,expect=True,check=True,force=False,download=None,sourceurl=None):   ### Returns source data file.        #V2.0
         '''
@@ -1019,11 +1051,12 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                 sourcefile = nowfile
                 rje.urlToFile(sourceurl,nowfile,self,backupfile=False)
                 sentry['Status'] = 'Downloaded'
-            elif download and str == 'TaxMap':
+            elif download and str in ['TaxMap','NameMap','SpecFile']:
                 try:
-                    sourcefile = nowfile
                     datecode = rje.dateTime(dateonly=True)
-                    taxdump = '%staxdump.%s.tar.gz' % (self.getStr('SourcePath'),datecode)
+                    taxdump = sourcefile
+                    if str in ['TaxMap','NameMap']:
+                        taxdump = '%staxdump.%s.tar.gz' % (self.getStr('SourcePath'),datecode)
                     #rje.urlToFile(sourceurl,taxdump,self)
                     #self.debug(sourceurl)
                     if self.force() or not rje.exists(taxdump):
@@ -1033,16 +1066,20 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                             os.rename('taxdump.tar.gz',taxdump)
                         elif self.getBool('Win32'): self.warnLog('Cannnot use wget with Win32=T'); raise ValueError
                         else: os.system("wget -O %s %s" % (taxdump,sourceurl))
-                    sentry['Status'] = 'Downloaded TarGZ'
-                    predump = glob.glob('*.*')
-                    self.printLog('#TARGZ','tar -xzf %s' % taxdump)
-                    os.system('tar -xzf %s' % taxdump)
-                    for dfile in glob.glob('*.*')[0:]:
-                        if dfile in predump: continue
-                        fileparts = os.path.splitext(dfile)
-                        datefile = '%s%s.%s%s' % (self.getStr('SourcePath'),fileparts[0],datecode,fileparts[1])
-                        os.rename(dfile,datefile)
-                    sentry['Status'] = 'Downloaded'
+                    if taxdump.endswith('.tar.gx'):
+                        sentry['Status'] = 'Downloaded TarGZ'
+                        predump = glob.glob('*.*')
+                        self.printLog('#TARGZ','tar -xzf %s' % taxdump)
+                        os.system('tar -xzf %s' % taxdump)
+                        for dfile in glob.glob('*.*')[0:]:
+                            if dfile in predump: continue
+                            fileparts = os.path.splitext(dfile)
+                            datefile = '%s%s.%s%s' % (self.getStr('SourcePath'),fileparts[0],datecode,fileparts[1])
+                            os.rename(dfile,datefile)
+                        sentry['Status'] = 'Downloaded'
+                    else:
+                        os.rename(sourcefile,nowfile)
+                        sentry['Status'] = 'Downloaded'
                 except: self.errorLog('Problem processing NCBI Taxa download')
             elif download and sourceurl:
                 sourcefile = nowfile
@@ -1075,23 +1112,30 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         :param report: bool [True] = Whether to log the program version
         :param warn: bool [True] = Whether to warn if no version detected (and needed=False)
         :param needed: bool [False] = Whether to raise an error if no version detected.
-        :return: True/False
+        :return: version if found, else False
         '''
         try:### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            if not 'Prog' in self.dict: self.dict['Prog'] = {}
+            if program in self.dict['Prog']: return self.dict['Prog'][program]
+            self.dict['Prog'][program] = False
+            ### ~ [1] Check for version ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             version = os.popen('{} --version 2>&1'.format(program)).readline()
             if not version or "command not found" in version:
+                if self.getBool('LoadMod'):
+                    self.printLog('#LOAD', 'Module loading not yet implemented!')
                 if needed: raise ValueError('Cannot run "{0} --version": check installation'.format(program))
                 elif warn: self.warnLog('Cannot run "{0} --version": check installation'.format(program))
                 return False
             version = rje.chomp(version)
+            if version[:1] != 'v' and version.split()[0] not in ['samtools','R']:
+                version = 'v' + version
+            self.dict['Prog'][program] = version
             if report:
-                if version[:1] != 'v' and version.split()[0] not in ['samtools','R']:
-                    version = 'v' + version
                 self.printLog('#PROGV','{0}: {1} detected'.format(program,version))
-            return True
+            return version
         except: raise
 #########################################################################################################################
-    def loggedSysCall(self,cmd,syslog=None,stderr=True,append=True,verbosity=1,nologline=None,threaded=True):    ### Makes a system call, catching output in log file
+    def loggedSysCall(self,cmd,syslog=None,stderr=True,append=True,verbosity=1,nologline=None,threaded=True,slimfarmer=None):    ### Makes a system call, catching output in log file
         '''
         Makes a system call, catching output in log file.
         :param cmd:str = System call command to catch
@@ -1100,6 +1144,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         :param append:bool [False] = Whether to append the log if it exists
         :param verbosity:int [1] = Verbosity level at which output also goes to screen (tee, not redirect)
         :param nologline:str [None] = Default logline returned if nothing is in the log
+        :param threaded:bool [True] = Sets ppn to 1 if calling with qsub (dev mode only)
         :return: last line of syslog output
         '''
         try:### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -1124,8 +1169,9 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                 if self.v() >= verbosity: cmd = '{0} | tee {1}'.format(cmd,syslog)
                 else: cmd = '{0} > {1}'.format(cmd,syslog)
             ### ~ [2] ~ Process System Call ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            if self.dev() and self.getBool('UseQSub'):
+            if self.getBool('UseQSub') and slimfarmer:
                 if not rje.exists('tmp_qsub'): rje.mkDir(self,'tmp_qsub/',log=True)
+                mydir = os.path.abspath('.')
                 qbase = rje.baseFile(syslog)
                 ppn = self.threads()
                 vmem = self.getInt('QSubVMem')
@@ -1371,7 +1417,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         >> datadict = Dictionary of values to add to self.dict[dictkey]
         '''
         try:
-            if not self.dict.has_key(dictkey): self.dict[dictkey] = {}
+            if dictkey not in self.dict: self.dict[dictkey] = {}
             for key in datadict.keys(): self.dict[dictkey][key] = datadict[key]
         except: self.errorLog('Problem with setDictData()',True)
 #########################################################################################################################
@@ -1388,10 +1434,10 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         try:### ~ [0] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             dictlist = []
-            if self.dict.has_key('Data'): dictlist = [self.dict['Data']]
+            if 'Data' in self.dict: dictlist = [self.dict['Data']]
             ddict = {'str':self.str,'int':self.int,'num':self.num,'bool':self.bool}
             for dict in dlist:
-                if ddict.has_key(dict): dictlist.append(ddict[dict])
+                if dict in ddict: dictlist.append(ddict[dict])
                 else: dictlist.append(dict)
             ### ~ [1] ~ Look in dictionaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             data = default
@@ -1552,7 +1598,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         Scan through file to find line starting with word.
         >> key:str = self.file key.
-        >> wordlist:str = list of words to find at beginning of line using string.split()
+        >> wordlist:str = list of words to find at beginning of line using rje.split()
         >> asdict:bool [True] = return {word:line} dictionary (blank if missing). !!! Assumes unique line per word !!!
         >> wrap:bool [True] = Whether to scan whole file, jumping to start if end reached.
         >> chomp:bool [True] = Whether to strip /r and /n from end of line.

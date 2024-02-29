@@ -20,8 +20,8 @@
 """
 Module:       rje_busco
 Description:  BUSCO data manipulation library
-Version:      0.1.1
-Last Edit:    02/10/21
+Version:      0.1.2
+Last Edit:    10/01/22
 Copyright (C) 2021  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -53,6 +53,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.0.0 - Initial Compilation.
     # 0.1.0 - Added recognition and parsing of transcriptome mode output, which lacks Start and End.
     # 0.1.1 - Fixed bug with sequence names containing pipe characters. (Why?!)
+    # 0.1.2 - Fixed bug with odd MetaEuk runs with appended letter on BUSCO ID.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -73,7 +74,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('RJE_BUSCO', '0.1.1', 'October 2021', '2021')
+    (program, version, last_edit, copy_right) = ('RJE_BUSCO', '0.1.2', 'January 2022', '2021')
     description = 'BUSCO data manipulation library'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -343,6 +344,11 @@ class BUSCO(rje_obj.RJE_Object):
                             bkey = (bkey[0],rje.matchExp('^(\S+):\d+-\d+',bkey[1])[0],bkey[2],bkey[3])
                         else:
                             bkey = (bkey[0], rje.matchExp('^(\S+):\d+-\d+', bkey[1])[0])
+                    if bkey not in seqdict and rje.matchExp('^(\S+\d+)\D+$', bkey[0]):
+                        if len(bkey) == 4:
+                            bkey = (rje.matchExp('^(\S+\d+)\D+$', bkey[0])[0],bkey[1],bkey[2],bkey[3])
+                        else:
+                            bkey = (rje.matchExp('^(\S+\d+)\D+$', bkey[0])[0], bkey[1])
                     if bkey in seqdict:
                         if bkey[0] not in buscoseq: buscoseq[bkey[0]] = []
                         buscoseq[bkey[0]].append(seqdict[bkey])
