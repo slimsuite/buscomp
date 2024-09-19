@@ -19,8 +19,8 @@
 """
 Module:       rje
 Description:  Contains SLiMSuite and Sequite General Objects
-Version:      4.24.3
-Last Edit:    09/05/23
+Version:      4.25.0
+Last Edit:    07/08/24
 Copyright (C) 2005  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -43,6 +43,7 @@ Commandline:
     basefile=FILE   : This will set the 'root' filename for output files (FILE.*), including the log
     delimit=X       : Sets standard delimiter for results output files [\t]
     force=T/F       : Force to regenerate data rather than keep old results [False]
+    fullforce=T/F   : Force to regenerate externally created data rather than keep existing data results [False]
     backups=T/F     : Whether to generate backup files (True) or just overwrite without asking (False) [True]
     rest=X          : Variable that sets the output to be returned by REST services [None]
 
@@ -178,7 +179,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 4.24.0 - Changed warning and error repeat behaviour at EndLog.
     # 4.24.1 - Fixed signif calculation and sortKeys for python3.
     # 4.24.2 - Fixed md5 hash bug.
-    # 4.23.3 - Py3 urllib bug fix. / to // bug fixes.
+    # 4.24.3 - Py3 urllib bug fix. / to // bug fixes.
+    # 4.25.0 - Added fullforce=T/F to default options to regenerate externally created data rather than keep existing data results [False]
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -197,8 +199,8 @@ except:
     import urllib.request as urllib
     py3 = True
     import rje_py3 as rje_py
-    if len(sys.argv) != 2 or sys.argv[1] not in ['version', '-version', '--version', 'details', '-details', '--details', 'description', '-description', '--description']:
-        print('>>> Python 3.x detected but not fully supported. Please report odd behaviour <<<')
+    #if len(sys.argv) != 2 or sys.argv[1] not in ['version', '-version', '--version', 'details', '-details', '--details', 'description', '-description', '--description']:
+    #    print('>>> Python 3.x detected but not fully supported. Please report odd behaviour <<<')
 try:
    set
 except NameError:
@@ -227,7 +229,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     stat = {}       # Stores numeric variables
     statlist = ['Verbose','Interactive']
     opt = {}        # Stores boolean variables
-    optlist = ['DeBug','Win32','PWin','Memsaver','Append','MySQL','Force','Pickle','SoapLab','Test','Backups','Silent',
+    optlist = ['DeBug','Win32','PWin','Memsaver','Append','MySQL','Force','FullForce','Pickle','SoapLab','Test','Backups','Silent',
                'Webserver','ProgLog','Dev','Warn','OSX']
     obj = {}        # Stores a dictionary of other RJE_Objects 'owned' by object 
     objlist = []
@@ -275,6 +277,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
         self.info['Path'] = makePath(os.path.abspath(os.sep.join(sys.argv[0].split(os.sep)[:-1]+[''])))
         self.stat = {'Verbose':1,'Interactive':0}
         self.opt = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,'Force':False,
+                    'FullForce':False,
                     'Pickle':True,'SoapLab':False,'Test':False,'Backups':True,'Silent':False,'Webserver':False,'Quiet':False,
                     'ProgLog':True,'Warn':True,'Dev':False,'OSX':False}
         self.list = {}
@@ -304,7 +307,8 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def interactive(self): return self.stat['Interactive']
     def i(self): return self.stat['Interactive']
     def v(self): return self.stat['Verbose']
-    def force(self): return self.opt['Force']
+    def force(self): return self.opt['Force'] or self.opt['FullForce']
+    def fullForce(self): return self.opt['FullForce']
     def test(self): return self.opt['Test']
     def server(self): return self.opt['Webserver']
     def warn(self): return self.opt['Warn'] and not self.opt['Silent']
@@ -360,7 +364,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
             self._cmdReadList(cmd,'file',['Basefile','RPath','ErrorLog'])
             self._cmdReadList(cmd,'abspath',['Path','RunPath'])
             self._cmdRead(cmd,type='opt',att='Win32',arg='pwin')
-            self._cmdReadList(cmd,'opt',['DeBug','Win32','PWin','MemSaver','Append','Force','MySQL','Pickle','Test',
+            self._cmdReadList(cmd,'opt',['DeBug','Win32','PWin','MemSaver','Append','Force','FullForce','MySQL','Pickle','Test',
                                          'SoapLab','Backups','Webserver','ProgLog','Dev','Warn','OSX','Silent','Quiet'])
         except:
             self.deBug(self.cmd_list)
@@ -573,7 +577,7 @@ class RJE_Object_Shell(object):     ### Metaclass for inheritance by other class
     def processPickle(self,newme):  ### Changes attributes accordingly
         '''Changes attributes accordingly. Replace this method in subclasses.'''
         try:### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            newme.setLog(self.log)      # Replaces old log with new log.
+            newme.setLog(self.log,py3warn=False)      # Replaces old log with new log.
             if 'Silent' not in newme.opt: newme.opt['Silent'] = False
             for obj in self.obj.values():
                 if not obj: continue
@@ -1030,7 +1034,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         except: self.log.errorLog('Problem with %s.getData(%s)' % (self,dkey))
         return default
 #########################################################################################################################
-    def setLog(self,log,cascade=True):  ### Sets given log as log object and cascades through self.obj
+    def setLog(self,log,cascade=True,py3warn=False):  ### Sets given log as log object and cascades through self.obj
         '''Sets given log as log object and cascades through self.obj.'''
         self.log = log
         for obj in self.obj.values():
@@ -1306,7 +1310,7 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
             return compression_ratio
         except: self.log.errorLog('Problem during compressionScore()')
 #########################################################################################################################
-    def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True): ### Checks whether checkfile needs remake
+    def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True,fullforce=False): ### Checks whether checkfile needs remake
         '''
         Checks whether checkfile needs remake.
         >> checkfile:str = File name of file that may need remaking.
@@ -1314,7 +1318,8 @@ class RJE_Object(RJE_Object_Shell):     ### Metaclass for inheritance by other c
         >> checkdate:bool = whether to bother checking the comparative dates.
         >> checkforce:bool = whether to use self.force() to identify whether remake should be forced
         '''
-        if checkforce and self.force(): return True
+        if checkforce and not fullforce and self.force(): return True
+        if checkforce and fullforce and self.fullForce(): return True
         if not os.path.exists(checkfile): return True
         if checkdate == None and self.getBool('IgnoreDate',default=False) or checkdate == False: return True
         if isYounger(checkfile,parentfile) != parentfile: return False
@@ -1841,7 +1846,7 @@ class RJE_ObjectLite(RJE_Object_Shell):     ### Metclass for inheritance by othe
         except: self.log.errorLog('Problem with %s.getData(%s)' % (self,dkey))
         return default
 #########################################################################################################################
-    def setLog(self,log,cascade=True):  ### Sets given log as log object and cascades through self.obj
+    def setLog(self,log,cascade=True,py3warn=False):  ### Sets given log as log object and cascades through self.obj
         '''Sets given log as log object and cascades through self.obj.'''
         self.log = log
         for obj in self.obj.values():
@@ -4603,7 +4608,7 @@ def inputCmds(cmd_out,cmd_list):    ### Reads extra commands from user prompt
     cmd_out.verbose(0,3,"New Arguments: " + str(newcmd),1)
     return getCmdList(newcmd)
 #########################################################################################################################
-def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object and outputs general program run info to start of file. Returns log.
+def setLog(info,out,cmd_list,printlog=True,fullcmd=True,py3warn=True):  ### Makes Log Object and outputs general program run info to start of file. Returns log.
     '''
     Makes Log Object and outputs general program run info to start of file. Returns log.
     >> info:rje.Info object containing program info
@@ -4626,7 +4631,7 @@ def setLog(info,out,cmd_list,printlog=True,fullcmd=True):  ### Makes Log Object 
         if printlog:
             log.printLog('#~~#','#~~#',timeout=False,screen=False)
             log.printLog('#LOG','Activity Log for {0} V{1}: {2}'.format(info.program,info.version,time.asctime(time.localtime(info.start_time))),screen=False)
-            if py3: log.warnLog('Python 3.x detected but not fully supported. Please report odd behaviour.')
+            if py3 and py3warn: log.warnLog('Python 3.x detected but not fully supported. Please report odd behaviour.')
             log.printLog('#DIR','Run from directory: {0}'.format(os.path.abspath(os.curdir)),screen=False)
             log.printLog('#ARG','Commandline arguments: {0}'.format(stringj.join(argcmd)),screen=False)
             #log.printLog('#CMD','Program arguments: %s' % stringj.join(cmd_list),screen=False)

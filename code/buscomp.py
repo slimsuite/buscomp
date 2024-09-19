@@ -470,12 +470,9 @@ class BUSCOMP(rje_obj.RJE_Object):
 
         ## Citation
 
-        BUSCOMP is still under review as part of the Starling genome paper. For now, please cite the preprint:
+        When using BUSCOMP, please cite the Starling genome paper:
 
-        > Stuart KC*, Edwards RJ*, Cheng Y, Warren WC, Burt DW, Sherwin WB, Hofmeister NR, Werner SJ, Ball GF, Bateson M,
-        Brandley MC, Buchanan KL, Cassey P, Clayton DF, De Meyer T, Meddle SL & Rollins LA (preprint):
-        Transcript- and annotation-guided genome assembly of the European starling.
-        [bioRxiv 2021.04.07.438753](https://www.biorxiv.org/content/10.1101/2021.04.07.438753v1.full); doi: 10.1101/2021.04.07.438753. [*Joint first authors]
+        > Stuart KC, Edwards RJ et al. (2022). Molecular Ecology 22(8):3141-3160. (doi: 10.1111/1755-0998.13679)
 
         ---
 

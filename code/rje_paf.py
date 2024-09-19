@@ -19,8 +19,8 @@
 """
 Module:       rje_paf
 Description:  Minimap2 PAF parser and converter
-Version:      0.13.1
-Last Edit:    14/05/22
+Version:      0.13.2
+Last Edit:    07/08/24
 Copyright (C) 2019  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -127,6 +127,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.12.0 - Added readnames=T/F : Output the read names to the RID file [False]
     # 0.13.0 - Updated default -x to asm20 (5% divergence). Use minimap2 map-hifi setting for hifi read mapping.
     # 0.13.1 - Py3 updates.
+    # 0.13.2 - Added fix to pafin reading issue.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -2462,7 +2463,10 @@ class PAF(rje_obj.RJE_Object):
         try:### ~ [1] ~ Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             paf = self
             if not paffile:
-                paffile = self.baseFile() + '.paf'
+                if self.getStrLC('PAFIn') and not self.getStrLC('PAFIn') in ['minimap','minimap2']:
+                    paffile = self.getStr('PAFIn')
+                else:
+                    paffile = self.baseFile() + '.paf'
 
             ### ~ [2] ~ Generate individual BAM files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             if self.force() or not rje.exists(paffile):

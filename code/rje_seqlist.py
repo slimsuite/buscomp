@@ -19,8 +19,8 @@
 """
 Module:       rje_seqlist
 Description:  RJE Nucleotide and Protein Sequence List Object (Revised)
-Version:      1.50.4
-Last Edit:    05/06/23
+Version:      1.51.0
+Last Edit:    03/09/24
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -149,6 +149,7 @@ Commandline:
     gapstats=T/F    : Output summary tables of contigs, assembly gap sizes and positions (also contigs=T/F) [False]
     mingap=INT      : Minimum length of a stretch of N bases to count as a gap (0=None unless gapstats=T) [10]
     gapfix=X:Y(,X:Y): List of gap lengths X to convert to different lengths Y; 0 will fix all >= mingap []
+    chromlen=INT    : Minimum length of a scaffold to count as a chromosome [0]
     maker=T/F       : Whether to extract MAKER2 statistics (AED, eAED, QI) from sequence names [False]
     splitseq=X      : Split output sequence file according to X (gene/species) [None]
     tmpdir=PATH     : Directory used for temporary files ['./tmp/']
@@ -265,6 +266,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 1.50.2 - More Py3 bug fixes.
     # 1.50.3 - Added bug that was leaving out last fastq sequence from summarise etc.
     # 1.50.4 - Added gensize=NUM alias for genomesize=NUM
+    # 1.51.0 - Added chromlen=INT : Minimum length of a scaffold to count as a chromosome [0]
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -294,7 +296,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('SeqList', '1.50.4', 'June 2023', '2011')
+    (program, version, last_edit, copy_right) = ('SeqList', '1.51.0', 'September 2024', '2011')
     description = 'RJE Nucleotide and Protein Sequence List Object (Revised)'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_zen.Zen().wisdom()]
@@ -414,6 +416,7 @@ class SeqList(rje_obj.RJE_Object):
 
     Int:integer
     - AddFlanks=INT   : Length of flanking sequence to also extract/mask [0]
+    - ChromLen=INT    : Minimum length of a scaffold to count as a chromosome [0]
     - FracStep=INT         : Step size for NXX and LXX fractions (1/2/5/10/25) [5]
     - LenStats=LIST : List of min sequence lengths to output stats for (raw=T) []
     - MinGap=INT      : Minimum length of a stretch of N bases to count as a gap [10]
@@ -458,7 +461,7 @@ class SeqList(rje_obj.RJE_Object):
         self.boollist = ['AutoFilter','AutoLoad','Concatenate','Contigs','DNA','DupErr','Edit','GapStats','GeneCounter','GrepNR',
                          'GeneSpAcc','Maker','Mixed','FracStats','ORFGaps','ORFMet','ReName','RevCompNR','SizeSort','TwoPass','KeepName',
                          'Raw','SeqIndex','SeqShuffle','Summarise','UseCase']
-        self.intlist = ['AddFlanks','FracStep','MinGap','MinLen','MaxLen','MinORF','RFTran','TerMinORF','Tile','TileStep']
+        self.intlist = ['AddFlanks','ChromLen','FracStep','MinGap','MinLen','MaxLen','MinORF','RFTran','TerMinORF','Tile','TileStep']
         self.numlist = ['GenomeSize','MinTile']
         self.listlist = ['Edit','LenStats','PosFields','Sampler','Seq']
         self.dictlist = ['Filter','GapFix','SeqDict']
@@ -492,7 +495,7 @@ class SeqList(rje_obj.RJE_Object):
                 self._cmdReadList(cmd,'str',['NewAcc','NewGene','Region','SeqFormat','SeqMode','ReFormat','SpCode','SeqType','Split','SortSeq','SplitSeq','TileName'])
                 self._cmdReadList(cmd,'file',['Edit','NewDesc','SeqDB','SeqIn','SeqOut','GrabSeq','MaskSeq'])
                 self._cmdReadList(cmd,'path',['TmpDir'])
-                self._cmdReadList(cmd,'int',['AddFlanks','FracStep','MinGap','MinLen','MaxLen','MinORF','RFTran','TerMinORF','Tile','TileStep'])
+                self._cmdReadList(cmd,'int',['AddFlanks','ChromLen','FracStep','MinGap','MinLen','MaxLen','MinORF','RFTran','TerMinORF','Tile','TileStep'])
                 self._cmdReadList(cmd,'num',['GenomeSize','MinTile'])
                 self._cmdRead(cmd,type='num',att='GenomeSize',arg='gensize')
                 self._cmdReadList(cmd,'list',['PosFields'])
@@ -1048,6 +1051,7 @@ class SeqList(rje_obj.RJE_Object):
             #!# Add lendb if raw=F
             if not raw: lenstats = []
             mingap = max(0,self.getInt('MinGap'))
+            minchrom = self.getInt('ChromLen')
             if gapstats: mingap = max(1,mingap)
             if raw: mingap = 0
             gapre = re.compile('N{%d,}' % mingap)
@@ -1083,6 +1087,7 @@ class SeqList(rje_obj.RJE_Object):
             self.headLog('Sequence Summary for %s' % basename)
             seqlen = []
             ctglen = []
+            chromlen = []
             self.progLog('\r#SUM','Total number of sequences:')
             if not seqs: seqs = self.seqs()
             # Total number of sequences
@@ -1093,6 +1098,8 @@ class SeqList(rje_obj.RJE_Object):
                     self.progLog('\r#SUM','Total number of sequences: %s' % rje.iLen(seqlen))
                 sname = self.shortName(seq)
                 seqlen.append(self.seqLen(seq))
+                if self.seqLen(seq) > minchrom:
+                    chromlen.append(self.seqLen(seq))
                 gapn = 0
                 if self.dna():
                     sequence = self.seqSequence(seq).upper()
@@ -1160,6 +1167,11 @@ class SeqList(rje_obj.RJE_Object):
             # Total sequence length
             sumlen = sum(seqlen)
             self.printLog('#SUM','Total length of sequences: %s' % rje.iStr(sumlen))
+            if minchrom > 0:
+                seqdata['ChromNum'] = len(chromlen)
+                seqdata['ChromLen'] = sum(chromlen)
+                seqdata['ChromPerc'] = 100.0 * seqdata['ChromLen'] / max(1,sumlen)
+                self.printLog('#SUM','Total length of {0} chromosomes ({1}): {2} ({3}%)'.format(seqdata['ChromNum'], dnaLen(minchrom), rje.iStr(seqdata['ChromLen']), seqdata['ChromPerc']))
             seqdata['SeqNum'] = len(seqlen)
             seqdata['CtgNum'] = seqdata['SeqNum'] + seqdata['GapCount']
             seqdata['TotLength'] = sumlen
@@ -3860,6 +3872,8 @@ def batchSummarise(callobj,seqfiles,save=True,overwrite=False,seqcmd=[]):   ### 
                     seqdata['GCPC'] = '%.2f' % seqdata['GCPC']
                 if 'GapLength' in seqdata: seqdata['GapPC'] = '%.2f' % (100.0*seqdata['GapLength']/seqdata['TotLength'])
                 seqdata['MeanLength'] = '%.1f' % seqdata['MeanLength']
+                if 'ChromPerc' in seqdata:
+                    seqdata['ChromPerc'] = '%.2f' % seqdata['ChromPerc']
                 for field in rje.split('SeqNum, TotLength, MinLength, MaxLength, MeanLength, MedLength, N50Length, L50Count, CtgNum, N50Ctg, L50Ctg, NG50Length, LG50Count, GapLength, GapPC, GCPC',', '):
                     if field in seqdata and field not in sdb.fields(): sdb.addField(field)
                 for field in list(seqdata.keys()):

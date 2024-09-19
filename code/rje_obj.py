@@ -19,8 +19,8 @@
 """
 Module:       rje_obj
 Description:  Contains revised General Object templates for Rich Edwards scripts and bioinformatics programs
-Version:      2.10.0
-Last Edit:    29/05/23
+Version:      2.11.1
+Last Edit:    18/09/24
 Copyright (C) 2011  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -48,6 +48,7 @@ Program-Specific Commands: (Some programs only)
     mysql=T/F       : MySQL output
     append=T/F      : Append to results files rather than overwrite [False]
     force=T/F       : Force to regenerate data rather than keep old results [False]
+    fullforce=T/F   : Force to regenerate externally created data rather than keep existing data results [False]
     backups=T/F     : Whether to generate backup files (True) or just overwrite without asking (False) [True]
     maxbin=X        : Maximum number of trials for using binomial (else use Poisson) [-]
     memsaver=T/F    : Some modules will have a memsaver option to save memory usage [False]
@@ -127,6 +128,8 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 2.8.1 - Fixed ignoredate bug.
     # 2.9.0 - Expanded checkForProgram() method to
     # 2.10.0- Added compressionScore() function
+    # 2.11.0- Added fullforce as a general option for controlling regeneration of externally created data.
+    # 2.11.1- Fixed an issue with false reporting of programs in checkForProgram(). Updated verbosity to use sys.stdout.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -213,7 +216,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         self.str['Path'] = rje.makePath(os.path.abspath(os.sep.join(sys.argv[0].split(os.sep)[:-1]+[''])))
         self.int = {'Verbose':1,'Interactive':0,'ScreenWrap':200}
         self.bool = {'DeBug':False,'Win32':False,'PWin':False,'MemSaver':False,'Append':False,'MySQL':False,'IgnoreDate':False,
-                     'Force':False,'Pickle':True,'SoapLab':False,'Test':False,'Backups':True,'Silent':False,'Quiet':False,
+                     'Force':False,'FullForce':False,
+                     'Pickle':True,'SoapLab':False,'Test':False,'Backups':True,'Silent':False,'Quiet':False,
                      'Webserver':False,'ProgLog':True,'Warn':True,'Dev':False,'Setup':False,'OSX':False,'LoadMod':True}
         self.dict = {'Output':{}}
         self.obj['DB'] = None
@@ -293,7 +297,8 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
     def interactive(self): return self.getInt('Interactive')
     def i(self): return self.getInt('Interactive')
     def v(self): return self.getInt('Verbose')
-    def force(self): return self.getBool('Force')
+    def force(self): return self.getBool('Force') or self.getBool('FullForce')
+    def fullForce(self): return self.getBool('FullForce')
     def test(self): return self.getBool('Test')
     def server(self): return self.getBool('Webserver')
     def warn(self): return self.getBool('Warn') and not self.getBool('Silent')
@@ -549,7 +554,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             self._cmdReadList(cmd,'file',['Basefile','RPath','ErrorLog'])
             self._cmdReadList(cmd,'abspath',['Path','RunPath'])
             self._cmdRead(cmd,type='bool',att='Win32',arg='pwin')
-            self._cmdReadList(cmd,'bool',['DeBug','Win32','PWin','MemSaver','Append','Force','MySQL','Pickle','Test','LoadMod',
+            self._cmdReadList(cmd,'bool',['DeBug','Win32','PWin','MemSaver','Append','Force','FullForce','MySQL','Pickle','Test','LoadMod',
                                          'SoapLab','Backups','Webserver','ProgLog','Dev','Warn','OSX','IgnoreDate'])
         except:
             self.deBug(self.cmd_list)
@@ -728,12 +733,16 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         '''
         if i == None: i = self.getInt('Interactive') + 1
         if not self.getBool('Silent') and (self.getInt('Verbose') >= v or self.getInt('Interactive') >= i):
-            rje.printf(text),
+            sys.stdout.write('{0}'.format(text))
+            #rje.printf(text),
             if self.getInt('Interactive') >= i:
                 if rje.py3: input(" <ENTER> to continue.")
                 else: raw_input(" <ENTER> to continue.")
                 if 'pwin' not in sys.argv + self.cmd_list: newline -= 1
-            while newline > 0: print; newline -= 1
+            while newline > 0: 
+                #print
+                sys.stdout.write('\n') 
+                newline -= 1
             try: sys.stdout.flush()
             except: pass
 #########################################################################################################################
@@ -938,7 +947,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             self.printLog('#GZIP','%s zipped.' % filename); return True
         else: self.printLog('#ERR','%s missing!' % filename); return False
 #########################################################################################################################
-    def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True,tiesok=True): ### Checks whether checkfile needs remake
+    def needToRemake(self,checkfile,parentfile,checkdate=None,checkforce=True,tiesok=True,fullforce=False): ### Checks whether checkfile needs remake
         '''
         Checks whether checkfile needs remake.
         >> checkfile:str = File name of file that may need remaking.
@@ -946,8 +955,10 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         >> checkdate:bool = whether to bother checking the comparative dates.
         >> checkforce:bool = whether to use self.force() to identify whether remake should be forced
         >> tiesok:bool = whether to allowed tied age with parent file
+        >> fullforce:bool = whether to used self.fullForce() rather than self.force() to check for forcing. (External)
         '''
-        if checkforce and self.force(): return True
+        if checkforce and not fullforce and self.force(): return True
+        if checkforce and fullforce and self.fullForce(): return True
         if not os.path.exists(checkfile): return True
         if (checkdate == None and self.getBool('IgnoreDate',default=False)) or checkdate == False: return False
         if tiesok and rje.isYounger(checkfile,parentfile) != parentfile: return False
@@ -975,7 +986,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         >> ask:bool [True] = Whether to ask for file if not found.
         >> expect:bool [True] = Whether to download/ask for file name if missing
         >> check:bool [True] = Whether to check for file presence. If False will return the desired file download name.
-        >> force:bool [True] = Whether to use self.force() to govern file regeneration.
+        >> force:bool [True] = Whether to use self.fullForce() to govern file regeneration.
         >> download:bool [None] = Whether to download. If None, will use self.bool['Download'] if possible.
         >> sourceurl:str [None] = String of source URL for download. Will try self.dict['SourceURL'] and 'URL' field
          of self.db('Source') if missing.
@@ -985,7 +996,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             if download == None:
                 try: download = self.getBool('Download')
                 except: self.errorLog('No Download boolean for %s' % self); download = False
-            force = force and self.force()
+            force = force and self.fullForce()
             ask = ask and self.i() >= 0
             if not self.db('Source',add=False): self.db().addEmptyTable('Source',['Name','File','Status','Entries','URL'],keys=['Name'],log=False)   # Store Source info
             sentry = self.db('Source').data(str)
@@ -1017,7 +1028,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                 if checkfile in checked: continue
                 checked.append(checkfile)
                 if not rje.exists(checkfile): continue
-                if checkfile != nowfile and force: self.printLog('#FORCE','Ignoring %s. (force=T)' % checkfile); continue
+                if checkfile != nowfile and force: self.printLog('#FORCE','Ignoring %s. (fullforce=T)' % checkfile); continue
                 if checkfile == lastfile and not self.yesNo('%s not found. Use %s?' % (sourcefile,lastfile)): continue
                 if checkfile not in [self.getStr(str),datefile,nowfile]:
                     if not self.getStr('SourceDate'):
@@ -1029,7 +1040,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                             self.setStr({'SourceDate':rje.dateTime(dateonly=True)})
                             self.warnLog('Using %s rather than %s (sourcedate=%s)' % (checkfile,datefile,self.getStr('SourceDate')))
                     else: self.warnLog('Using %s rather than %s (sourcedate=%s)' % (checkfile,datefile,self.getStr('SourceDate')))
-                if force and self.yesNo('%s found but force=T. Regenerate?' % checkfile): self.printLog('#FORCE','Ignoring %s. (force=T)' % checkfile); continue
+                if force and self.yesNo('%s found but fullforce=T. Regenerate?' % checkfile): self.printLog('#FORCE','Ignoring %s. (fullforce=T)' % checkfile); continue
                 sentry['Status'] = 'Found'
                 sentry['File'] = checkfile
                 if checkfile != self.getStr(str): self.printLog('#SOURCE','Set %s=%s.' % (str.lower(),checkfile))
@@ -1059,7 +1070,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
                         taxdump = '%staxdump.%s.tar.gz' % (self.getStr('SourcePath'),datecode)
                     #rje.urlToFile(sourceurl,taxdump,self)
                     #self.debug(sourceurl)
-                    if self.force() or not rje.exists(taxdump):
+                    if self.fullForce() or not rje.exists(taxdump):
                         self.printLog('#FTP','Downloading %s...' % sourceurl,log=False)
                         if self.getBool('OSX'):
                             os.system("curl -O %s" % (sourceurl))
@@ -1120,7 +1131,7 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
             self.dict['Prog'][program] = False
             ### ~ [1] Check for version ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             version = os.popen('{} --version 2>&1'.format(program)).readline()
-            if not version or "command not found" in version:
+            if not version or "not found" in version:
                 if self.getBool('LoadMod'):
                     self.printLog('#LOAD', 'Module loading not yet implemented!')
                 if needed: raise ValueError('Cannot run "{0} --version": check installation'.format(program))

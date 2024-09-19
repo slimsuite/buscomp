@@ -19,8 +19,8 @@
 """
 Module:       rje_forker
 Description:  Generic RJE Forking Module
-Version:      0.1.0
-Last Edit:    10/12/20
+Version:      0.2.0
+Last Edit:    17/07/24
 Copyright (C) 2013  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -61,6 +61,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.0.1 - Tweaked the logfork=F log forking output.
     # 0.0.2 - Fixed formatting for Python 2.6 back compatibility for servers.
     # 0.1.0 - Added killmain=T/F    : Whether to kill main thread rather than individual forks when killforks reached. [True]
+    # 0.2.0 - Added capacity for forker objects to work through lists of commands
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -73,7 +74,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('rje_forker', '0.1.0', 'December 2020', '2013')
+    (program, version, last_edit, copy_right) = ('rje_forker', '0.2.0', 'July 2024', '2013')
     description = 'Generic RJE Forking Module'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -341,9 +342,16 @@ class Forker(rje_obj.RJE_Object):
             if cpid:                # parent process records pid of child rsh process
                 fdict['PID'] = cpid
                 self.printLog('\r#FORK','Forking cmd as %s: %d remain; %.1f%% mem free' % (cpid,len(self.list['ToFork']),fdict['Mem']),log=self.getBool('LogFork'),screen=self.getBool('LogFork') or self.v() > 1)
-                self.printLog('#FORK','%s cmd: %s' % (cpid,fdict['cmd']),log=self.getBool('LogFork'),screen=self.getBool('LogFork') or self.v() > 1)
+                if isinstance(fdict['cmd'], list):
+                    self.printLog('#FORK', '%s cmd: %s commands' % (cpid, len(fdict['cmd'])), log=self.getBool('LogFork'), screen=self.getBool('LogFork') or self.v() > 1)
+                else:
+                    self.printLog('#FORK','%s cmd: %s' % (cpid,fdict['cmd']),log=self.getBool('LogFork'),screen=self.getBool('LogFork') or self.v() > 1)
             else:                   # child process
-                os.system(fdict['cmd'])
+                if isinstance(fdict['cmd'], list):
+                    for fcmd in fdict['cmd']:
+                        os.system(fcmd)
+                else:
+                    os.system(fdict['cmd'])
                 os._exit(0)
         except SystemExit: raise    # Child
         except: self.errorLog('Forker.startFork error')
